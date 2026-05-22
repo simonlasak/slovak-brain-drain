@@ -1,0 +1,12 @@
+data/
+.venv/
+__pycache__/
+*.pyc
+node_modules/
+frontend/dist/
+frontend/.vite/
+.env
+.env.local
+pipeline/logs/
+*.log
+.DS_Store
