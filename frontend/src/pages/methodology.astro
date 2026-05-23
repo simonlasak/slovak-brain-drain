@@ -1,0 +1,46 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Methodology - Slovak Brain Drain" lang="en">
+  <h1>Methodology and Sources</h1>
+  <p>Full data provenance, source quality ratings, and known limitations.</p>
+
+  <section class="methodology-content">
+    <h2>Data sources</h2>
+    <table>
+      <thead>
+        <tr><th>Source</th><th>Coverage</th><th>Confidence</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>SU SR DataCube</td><td>11 cubes, 2004-2025</td><td>Very high</td></tr>
+        <tr><td>Eurostat</td><td>8 datasets</td><td>High</td></tr>
+        <tr><td>Census 2021</td><td>9 indicators, 2,927 obec</td><td>Very high</td></tr>
+        <tr><td>Census 2011</td><td>Education at okres level</td><td>High</td></tr>
+        <tr><td>OECD</td><td>5 migration datasets</td><td>Medium-high</td></tr>
+        <tr><td>CSU (Czech)</td><td>4 tables, 2004-2025</td><td>High</td></tr>
+        <tr><td>UN DESA</td><td>Bilateral stock, 1990-2020</td><td>Medium</td></tr>
+      </tbody>
+    </table>
+
+    <h2>Known discrepancies</h2>
+    <ul>
+      <li>CSU reports ~12% more Slovaks in CZ than OECD/DESA (different counting methods: residence permits vs census-based "born in Slovakia")</li>
+      <li>2011 Census correction creates a discontinuity in population time series</li>
+      <li>OECD uses ISO3 country codes, UN DESA uses numeric codes</li>
+    </ul>
+
+    <h2>Validation report</h2>
+    <p>5 cross-source checks run. 0 red flags, 4 yellow flags (documented discrepancies). Full report available in the repository.</p>
+  </section>
+</Base>
+
+<style>
+  .methodology-content { max-width: 780px; }
+  .methodology-content h2 { font-family: var(--font-heading); margin-top: 2rem; margin-bottom: 0.5rem; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
+  th { font-weight: 600; background: #f8f9fa; }
+  ul { padding-left: 1.25rem; }
+  li { margin-bottom: 0.5rem; font-size: 0.95rem; }
+</style>

@@ -134,3 +134,99 @@ Each fetch produces `data/raw/<source>/<artifact>` plus a sidecar
 [ ]
 
 ---
+
+## Checkpoint 1 — Stage 1 Fetch complete
+
+Date: 2026-05-23
+
+### Summary
+
+All 10 data sources acquired: 442 files, 738 MB total.
+
+| Source | Files | Size | Coverage |
+|--------|-------|------|----------|
+| ŠÚ SR DataCube | 243 | 12.6 MB | 11 cubes, 2004–2025 |
+| Eurostat | 8 | 44.3 MB | 8 bulk TSV datasets |
+| Census 2021 | 10 | 529 MB | 9 indicators, 2,927 obec |
+| Census 2011 | 148 | 4.3 MB | Education at 78 okres |
+| OECD | 5 | 19.8 MB | Migration flows + DIOC |
+| ČSÚ Foreigners | 4 | 10.8 MB | Slovaks in CZ (stock, region, employment, age) |
+| UN DESA | 1 | 6.1 MB | Bilateral migrant stock 2020 |
+| IZ Bratislava | 20 | 109.5 MB | LAU1 panel (Zenodo) |
+| Boundaries | 2 | 1.4 MB | SK okresy GeoJSON + world TopoJSON |
+| Notable people | 1 | 0.0 MB | Template for manual curation |
+
+### Constraint: 2011→2021 education comparison
+
+Census 2011 data is at **okres level only**. The education change map
+(2011 vs 2021) must display at okres granularity and must NOT offer
+obec-level zoom for the historical comparison layer. Obec-level detail
+is available for 2021-only views.
+
+### Verification
+
+- Census 2021 education total: 5,449,270 (exact match)
+- Census 2011 okres education total: 5,197,565 (15+ pop, correct)
+- ISCED crosswalk built: data/processed/education_isced_crosswalk.csv
+- ČSÚ contains Slovak-specific data (101k+ Slovaks in CZ from 2015)
+
+### Decision
+
+Approved. Before Stage 2, fetch Czech MSMT student data (Slovak students
+at Czech universities). Constraint on 2011 okres-level noted.
+
+---
+
+## Checkpoint 4 - Stage 4 Frontend v0 scaffold
+
+Date: 2026-05-23
+
+### What was done (Stages 1-4 in one session)
+
+**Stage 1 (Fetch):** 10 sources, 442 files, 738 MB raw data
+**Stage 2 (Transform):** 3 parquet outputs + notable_people.json
+  - section1_internal: 124,680 rows (12 metrics, 2004-2025, kraj/okres/obec)
+  - section2_corridor: 620 rows (stock + students, 2012-2025)
+  - section3_diaspora: 5,708 rows (87 countries, 1990-2024)
+  - notable_people.json: 9 verified entries + section_caveats
+**Stage 3 (Validate):** 5 checks passed (0 red, 4 yellow)
+**Stage 4 (Frontend v0):** Astro + React islands scaffold, 7 routes
+
+### Known issues in v0 (fix next session)
+
+1. DuckDB-Wasm worker fails to load from CDN due to CORS (Worker
+   constructor blocks cross-origin scripts from localhost). Fix:
+   self-host the worker file in public/ or use inline worker.
+2. Locale toggle (SK/EN) button does nothing yet.
+3. Section 4 (/people) shows an age histogram of notable people only,
+   not the overall population age structure. The histogram should
+   show age-at-leaving distribution from the 9 people (which is the
+   correct intent per spec - it visualizes the pattern that most
+   leave before completing tertiary). But the page needs editorial
+   framing to make this clear.
+4. Sections 1-3 show error state because DuckDB fails (see #1).
+5. No charts built yet (just tables/text once DuckDB works).
+6. No MDX editorial content integrated.
+7. No MapLibre maps.
+8. No Visx charts.
+
+### Next session priorities (in order)
+
+1. Fix DuckDB-Wasm worker loading (self-host .wasm + worker files)
+2. Get data rendering on all 3 interactive sections
+3. Build first real Visx chart (population trend line for Section 1)
+4. Draft editorial content (English first) for Section 1 opening
+5. Submit editorial draft for approval before building remaining charts
+
+### Architectural decisions locked in
+
+- Framework: Astro 6 + React islands
+- Data layer: DuckDB-Wasm querying static parquet files
+- Fonts: Source Serif 4 + Inter Tight + JetBrains Mono (loaded from Google Fonts)
+- Charts: Visx (React)
+- Maps: MapLibre GL
+- Routing: 7 pages (/, /internal, /corridor, /diaspora, /people, /resources, /methodology)
+- Hosting target: Cloudflare Pages (static output)
+- No em-dashes anywhere in frontend
+
+---

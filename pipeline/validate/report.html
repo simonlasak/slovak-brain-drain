@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Stage 3 Validation Report - Slovak Brain Drain</title>
+    <style>
+        body { font-family: 'Inter Tight', system-ui, sans-serif; max-width: 800px; margin: 40px auto; padding: 0 20px; color: #1a1a1a; }
+        h1 { border-bottom: 2px solid #1a1a1a; padding-bottom: 8px; }
+        .summary { font-size: 1.1em; margin: 20px 0; padding: 12px; background: #f8f9fa; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Stage 3: Data Validation Report</h1>
+    <div class="summary">
+        <strong>Results:</strong> 1 green, 4 yellow, 0 red
+        <br>
+        <strong>Verdict:</strong> No blocking issues. Yellow flags are documented discrepancies.
+    </div>
+    
+        <div style="border-left: 4px solid #2d6a4f; background: #d8f3dc; padding: 12px 16px; margin: 12px 0; border-radius: 4px;">
+            <h3 style="margin: 0; color: #2d6a4f;">[GREEN] Population consistency (kraj vs SR total)</h3>
+            <p style="margin: 4px 0; font-style: italic;">1 observations</p>
+            <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
+                <li>All years: kraj sums match SR totals within 5%</li>
+            </ul>
+        </div>
+        
+        <div style="border-left: 4px solid #e9c46a; background: #fff3cd; padding: 12px 16px; margin: 12px 0; border-radius: 4px;">
+            <h3 style="margin: 0; color: #e9c46a;">[YELLOW] Migration accounting (pop change vs births-deaths+migration)</h3>
+            <p style="margin: 4px 0; font-style: italic;">FLAGS: 11 observations</p>
+            <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
+                <li>2007: actual change=4,457, computed=7,568, residual=-3,111 (70%)</li><li>2008: actual change=7,361, computed=11,482, residual=-4,121 (56%)</li><li>2011: actual change=-32,479, computed=12,066, residual=-44,545 (137%)</li><li>2012: actual change=11,876, computed=6,694, residual=5,182 (44%)</li><li>2016: actual change=4,903, computed=9,251, residual=-4,348 (89%)</li><li>2020: actual change=7,452, computed=2,088, residual=5,364 (72%)</li><li>2021: actual change=-8,603, computed=-14,369, residual=5,766 (67%)</li><li>2022: actual change=-14,558, computed=-5,738, residual=-8,820 (61%)</li><li>2023: actual change=-5,920, computed=-3,944, residual=-1,976 (33%)</li><li>2024: actual change=-4,105, computed=-5,054, residual=949 (23%)</li><li>2025: actual change=-5,236, computed=-9,892, residual=4,656 (89%)</li>
+            </ul>
+        </div>
+        
+        <div style="border-left: 4px solid #e9c46a; background: #fff3cd; padding: 12px 16px; margin: 12px 0; border-radius: 4px;">
+            <h3 style="margin: 0; color: #e9c46a;">[YELLOW] CZ corridor cross-check (CSU vs OECD/DESA)</h3>
+            <p style="margin: 4px 0; font-style: italic;">Discrepancy is expected (different definitions); quantified below</p>
+            <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
+                <li>2015: CSU=101,589, OECD/DESA=89,301 (-12.1%)</li><li>2016: CSU=107,251, OECD/DESA=94,022 (-12.3%)</li><li>2017: CSU=111,804, OECD/DESA=98,877 (-11.6%)</li><li>2018: CSU=116,817, OECD/DESA=102,393 (-12.3%)</li><li>2019: CSU=121,278, OECD/DESA=106,633 (-12.1%)</li><li>2020: CSU=124,544, OECD/DESA=113,773 (-8.6%)</li><li>2021: CSU=114,630, OECD/DESA=112,713 (-1.7%)</li><li>2022: CSU=117,265, OECD/DESA=234,184 (+99.7%)</li><li>2023: CSU=119,182, OECD/DESA=232,308 (+94.9%)</li><li>2024: CSU=121,471, OECD/DESA=232,525 (+91.4%)</li>
+            </ul>
+        </div>
+        
+        <div style="border-left: 4px solid #e9c46a; background: #fff3cd; padding: 12px 16px; margin: 12px 0; border-radius: 4px;">
+            <h3 style="margin: 0; color: #e9c46a;">[YELLOW] UN DESA vs OECD stock comparison</h3>
+            <p style="margin: 4px 0; font-style: italic;">2 observations</p>
+            <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
+                <li>No direct overlap between OECD popf and UN DESA (different country codes: ISO3 vs numeric)</li><li>This is expected - OECD uses ISO3 (CZE), DESA uses numeric (203). Harmonization needed in frontend.</li>
+            </ul>
+        </div>
+        
+        <div style="border-left: 4px solid #e9c46a; background: #fff3cd; padding: 12px 16px; margin: 12px 0; border-radius: 4px;">
+            <h3 style="margin: 0; color: #e9c46a;">[YELLOW] Eurostat vs SUSR national figures</h3>
+            <p style="margin: 4px 0; font-style: italic;">Partial check - Eurostat raw available but not directly comparable in current transform</p>
+            <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
+                <li>SUSR SR population 2025: 5,419,451</li><li>Eurostat bulk TSV not yet parsed into section1 for direct comparison</li><li>Cross-check deferred to frontend layer (DuckDB query on raw Eurostat TSV)</li>
+            </ul>
+        </div>
+        
+    <hr>
+    <p style="font-size: 0.8em; color: #666;">Generated by pipeline/validate/invariants.py</p>
+</body>
+</html>

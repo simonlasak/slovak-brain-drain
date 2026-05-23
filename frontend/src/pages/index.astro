@@ -1,0 +1,50 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Slovak Brain Drain" lang="en">
+  <h1>Slovak Brain Drain</h1>
+  <p class="subtitle">A data investigation into Slovakia's emigration since independence</p>
+
+  <section class="summary">
+    <p>Slovakia has lost more than 300,000 people to emigration since EU accession. This site maps where they went, why they left, and what was lost.</p>
+  </section>
+
+  <section class="sections-grid">
+    <a href="/internal" class="section-card">
+      <h2>Section 1: Internal Slovakia</h2>
+      <p>Population change, migration flows, and regional divergence across 79 districts, 2004-2025.</p>
+    </a>
+    <a href="/corridor" class="section-card">
+      <h2>Section 2: The Czech Corridor</h2>
+      <p>240,000 Slovaks in Czechia. The student pipeline, the labour pipeline, and the stay rate.</p>
+    </a>
+    <a href="/diaspora" class="section-card">
+      <h2>Section 3: Global Diaspora</h2>
+      <p>Slovak-born populations in 87 countries. Where the brain drain actually goes.</p>
+    </a>
+    <a href="/people" class="section-card">
+      <h2>Section 4: Notable Departures</h2>
+      <p>Individual stories that illustrate the structural patterns.</p>
+    </a>
+  </section>
+</Base>
+
+<style>
+  h1 { font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 0.25rem; }
+  .subtitle { font-size: 1.1rem; color: #666; margin-bottom: 2rem; }
+  .summary { margin-bottom: 2rem; font-size: 1.05rem; max-width: 680px; }
+  .sections-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  .section-card {
+    display: block;
+    padding: 1.25rem;
+    border: 1px solid #e5e5e5;
+    border-radius: 6px;
+    text-decoration: none;
+    color: inherit;
+    transition: border-color 0.15s;
+  }
+  .section-card:hover { border-color: var(--color-accent, #c44d2b); }
+  .section-card h2 { font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.5rem; }
+  .section-card p { font-size: 0.9rem; color: #555; }
+</style>
