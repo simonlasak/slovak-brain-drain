@@ -1,0 +1,95 @@
+# Pipeline configuration — single source of truth for endpoints, paths, and rate limits.
+# All URLs sourced from docs/02-data-manifest.md. Do not hand-edit elsewhere.
+
+paths:
+  raw:        data/raw
+  interim:    data/interim
+  processed:  data/processed
+  logs:       pipeline/logs
+
+http:
+  timeout_seconds:    60
+  max_concurrent:     4
+  delay_ms:           200
+  user_agent:         "slovak-brain-drain/0.1 (research; +https://github.com/szlasak)"
+
+sources:
+
+  # ─── Tier 1: Slovak primary ───────────────────────────────────
+  susr_datacube:
+    base_url:       "https://data.statistics.sk/api/v2"
+    help_url:       "https://data.statistics.sk/api/html/help-en.html"
+    license:        "CC-BY-4.0"
+    refresh_cadence: "twice daily, weekdays"
+    tables:
+      # Section 1 — population & migration
+      om7011rr: { title: "Stock and Change of Population",        granularity: "kraj/okres", section: 1 }
+      om7013rr: { title: "Stock and Change by Sex",               granularity: "kraj/okres", section: 1 }
+      om7101rr: { title: "Population by Sex — obec",              granularity: "obec",       section: 1 }
+      om7102rr: { title: "Population by Sex — okres",             granularity: "okres",      section: 1 }
+      om7104rr: { title: "Population Change",                     granularity: "kraj/okres", section: 1 }
+      om7007rr: { title: "Age Groups",                            granularity: "okres",      section: 1 }
+      om7009rr: { title: "Age Structure",                         granularity: "okres",      section: 1 }
+      om7004rr: { title: "Demographic Balance",                   granularity: "kraj",       section: 1 }
+      om7014rr: { title: "Population Density — obec",             granularity: "obec",       section: 1 }
+      om5001rr: { title: "Base Characteristics",                  granularity: "obec",       section: 1 }
+      # Section 1/2 — wages & labour
+      pr0204qs: { title: "Average Monthly Wage — Economy",        granularity: "SR",         section: "1,2", frequency: "quarterly" }
+      pr0205qs: { title: "Average Monthly Wage by Industry",      granularity: "SR/NACE",    section: "1,2", frequency: "quarterly" }
+      od0008ms: { title: "Wage in Selected Industries",           granularity: "SR/NACE",    section: "1,2", frequency: "monthly"   }
+    smoke_test:
+      table:        om7102rr
+      description:  "Population by sex at okres level — smallest viable cube to validate pipeline shape"
+
+  scitanie_2021:
+    portal:         "https://www.scitanie.sk"
+    open_data:      "https://www.scitanie.sk/otvorene-data"
+    license:        "open data"
+
+  iz_bratislava_lau1:
+    zenodo_record:  "https://zenodo.org/records/17549749"
+    license:        "CC-BY"
+
+  csu_foreigners:
+    portal:         "https://csu.gov.cz/foreigners-in-the-czech-republic"
+    open_data:      "https://csu.gov.cz/open-data"
+    license:        "CC-BY-4.0"
+
+  un_desa_migrant_stock:
+    portal:         "https://www.un.org/development/desa/pd/content/international-migrant-stock"
+    license:        "open data"
+
+  oecd_dioc:
+    portal:         "https://www.oecd.org/en/data/datasets/database-on-immigrants-in-oecd-countries.html"
+    license:        "OECD terms"
+
+  oecd_migration_db:
+    portal:         "https://stats.oecd.org"
+    license:        "OECD terms"
+
+  eurostat:
+    api_base:       "https://ec.europa.eu/eurostat/api/dissemination/sdmx/2.1/data"
+    license:        "open data"
+    tables:
+      migr_pop1ctz:    "Population by citizenship, sex, age"
+      migr_pop3ctb:    "Population by country of birth, sex, age"
+      migr_imm1ctz:    "Immigration by citizenship"
+      migr_emi1ctz:    "Emigration by citizenship"
+      educ_uoe_mobs02: "Tertiary students from abroad by country of origin"
+      educ_uoe_mobg01: "Mobile graduates by origin and destination"
+      lfst_r_lfu3rt:   "Regional unemployment"
+      nama_10r_3gdp:   "Regional GDP"
+
+  worldbank_bilateral:
+    portal:         "https://data.worldbank.org"
+    license:        "CC-BY-4.0"
+
+  # ─── Tier 4: boundaries ───────────────────────────────────────
+  boundaries_sk:
+    primary:   "https://github.com/drakh/slovakia-gps-data"
+    official:  "https://www.geoportal.sk/sk/zbgis_smd/na-stiahnutie/"
+    license:   "see source"
+
+  boundaries_world:
+    primary:   "https://github.com/topojson/world-atlas"
+    license:   "ISC"

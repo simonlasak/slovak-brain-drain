@@ -1,0 +1,104 @@
+/*
+ * Design tokens — locked in docs/05-design.md
+ * Direction: Folk-modern (terracotta + Tatra blue + harvest gold on cream)
+ * Single source of truth. Do not edit values without updating docs/05-design.md.
+ */
+
+:root {
+  /* ─── Surfaces ────────────────────────────────────────────── */
+  --bg-page: #FBF7F0;
+  --bg-surface: #FFFFFF;
+  --bg-nested: #F4EFE3;
+  --bg-inverse: #2A1810;
+
+  /* ─── Text ────────────────────────────────────────────────── */
+  --text-primary: #2A1810;
+  --text-secondary: #6B4A2F;
+  --text-tertiary: #8B6F4F;
+  --text-inverse: #FBF7F0;
+
+  /* ─── Accents ─────────────────────────────────────────────── */
+  --accent-primary: #B83A1F;
+  --accent-primary-hover: #9A2F18;
+  --accent-primary-light: #FBE0D8;
+
+  --accent-secondary: #2A6B8B;
+  --accent-secondary-hover: #1F5570;
+  --accent-secondary-light: #DCE9EE;
+
+  --accent-tertiary: #D4A547;
+  --accent-tertiary-hover: #B88A35;
+  --accent-tertiary-light: #F5E8C4;
+
+  /* ─── Borders ─────────────────────────────────────────────── */
+  --border-subtle: #E8DDC8;
+  --border-emphasis: #D4A547;
+  --border-strong: #2A1810;
+
+  /* ─── States ──────────────────────────────────────────────── */
+  --state-success: #4A7D3F;
+  --state-warning: #C97D1E;
+  --state-error: #A02E1A;
+  --state-info: #2A6B8B;
+
+  /* ─── Data viz scales (5-step) ────────────────────────────── */
+  --scale-loss-1: #FBE0D8;
+  --scale-loss-2: #E89A82;
+  --scale-loss-3: #B83A1F;
+  --scale-loss-4: #8A2812;
+  --scale-loss-5: #5A1808;
+
+  --scale-gain-1: #DCE9EE;
+  --scale-gain-2: #6FA0B8;
+  --scale-gain-3: #2A6B8B;
+  --scale-gain-4: #1F5570;
+  --scale-gain-5: #143B4D;
+
+  /* ─── Type ────────────────────────────────────────────────── */
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+
+  /* ─── Space (4px base) ────────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* ─── Radius (max 8px — never pills) ──────────────────────── */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+
+  /* ─── Shadow (only one allowed; floating elements) ────────── */
+  --shadow-floating: 0 4px 12px rgba(42, 24, 16, 0.08);
+
+  /* ─── Motion ──────────────────────────────────────────────── */
+  --duration-instant: 100ms;
+  --duration-fast: 200ms;
+  --duration-base: 320ms;
+  --duration-slow: 600ms;
+  --duration-cinematic: 1200ms;
+  --easing-default: cubic-bezier(0.2, 0, 0, 1);
+  --easing-emphasis: cubic-bezier(0.3, 0, 0, 1.2);
+  --easing-decelerate: cubic-bezier(0, 0, 0.2, 1);
+
+  /* ─── Layout ──────────────────────────────────────────────── */
+  --max-prose: 720px;
+  --max-content: 1080px;
+  --max-page: 1440px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+    --duration-cinematic: 0ms;
+  }
+}
