@@ -1,68 +1,109 @@
-# Slovak Brain Drain Case Study
+# Odchod / Departure
 
-## What this is
+### An interactive case study of Slovak brain drain
 
-A deep-research data project exploring brain drain from Slovakia, designed as an interactive case-study website with three interactive sections and one narrative dashboard.
+*Slovensky nižšie / Slovak below*
 
-## What's in this folder
+---
 
-- `docs/01-research-architecture.md` — the high-level structure: four sections, shared filters, the unifying thread
-- `docs/02-data-manifest.md` — every dataset, endpoint, format, license, and storage estimate
-- `docs/03-methodology.md` — definitions (Slovak-born vs citizen vs identified), interpolation strategy, display honesty principles, the Slafkovský caveat
-- `docs/04-spec.md` — the Claude Code agent handoff: tech stack, pipeline stages, feedback loop, definition of done
-- `docs/05-design.md` — the locked design system: fonts, color palette, spacing, components, folk motif system, data viz styling
-- `docs/06-sources-page.md` — full specification of the /methodology page: dataset register, metric derivation log, interpolation register, cross-validation log, confidence grid, downloadable data, the sources_report.json schema that the pipeline generates and the frontend renders
+Slovakia has lost more than 300,000 people to emigration since EU accession in 2004 — a figure the official statistics likely undercount. This project maps that departure: where people go, at what age, from which regions, in which fields, and why the flow is so one-directional.
 
-## How to use this
+Built as a data-journalism website with interactive maps and original data work across four sections.
 
-Hand the entire `docs/` folder to a Claude Code agent in a fresh session, along with this prompt:
+**[Live site →](https://slovak-brain-drain.pages.dev)** *(deploying soon)*
 
-> Read docs/01 through docs/06 in order — all six files. Then ask me your Stage 0 questions from docs/04-spec.md before doing anything else. Do not write any code, fetch any data, or create any files until I have confirmed the tech stack and answered your pre-flight questions.
+---
 
-The agent will work through the stages with explicit human-in-the-loop checkpoints documented in `feedback/checkpoints.md` (it will create this file itself).
+## What's inside
 
-## Headline findings the data should support
+**§1 — Inside Slovakia**
+How talent redistributes internally before anyone crosses a border. An animated choropleth of Slovakia at kraj, okres, and obec resolution showing net migration of educated residents 2004–present, with wage and unemployment overlays.
 
-Based on the research conducted, the following findings are likely (but not guaranteed) to emerge once the data is built out. They are NOT to be assumed in the visualisations — the data needs to confirm them first:
+**§2 — The Czech corridor**
+The dominant migration route: 240,000+ Slovaks now live in Czechia, making it the largest single bilateral flow in the EU relative to population. Two co-equal stories — the student pathway (18-year-olds choosing Charles University over Comenius) and the labour pathway — shown as parallel Sankeys with a bridge metric tracking how many students stay after graduating.
 
-1. **Inside Slovakia**, Bratislava + its hinterland (Senec, Pezinok, Malacky) are net winners of educated talent; eastern Slovakia (Prešov region, Košice rural, Gemer) is the biggest loser, with Banskobystrický kraj rural close behind.
+**§3 — Global diaspora**
+Where Slovaks end up worldwide. An interactive world heatmap switchable between three definitions of "Slovak" (born in Slovakia / Slovak citizen / Slovak-identified by ancestry) — which give very different pictures of the diaspora.
 
-2. **The Czech corridor** is not really "emigration" in the classical sense — it functions as a structural extension of the Slovak labour market into a higher-wage jurisdiction, dominated by 20-34 year olds in IT, healthcare, and manufacturing.
+**§4 — Notable departures**
+A static timeline of high-impact Slovak-born individuals who built their careers abroad. From Andrej Karpathy (AI, left at 15) to Juraj Slafkovský (NHL, left at 15, publicly critical of Slovak hockey structures). The pattern that emerges is not what most people expect.
 
-3. **The student pathway** is the dominant entry point — ~17-18% of Slovak HE students study abroad (vs EU average ~4%), most in Czechia, and many never return. The 18-year-old leaving for Charles University is the central brain-drain story, not the post-graduation emigrant.
+---
 
-4. **The diaspora picture** depends sharply on which definition of "Slovak" you use. By citizenship, the diaspora is concentrated in EU (CZ, DE, AT, UK). By ancestry, it's concentrated in the US and reflects 1880-1948 waves rather than current outflows. By place of birth, it's somewhere in between.
+## Data
 
-5. **Modern departures** (post-2004) skew young, educated, and disproportionately STEM. Family migration (the Karpathy case) and structural failure of domestic institutions (the Slafkovský case) are both visible drivers. Many high-impact emigrants left as teenagers, before completing Slovak tertiary education.
+All data is sourced from primary records. The `/methodology` page on the live site documents every dataset, every derived metric, every interpolation, and every case where two sources disagree.
 
-## Status of this document
+Primary sources include: Štatistický úrad SR DataCube API, Sčítanie 2021, ČSÚ Foreigners in the Czech Republic (annual), Czech MŠMT/DZS student data, UN DESA International Migrant Stock 2024, OECD DIOC, Eurostat migration tables, IZ Bratislava LAU1 unemployment panel.
 
-This `docs/` package is the result of a focused research and design session that systematically mapped:
+Processed outputs are available for download under CC-BY 4.0 on the methodology page.
 
-- Slovak primary sources (ŠÚ SR DataCube API confirmed working, Census 2021, UPSVAR, SLK)
-- Czech primary sources (ČSÚ open data, MŠMT student data, Foreigners publications)
-- International sources (UN DESA, OECD DIOC, Eurostat, World Bank)
-- Geographic boundaries (Geoportal SK, GitHub mirrors)
-- Notable-people candidates (initial longlist of 10)
-- The visual identity and design system (Folk-modern direction, fully specified)
+---
 
-No data has actually been fetched yet, and no code has been written — those are Stages 1+ of the agent's work. The docs tell the agent exactly where to look and what the output should feel like.
+## Running locally
 
-## Decision log
+Requires Python 3.11+ and Node 18+.
 
-Decisions made during the research and design sessions that informed these specs:
+```bash
+git clone https://github.com/simonlasak/slovak-brain-drain.git
+cd slovak-brain-drain
 
-**Research scope:**
-- **Time window:** Post-2004 (EU accession onwards) — clean data and policy-relevant era
-- **Geographic resolution:** Kraj/okres default, obec on zoom
-- **Education filter:** All three definitions (tertiary, tertiary+maturita, by field) as toggleable filters
-- **Student emigration:** Treated as a first-class pathway (not a sub-pattern) — Section 1 has an outbound tertiary mobility metric; Section 2 has co-equal student and labour pathways
-- **Storage:** No limit, store everything (~580 MB raw, ~150 MB processed)
-- **Notable people:** Globally famous + impactful, less known for being Slovak, mostly non-athletes; Slafkovský included as a critical counter-example
+# Python pipeline
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+python pipeline/run_all.py
 
-**Design:**
-- **Direction:** Folk-modern — editorial gravitas grounded in subtle Slovak visual heritage (Čičmany geometric primitives used functionally, never decoratively)
-- **Type:** Source Serif 4 (headlines) + Pangram Sans (UI) + JetBrains Mono (numbers) — all chosen for excellent Slovak diacritic rendering
-- **Color:** Cream `#FBF7F0` background, terracotta `#B83A1F` primary, Tatra blue `#2A6B8B` secondary, harvest gold `#D4A547` tertiary
-- **Data viz stack:** deck.gl + Maplibre + visx + Framer Motion + GSAP + Scrollama — Vega-Lite explicitly removed
-- **Bilingual:** Slovak primary headings, English subtitles in lighter weight
+# Frontend
+cd frontend
+npm install
+npm run dev
+```
+
+The pipeline fetches ~580 MB of raw data on first run. Subsequent runs are incremental — only changed sources are re-fetched.
+
+---
+
+## Tech
+
+**Pipeline:** Python · httpx · Polars · PyArrow · GeoPandas · pdfplumber
+
+**Frontend:** React · Vite · TypeScript · deck.gl · Maplibre GL · visx · Framer Motion · GSAP · Scrollama · DuckDB-Wasm
+
+**Hosting:** Cloudflare Pages (static, no backend)
+
+---
+
+## License
+
+Code: [MIT](LICENSE)
+
+Processed data outputs: [CC-BY 4.0](https://creativecommons.org/licenses/by/4.0/) — cite this project and you can use the data freely. The underlying raw sources have their own open licenses; raw data is not redistributed here.
+
+---
+
+## Author
+
+Šimon Lasák — CS student, UCD Dublin
+
+---
+
+---
+
+## Odchod / Departure
+
+### Interaktívna prípadová štúdia slovenského brain drainु
+
+Od vstupu Slovenska do EÚ v roku 2004 emigrovalo viac ako 300 000 ľudí — a officiálne štatistiky tento počet pravdepodobne podhodnocujú. Tento projekt mapuje ten odchod: kam ľudia odchádzajú, v akom veku, z ktorých regiónov, v ktorých odvetviach a prečo je tok taký jednostranný.
+
+Projekt je postavený ako dátovo-žurnalistická webová stránka so štyrmi sekciami a interaktívnymi mapami.
+
+**§1** — Vnútorná migrácia na Slovensku
+
+**§2** — Český koridor: 240 000+ Slovákov žijúcich v Česku
+
+**§3** — Globálna diaspóra: kde Slováci žijú vo svete
+
+**§4** — Významné odchody: ľudia, ktorí zmenili svet — a väčšina nevie, že sú Slováci
+
+Spracované výstupy sú k dispozícii na stiahnutie pod licenciou CC-BY 4.0.
