@@ -300,3 +300,85 @@ Date: 2026-05-28
    small multiples)
 
 ---
+
+## Checkpoint 5 - Section 1 as the end-to-end standard
+
+Date: 2026-07-08
+
+Resuming after a ~1 month hiatus. First committed the month of uncommitted
+frontend work (self-hosted DuckDB-Wasm, real visx charts, editorial MDX) as a
+WIP checkpoint so nothing was at risk, then built Section 1 (/internal) up to
+the intended "standard" that Sections 2-4 will copy.
+
+### Two locked deviations from the written spec
+
+Both decided by Simon this session (see agent memory `project_section_pattern`):
+
+1. **Scrollytelling, NO shared filter bar.** docs/04-spec.md and
+   07-editorial-content.md call for a sticky shared filter bar (year / education
+   / age / Bratislava toggle) on sections 1-3. We are dropping it. The
+   scroll-driven narrative map (fixed-year, stepped info cards) plus interleaved
+   charts is the deliberate editorial direction. This is intentional, not an
+   omission.
+
+2. **Bilingual: architecture built, English authoritative, Slovak stubbed.**
+   The full SK/EN system is live and the toggle is functional + persistent.
+   English is complete and approved. Slovak is a marked stub (`reviewed: false`)
+   for Simon to author. Per the standing workflow rule, no machine-translated
+   Slovak ships: while unreviewed, the SK view shows a "translation in progress"
+   notice and renders the English text.
+
+### What was built
+
+- **Locale system** (`src/lib/locale.ts` + Base.astro): localStorage-backed,
+  pre-paint `<html lang>` set (no flash), custom-event bus so the Astro nav and
+  all React islands stay in sync; cross-tab sync via the storage event. The nav
+  SK/EN toggle is now real (was a dead pair of spans).
+- **Bilingual content module** (`src/content/internal.ts`): single render source
+  for all Section 1 prose, subheads, stat callouts, chart captions, map step
+  text, and per-chart source metadata, as `{en, sk}`. Supersedes
+  `internal.en.mdx` as the render source (MDX can't cleanly interleave the
+  scrollytelling map + charts). Prose was lifted out of Section1App.tsx and
+  MapVariantA.tsx (previously hardcoded).
+- **"About this data" panels** (`src/components/charts/AboutData.tsx`): reusable
+  slide-in panel with source / derivation / caveat, wired to all 4 Section 1
+  charts and the map. DoD item.
+- **Mobile responsiveness**: map info card + tooltip reflow to full-width bottom
+  / top on <=640px; editorial type scales down; About panel goes full-width.
+- **Scratch cleanup**: removed exploration pages/components that had set the
+  standard and were now dead (variant-a, variant-b, waves, corridor-wave and
+  their exclusive components MapVariantB, CorridorWaveApp, CorridorMapWave,
+  SlovakiaMap). Back to 7 clean routes.
+
+### Verification
+
+- `npm run build` passes (7 routes, exit 0).
+- Dev server serves /internal (200) plus all data assets: section1 parquet,
+  sk_okresy geojson, duckdb wasm. SSR renders island + locale wiring without
+  error.
+- Parquet content check (DuckDB): all Section 1 chart/map metrics present for
+  2024/25 - cohort_retention 79 okres rows (ex-Bratislava), avg_wage_eur 8 kraj
+  rows, population/total_change/intl_net all populated. Charts will render.
+- NOT yet verified with human eyes in a real browser (no headless browser in
+  this environment): the actual DuckDB-Wasm client queries rendering pixels, the
+  toggle re-rendering the island live, About panels opening, and the mobile
+  layout. Needs Simon to run `npm run dev` and click through.
+
+### Questions for you
+
+1. **Eyeball /internal.** Run `npm run dev`, open /internal, and confirm: charts
+   render from live data, SK/EN toggle flips the prose + nav and persists across
+   navigation, the SK "translation in progress" notice reads right, each chart's
+   "About this data" panel opens with correct sourcing, and the map/cards hold up
+   at mobile width. This is the template, so it should feel right before I
+   replicate it.
+2. **Slovak authoring.** `src/content/internal.ts` has the `sk` stub with
+   `TODO(sk)` markers. Do you want to author it now (so Section 1 is fully
+   bilingual before I move on), or keep stubbing SK across all sections and do a
+   single Slovak-authoring pass at the end?
+3. **Next section.** Assuming /internal is approved as the standard, Section 2
+   (/corridor) is the most built-out next candidate. Proceed there next?
+
+### Your decision (Simon to fill in)
+
+[ ]

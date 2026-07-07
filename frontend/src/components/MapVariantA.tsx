@@ -2,6 +2,8 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { query, registerParquet } from '../lib/db';
+import { AboutData } from './charts/AboutData';
+import type { SourcePanel } from '../content/internal';
 
 const IDN3_TO_SK: Record<number, string> = {
   101:"SK0101",102:"SK0102",103:"SK0103",104:"SK0104",105:"SK0105",106:"SK0106",107:"SK0107",108:"SK0108",
@@ -14,13 +16,23 @@ const IDN3_TO_SK: Record<number, string> = {
   801:"SK0421",802:"SK0422",803:"SK0423",804:"SK0424",805:"SK0425",806:"SK0426",807:"SK0427",808:"SK0428",809:"SK0429",810:"SK042A",811:"SK042B",
 };
 
-const STEPS = [
-  { metric: null, year: 2024, title: '', description: '' },
-  { metric: 'population', year: 2024, title: 'Where people live', description: 'Population distribution across Slovakia, 2024. Bratislava and its suburbs dominate the west; the east remains densely settled but increasingly younger people leave for opportunity elsewhere.' },
-  { metric: 'cohort_retention', year: 2024, title: 'Where did the teenagers go?', description: 'Take every 15-19 year old living in a district in 2004. Twenty years later, how many 35-39 year olds does that same district have? Senec has 234% (it attracted people). Snina kept only 76% - one in four left and never came back. The median district loses 11% of each generation.' },
-  { metric: 'total_change', year: 2024, title: 'Who is growing, who is shrinking', description: 'Annual population change in 2024. Blue districts gain residents; terracotta districts lose them. Only Bratislava and its immediate suburban ring are meaningfully growing.' },
-  { metric: 'intl_net', year: 2024, title: 'Where they go', description: 'The internal story has a threshold. Bratislava absorbs arrivals from abroad; eastern and central districts show consistent negative net international balances. Where those outflows go is the subject of the next section.' },
+// Structural step metadata (which metric colours the map at each scroll step).
+// The step title/description text is bilingual and supplied via props.
+const STEPS: { metric: string | null; year: number }[] = [
+  { metric: null, year: 2024 },
+  { metric: 'population', year: 2024 },
+  { metric: 'cohort_retention', year: 2024 },
+  { metric: 'total_change', year: 2024 },
+  { metric: 'intl_net', year: 2024 },
 ];
+
+interface StepText { title: string; description: string; }
+
+interface MapVariantAProps {
+  steps: StepText[];
+  aboutLabel: string;
+  sourcePanel: SourcePanel;
+}
 
 // Gain: Tatra blue scale (#DCE9EE -> #143B4D)
 // Loss: Terracotta scale (#FBE0D8 -> #5A1808)
@@ -56,7 +68,7 @@ function interpolateSeq(value: number, min: number, max: number): [number, numbe
   return [r, g, b, 220];
 }
 
-export default function MapVariantA() {
+export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVariantAProps) {
   const [geojson, setGeojson] = useState<any>(null);
   const [mapData, setMapData] = useState<Record<string, number>>({});
   const [activeStep, setActiveStep] = useState(0);
@@ -68,6 +80,7 @@ export default function MapVariantA() {
   const [dataReady, setDataReady] = useState(false);
   const [revealedRegions, setRevealedRegions] = useState<Set<number>>(new Set());
   const [animPhase, setAnimPhase] = useState<'init' | 'drawing' | 'filling' | 'settled'>('init');
+  const [isMobile, setIsMobile] = useState(false);
   const dataReadyRef = useRef(false);
   const tooltipTimer = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -109,6 +122,12 @@ export default function MapVariantA() {
       }
     }
     preload();
+
+    const mq = window.matchMedia('(max-width: 640px)');
+    const onMq = () => setIsMobile(mq.matches);
+    onMq();
+    mq.addEventListener('change', onMq);
+
     fetch('/data/sk_okresy.geojson').then(r => r.json()).then(gj => {
       setGeojson(gj);
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -291,11 +310,14 @@ export default function MapVariantA() {
             style={{ background: '#FBF7F0', width: '100%', height: '100%' }}
           />
 
-          {/* Hover tooltip - bottom left of info card */}
+          {/* Hover tooltip - bottom left of info card (desktop) / top on mobile */}
           <div style={{
-            position: 'absolute', bottom: '2.5rem', right: '27.5rem',
-            opacity: tooltipVisible && cardState === 'visible' ? 1 : 0,
-            transform: tooltipVisible && cardState === 'visible' ? 'translateX(0)' : 'translateX(20px)',
+            position: 'absolute',
+            ...(isMobile
+              ? { top: '1rem', left: '1rem', right: '1rem' }
+              : { bottom: '2.5rem', right: '27.5rem' }),
+            opacity: tooltipVisible && (isMobile || cardState === 'visible') ? 1 : 0,
+            transform: tooltipVisible && (isMobile || cardState === 'visible') ? 'translateX(0)' : 'translateX(20px)',
             transition: 'opacity 0.25s ease, transform 0.25s ease',
             pointerEvents: 'none',
             background: 'rgba(42, 24, 16, 0.88)',
@@ -308,12 +330,15 @@ export default function MapVariantA() {
             <p style={{ fontSize: '0.75rem', color: 'rgba(251,247,240,0.7)', margin: '2px 0 0 0' }}>{hoveredInfo ? Math.round(hoveredInfo.value).toLocaleString() : ' '}</p>
           </div>
 
-          {/* Info card - bottom right, fades in on step 1 */}
+          {/* Info card - bottom right (desktop) / full-width bottom (mobile) */}
           <div style={{
-            position: 'absolute', bottom: '2.5rem', right: '2.5rem',
-            maxWidth: '380px', background: 'rgba(255,255,255,0.94)',
+            position: 'absolute',
+            ...(isMobile
+              ? { bottom: '1rem', left: '1rem', right: '1rem', maxWidth: 'none', padding: '1.1rem 1.25rem' }
+              : { bottom: '2.5rem', right: '2.5rem', maxWidth: '380px', padding: '1.5rem 1.75rem' }),
+            background: 'rgba(255,255,255,0.94)',
             backdropFilter: 'blur(10px)', borderRadius: '10px',
-            padding: '1.5rem 1.75rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
+            boxShadow: '0 4px 24px rgba(0,0,0,0.08)',
             opacity: cardState === 'visible' ? 1 : 0,
             transform: cardState === 'exiting' ? 'translate(40px, 0)' : cardState === 'entering' ? 'translate(0, 14px)' : 'translate(0, 0)',
             transition: 'opacity 0.35s ease, transform 0.35s ease',
@@ -323,11 +348,12 @@ export default function MapVariantA() {
               {displayedStep} / {STEPS.length - 1}
             </p>
             <h2 style={{ margin: '0 0 0.5rem 0', fontSize: '1.4rem', fontFamily: 'var(--font-serif)', fontWeight: 600, lineHeight: 1.2 }}>
-              {STEPS[displayedStep]?.title}
+              {steps[displayedStep]?.title}
             </h2>
-            <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: 1.6, color: '#444' }}>
-              {STEPS[displayedStep]?.description}
+            <p style={{ margin: '0 0 0.75rem 0', fontSize: '0.9rem', lineHeight: 1.6, color: '#444' }}>
+              {steps[displayedStep]?.description}
             </p>
+            <AboutData label={aboutLabel} panel={sourcePanel} />
           </div>
 
           {/* Scroll indicator on first step */}

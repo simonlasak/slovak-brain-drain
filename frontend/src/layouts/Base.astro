@@ -27,6 +27,17 @@ const navItems = [
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <script is:inline>
+      // Set the active locale before first paint to avoid a flash of the
+      // wrong language. Mirrors DEFAULT_LOCALE / STORAGE_KEY in src/lib/locale.ts.
+      (function () {
+        var stored = null;
+        try { stored = window.localStorage.getItem('sbd-locale'); } catch (e) {}
+        var loc = stored === 'sk' || stored === 'en' ? stored : 'en';
+        document.documentElement.lang = loc;
+        document.documentElement.setAttribute('data-locale', loc);
+      })();
+    </script>
     <style is:global>
       *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
       body {
@@ -129,7 +140,21 @@ const navItems = [
         font-size: 14px;
         flex-shrink: 0;
       }
-      .locale-active {
+      .locale-btn {
+        font-family: var(--font-sans);
+        font-size: 14px;
+        font-weight: 400;
+        color: var(--text-tertiary);
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: color var(--duration-fast) var(--easing-default);
+      }
+      .locale-btn:hover {
+        color: var(--text-primary);
+      }
+      .locale-btn.locale-active {
         color: var(--text-primary);
         font-weight: 500;
         cursor: default;
@@ -138,14 +163,6 @@ const navItems = [
         color: var(--text-tertiary);
         font-weight: 400;
         margin: 0 6px;
-      }
-      .locale-inactive {
-        color: var(--text-tertiary);
-        font-weight: 400;
-        cursor: pointer;
-      }
-      .locale-inactive:hover {
-        color: var(--text-primary);
       }
 
       main {
@@ -184,19 +201,66 @@ const navItems = [
       <a href="/" class="masthead">Slovenský odliv<span class="masthead-diamond">&#9670;</span></a>
       <div class="nav-items">
         {navItems.map(item => (
-          <a href={item.href} class:list={[{ active: currentPath === item.href || currentPath.startsWith(item.href) }]}>
+          <a
+            href={item.href}
+            class:list={[{ active: currentPath === item.href || currentPath.startsWith(item.href) }]}
+            data-label-sk={item.label.sk}
+            data-label-en={item.label.en}
+          >
             {item.label[lang]}
           </a>
         ))}
       </div>
-      <div class="locale-toggle">
-        <span class={lang === 'sk' ? 'locale-active' : 'locale-inactive'}>SK</span>
+      <div class="locale-toggle" id="locale-toggle">
+        <button type="button" class="locale-btn" data-locale="sk">SK</button>
         <span class="locale-separator">/</span>
-        <span class={lang === 'en' ? 'locale-active' : 'locale-inactive'}>EN</span>
+        <button type="button" class="locale-btn" data-locale="en">EN</button>
       </div>
     </nav>
     <main>
       <slot />
     </main>
+    <script is:inline>
+      // Locale toggle wiring. Mirrors src/lib/locale.ts (STORAGE_KEY, EVENT).
+      // React islands import the hook there; this drives the Astro-rendered
+      // nav (toggle buttons + nav-item labels) and broadcasts the change.
+      (function () {
+        var KEY = 'sbd-locale';
+        var EVENT = 'sbd-locale-change';
+
+        function current() {
+          var s = null;
+          try { s = window.localStorage.getItem(KEY); } catch (e) {}
+          return s === 'sk' || s === 'en' ? s : 'en';
+        }
+
+        function apply(loc) {
+          document.documentElement.lang = loc;
+          document.documentElement.setAttribute('data-locale', loc);
+          document.querySelectorAll('.locale-btn').forEach(function (btn) {
+            btn.classList.toggle('locale-active', btn.dataset.locale === loc);
+          });
+          document.querySelectorAll('.nav-items a').forEach(function (a) {
+            var label = loc === 'sk' ? a.dataset.labelSk : a.dataset.labelEn;
+            if (label) a.textContent = label;
+          });
+        }
+
+        function set(loc) {
+          try { window.localStorage.setItem(KEY, loc); } catch (e) {}
+          apply(loc);
+          window.dispatchEvent(new CustomEvent(EVENT, { detail: loc }));
+        }
+
+        document.querySelectorAll('.locale-btn').forEach(function (btn) {
+          btn.addEventListener('click', function () { set(btn.dataset.locale); });
+        });
+        // Keep nav in sync if an island changes locale, or another tab does.
+        window.addEventListener(EVENT, function (e) { apply(e.detail || current()); });
+        window.addEventListener('storage', function (e) { if (e.key === KEY) apply(current()); });
+
+        apply(current());
+      })();
+    </script>
   </body>
 </html>

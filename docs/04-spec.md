@@ -295,6 +295,14 @@ Navigation bar:
 
 Per-page structure (sections 1–4, plus resources page): see `07-editorial-content.md` for the alternating prose + visualisation layout. The agent must read `07-editorial-content.md` before building any section page UI.
 
+> **Deviation (locked 2026-07-08, Checkpoint 5):** The shared filter bar below
+> is **dropped**. Section pages use a scroll-driven narrative (fixed-year
+> deck.gl map with stepped info cards + interleaved charts) instead. This is the
+> deliberate editorial direction; Section 1 (`/internal`) is the reference
+> implementation. The bilingual treatment is also revised: a functional SK/EN
+> toggle with English authoritative and Slovak authored by Šimon per section
+> (see `07-editorial-content.md` bilingual note and Checkpoint 5).
+
 **Shared filter bar (top of every interactive section):**
 - Time range slider (start year — end year)
 - Education level toggle (3 options)
