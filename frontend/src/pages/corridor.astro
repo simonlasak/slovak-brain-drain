@@ -4,8 +4,152 @@ import Section2App from '../components/Section2App';
 ---
 
 <Base title="Czech Corridor - Slovak Brain Drain" lang="en">
-  <h1>Section 2: The Czech Corridor</h1>
-  <p>The student pathway, the labour pathway, and the 240,000 Slovaks who chose Prague over Bratislava.</p>
-
   <Section2App client:load />
 </Base>
+
+<style is:global>
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body { overflow-x: hidden; }
+
+  .corridor-map-scroll-hint {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    opacity: 0.6;
+  }
+
+  /* Editorial layout below the map */
+  .section2-editorial {
+    padding: var(--space-16) var(--space-16) var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  .section2-header {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+  }
+  .section2-h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 42px;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .section2-prose {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+  }
+  .section2-prose p {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin: 0 0 1.25rem 0;
+  }
+  .section2-prose p:last-child {
+    margin-bottom: 0;
+  }
+  .section2-chart-wide {
+    max-width: var(--max-content);
+    margin: 0 auto;
+  }
+  .section2-chart-title {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+  .section2-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: var(--space-2);
+  }
+  .section2-h3 {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--text-primary);
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    text-align: center;
+  }
+  .section-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-tertiary);
+    margin: 0 0 var(--space-6) 0;
+  }
+  .stat-callout {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    text-align: center;
+  }
+  .stat-callout-value {
+    font-family: var(--font-serif);
+    font-size: 72px;
+    font-weight: 400;
+    color: var(--accent-primary);
+    line-height: 1;
+    margin: 0;
+  }
+  .stat-callout-label {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin: var(--space-3) 0 0 0;
+  }
+  .stat-inline {
+    font-family: var(--font-serif);
+    font-size: 1.15em;
+    font-weight: 600;
+    color: var(--accent-primary);
+  }
+  .section2-closing {
+    margin-top: var(--space-8);
+  }
+  .stay-leave-bar {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+  }
+  .stay-leave-bar-inner {
+    display: flex;
+    height: 48px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+  .stay-leave-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-inverse);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .stay-leave-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: var(--space-2);
+  }
+</style>

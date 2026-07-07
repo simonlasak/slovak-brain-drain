@@ -6,8 +6,8 @@ Reads from:
 - data/raw/susr_datacube/om7102rr/ (population by sex at okres level)
 - data/raw/susr_datacube/om7104rr/ (population change at okres level)
 - data/raw/susr_datacube/om7007rr/ (age groups at okres level)
-- data/raw/susr_datacube/pr0204qs/ (average wage — economy)
-- data/raw/susr_datacube/pr0205qs/ (average wage by industry)
+- data/raw/susr_datacube/pr0204qs/ (average wage - economy, national)
+- data/raw/susr_datacube/np3112qr/ (average wage - economy, by kraj)
 
 Writes to:
 - data/processed/section1_internal.parquet
@@ -140,7 +140,7 @@ def transform_population_movement() -> pl.DataFrame:
 
 
 def transform_wages() -> pl.DataFrame:
-    """Parse pr0204qs — average monthly wage for the whole economy."""
+    """Parse pr0204qs — average monthly wage for the whole economy (national)."""
     cube_dir = RAW_SUSR / "pr0204qs"
     all_rows = []
 
@@ -156,7 +156,7 @@ def transform_wages() -> pl.DataFrame:
                 continue
             all_rows.append({
                 "year": year,
-                "geo_level": "kraj",
+                "geo_level": "national",
                 "geo_code": "SK0",
                 "geo_name": "Slovenská republika",
                 "age_bracket": "all",
@@ -168,6 +168,57 @@ def transform_wages() -> pl.DataFrame:
                 "source": "susr_pr0204qs",
             })
             break  # one value per year (national average)
+
+    return pl.DataFrame(all_rows)
+
+
+KRAJ_CODES = {
+    "SK010": "Region of Bratislava",
+    "SK021": "Region of Trnava",
+    "SK022": "Region of Trenčín",
+    "SK023": "Region of Nitra",
+    "SK031": "Region of Žilina",
+    "SK032": "Region of Banská Bystrica",
+    "SK041": "Region of Prešov",
+    "SK042": "Region of Košice",
+}
+
+
+def transform_wages_regional() -> pl.DataFrame:
+    """Parse np3112qr — average monthly wage by kraj (NUTS3)."""
+    cube_dir = RAW_SUSR / "np3112qr"
+    if not cube_dir.exists():
+        log.warning("transform.section1.wages_regional: np3112qr not fetched, skipping")
+        return pl.DataFrame()
+
+    all_rows = []
+    for fpath in sorted(cube_dir.glob("np3112qr_*.json")):
+        if "manifest" in fpath.name:
+            continue
+        year = int(fpath.stem.split("_")[-1])
+        parsed = _parse_jsonstat_cube(fpath)
+
+        for row in parsed:
+            geo_code = row.get("nuts13", "")
+            if geo_code not in KRAJ_CODES:
+                continue
+            val = row.get("_value")
+            if val is None:
+                continue
+            geo_name = row["_labels"].get("nuts13", KRAJ_CODES[geo_code])
+            all_rows.append({
+                "year": year,
+                "geo_level": "kraj",
+                "geo_code": geo_code,
+                "geo_name": geo_name,
+                "age_bracket": "all",
+                "sex": "all",
+                "education": "all",
+                "metric": "avg_wage_eur",
+                "value": float(val),
+                "is_interpolated": False,
+                "source": "susr_np3112qr",
+            })
 
     return pl.DataFrame(all_rows)
 
@@ -249,10 +300,13 @@ def run() -> pl.DataFrame:
     df_wages = transform_wages()
     log.info("transform.section1.wages rows=%d", len(df_wages))
 
+    df_wages_regional = transform_wages_regional()
+    log.info("transform.section1.wages_regional rows=%d", len(df_wages_regional))
+
     df_age = transform_age_structure()
     log.info("transform.section1.age_structure rows=%d", len(df_age))
 
-    frames = [f for f in [df_pop, df_wages, df_age] if len(f) > 0]
+    frames = [f for f in [df_pop, df_wages, df_wages_regional, df_age] if len(f) > 0]
     df = pl.concat(frames, how="vertical_relaxed")
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)

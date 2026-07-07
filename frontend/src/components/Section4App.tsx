@@ -83,7 +83,7 @@ function AgeHistogram({ people }: { people: Person[] }) {
             <div style={{
               width: '100%',
               height: `${(count / max) * 60}px`,
-              background: count > 0 ? 'var(--color-accent, #c44d2b)' : '#eee',
+              background: count > 0 ? 'var(--accent-primary)' : '#eee',
               borderRadius: '2px 2px 0 0',
               minHeight: '2px',
             }} />

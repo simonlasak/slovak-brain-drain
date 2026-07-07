@@ -1,0 +1,13 @@
+---
+import Base from '../layouts/Base.astro';
+import MapVariantA from '../components/MapVariantA';
+---
+
+<Base title="Variant A: Scrollytelling" lang="en">
+  <MapVariantA client:load />
+</Base>
+
+<style is:global>
+  main { max-width: none !important; padding: 0 !important; margin: 0 !important; }
+  body { overflow-x: hidden; }
+</style>

@@ -272,13 +272,28 @@ Failures produce an HTML report in `pipeline/validate/report.html` with green/ye
 
 The frontend is a SPA. DuckDB-Wasm queries the static parquet files. No backend.
 
-**Routing:**
-- `/` — landing page with summary stats and navigation
-- `/internal` — Section 1
-- `/corridor` — Section 2
-- `/diaspora` — Section 3
-- `/people` — Section 4
-- `/methodology` — full sources and methodology audit trail (see `docs/06-sources-page.md` for the complete specification of this page — it is a first-class deliverable, not an afterthought)
+**Routing and navigation:**
+
+The site is a multi-page application with a persistent top navigation bar. Each section is a distinct page reachable via the nav, not panels of one long scroll.
+
+- `/` — landing page: introduction to the project (see `07-editorial-content.md` for content spec), 2 summary visualisations, links into each section, condensed resources closer at the bottom
+- `/internal` — Section 1: scrollable single page with interleaved prose and visualisations
+- `/corridor` — Section 2: same pattern
+- `/diaspora` — Section 3: same pattern
+- `/people` — Section 4: static narrative dashboard
+- `/resources` — Resources and counter-currents: curated annotated links to diaspora networks (slovaks.ai etc.), return programs, Slovak journalism on the topic, and named examples of institutions and individuals working against the drain
+- `/methodology` — full sources and methodology audit trail (see `docs/06-sources-page.md`)
+
+Within each section page, the user scrolls top-to-bottom through alternating prose paragraphs and interactive visualisations (the pattern specified in `07-editorial-content.md`). The shared filter bar is sticky at the top of sections 1, 2, and 3 so filter changes propagate to all visualisations on the current page without scroll position loss.
+
+Navigation bar:
+- Horizontal, persistent across all pages
+- Items: Domov / Home, Sekcia 1 / Internal, Sekcia 2 / Czech corridor, Sekcia 3 / Diaspora, Sekcia 4 / People, Zdroje / Resources, Metodológia / Methodology
+- Active item: 2px terracotta underline (per design system)
+- On mobile: collapse to a hamburger only below 640px width; tablet and up keep horizontal nav
+- Locale toggle (SK/EN) at the right end of the nav
+
+Per-page structure (sections 1–4, plus resources page): see `07-editorial-content.md` for the alternating prose + visualisation layout. The agent must read `07-editorial-content.md` before building any section page UI.
 
 **Shared filter bar (top of every interactive section):**
 - Time range slider (start year — end year)
@@ -414,6 +429,9 @@ The agent should track and surface these risks as work progresses:
 The project is "v1 complete" when:
 
 - [ ] All four sections render without errors with full datasets loaded
+- [ ] Each interactive section page has the prose + visualisation structure specified in `07-editorial-content.md` — opening, bridge paragraphs, conclusion, in both English and Slovak
+- [ ] Landing page exists with the 800-1,200 word introduction in both languages
+- [ ] Locale toggle (SK/EN) works on every page and persists across navigation
 - [ ] Filter combinations have been tested for the cartesian product of common cases (e.g. each education level × each age bracket × each year)
 - [ ] The `/methodology` page is complete per `docs/06-sources-page.md`: dataset register, metric derivation log, interpolation register, cross-source validation log, confidence grid, downloadable data, update log — all populated from the pipeline's `sources_report.json`
 - [ ] Every chart and map on the site has an "About this data" button that opens the side panel with the relevant derivation and source entries
@@ -423,6 +441,7 @@ The project is "v1 complete" when:
 - [ ] The site loads in under 5 seconds on a mid-tier mobile device
 - [ ] A non-expert reader can navigate the four sections without a tutorial
 - [ ] Slovak diacritics render correctly in all three fonts at all weights used (verify with the test page from Stage 0)
+- [ ] No em-dashes anywhere in editorial copy or UI text (the persistent style rule)
 
 Beyond v1, future improvements (out of scope for initial spec):
 

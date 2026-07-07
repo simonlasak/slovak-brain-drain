@@ -8,7 +8,6 @@ const { title, lang = 'sk' } = Astro.props;
 const currentPath = Astro.url.pathname;
 
 const navItems = [
-  { href: '/', label: { sk: 'Domov', en: 'Home' } },
   { href: '/internal', label: { sk: 'Vnútorné', en: 'Internal' } },
   { href: '/corridor', label: { sk: 'Koridor', en: 'Corridor' } },
   { href: '/diaspora', label: { sk: 'Diaspora', en: 'Diaspora' } },
@@ -26,77 +25,174 @@ const navItems = [
     <title>{title}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="/src/styles/tokens.css" />
-    <style>
-      * { margin: 0; padding: 0; box-sizing: border-box; }
+    <style is:global>
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        font-family: var(--font-body);
-        color: var(--color-text);
-        background: var(--color-bg);
+        font-family: var(--font-sans);
+        color: var(--text-primary);
+        background: var(--bg-page);
         line-height: 1.6;
       }
+      @keyframes ebb-drift {
+        0%   { transform: translateX(0);   opacity: 0.6; }
+        50%  { transform: translateX(6px); opacity: 0.3; }
+        100% { transform: translateX(0);   opacity: 0.6; }
+      }
+      .masthead-diamond {
+        animation: ebb-drift 8s ease-in-out infinite;
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .masthead-diamond { animation: none; opacity: 0.6; }
+      }
+    </style>
+    <style>
       nav {
         position: sticky;
         top: 0;
         z-index: 100;
-        background: var(--color-bg);
-        border-bottom: 1px solid var(--color-border, #e5e5e5);
-        padding: 0 1.5rem;
-      }
-      .nav-inner {
-        max-width: 1200px;
-        margin: 0 auto;
+        height: 72px;
         display: flex;
         align-items: center;
-        gap: 0.25rem;
-        overflow-x: auto;
+        justify-content: space-between;
+        padding: 0 var(--space-16);
+        background: var(--bg-page);
+        border-bottom: 1px solid var(--border-subtle);
       }
-      .nav-inner a {
-        padding: 0.75rem 0.75rem;
+      @media (max-width: 1024px) {
+        nav { padding: 0 var(--space-6); }
+      }
+
+      .masthead {
+        font-family: var(--font-serif);
+        font-style: italic;
+        font-size: 18px;
+        font-weight: 400;
+        color: var(--text-primary);
+        letter-spacing: -0.01em;
         text-decoration: none;
-        color: var(--color-text);
-        font-family: var(--font-body);
-        font-size: 0.85rem;
-        font-weight: 500;
         white-space: nowrap;
-        border-bottom: 2px solid transparent;
-        transition: border-color 0.15s;
+        flex-shrink: 0;
       }
-      .nav-inner a:hover { border-bottom-color: var(--color-accent, #c44d2b); }
-      .nav-inner a.active { border-bottom-color: var(--color-accent, #c44d2b); }
+      .masthead:hover { color: var(--text-primary); }
+      .masthead-diamond {
+        display: inline-block;
+        font-style: normal;
+        font-size: 10px;
+        margin-left: 12px;
+        opacity: 0.6;
+        vertical-align: middle;
+        color: var(--accent-primary);
+      }
+
+      .nav-items {
+        display: flex;
+        align-items: center;
+        gap: var(--space-8);
+      }
+      .nav-items a {
+        position: relative;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+        color: var(--text-secondary);
+        text-decoration: none;
+        white-space: nowrap;
+        padding: 0;
+        height: 72px;
+        display: flex;
+        align-items: center;
+        transition: color var(--duration-fast) var(--easing-default);
+      }
+      .nav-items a:hover {
+        color: var(--text-primary);
+      }
+      .nav-items a.active {
+        color: var(--text-primary);
+      }
+      .nav-items a.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background: var(--accent-primary);
+      }
+
       .locale-toggle {
-        margin-left: auto;
-        font-size: 0.8rem;
-        font-weight: 600;
-        padding: 0.4rem 0.6rem;
-        border: 1px solid var(--color-border, #e5e5e5);
-        border-radius: 4px;
-        cursor: pointer;
-        background: none;
+        display: flex;
+        align-items: center;
+        font-family: var(--font-sans);
+        font-size: 14px;
+        flex-shrink: 0;
       }
+      .locale-active {
+        color: var(--text-primary);
+        font-weight: 500;
+        cursor: default;
+      }
+      .locale-separator {
+        color: var(--text-tertiary);
+        font-weight: 400;
+        margin: 0 6px;
+      }
+      .locale-inactive {
+        color: var(--text-tertiary);
+        font-weight: 400;
+        cursor: pointer;
+      }
+      .locale-inactive:hover {
+        color: var(--text-primary);
+      }
+
       main {
         max-width: 1200px;
         margin: 0 auto;
         padding: 2rem 1.5rem;
       }
+
       @media (max-width: 640px) {
-        .nav-inner { gap: 0; }
-        .nav-inner a { font-size: 0.75rem; padding: 0.75rem 0.5rem; }
+        .nav-items { display: none; }
+        .locale-toggle { display: none; }
+        nav::after {
+          content: '';
+          display: block;
+          width: 16px;
+          height: 14px;
+          border-top: 2px solid var(--text-primary);
+          border-bottom: 2px solid var(--text-primary);
+          position: relative;
+        }
+        nav::after {
+          background: linear-gradient(
+            to bottom,
+            transparent 0px, transparent 4px,
+            var(--text-primary) 4px, var(--text-primary) 6px,
+            transparent 6px
+          );
+          border-top: 2px solid var(--text-primary);
+          border-bottom: 2px solid var(--text-primary);
+        }
       }
     </style>
   </head>
   <body>
     <nav>
-      <div class="nav-inner">
+      <a href="/" class="masthead">Slovenský odliv<span class="masthead-diamond">&#9670;</span></a>
+      <div class="nav-items">
         {navItems.map(item => (
-          <a href={item.href} class:list={[{ active: currentPath === item.href || (item.href !== '/' && currentPath.startsWith(item.href)) }]}>
+          <a href={item.href} class:list={[{ active: currentPath === item.href || currentPath.startsWith(item.href) }]}>
             {item.label[lang]}
           </a>
         ))}
-        <button class="locale-toggle" id="locale-toggle">
-          {lang === 'sk' ? 'EN' : 'SK'}
-        </button>
+      </div>
+      <div class="locale-toggle">
+        <span class={lang === 'sk' ? 'locale-active' : 'locale-inactive'}>SK</span>
+        <span class="locale-separator">/</span>
+        <span class={lang === 'en' ? 'locale-active' : 'locale-inactive'}>EN</span>
       </div>
     </nav>
     <main>

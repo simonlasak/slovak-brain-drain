@@ -1,0 +1,9 @@
+---
+import Base from '../layouts/Base.astro';
+import MapVariantB from '../components/MapVariantB';
+---
+
+<Base title="Variant B: Before/After" lang="en">
+  <p style="text-align: center; color: #888; font-size: 0.8rem; margin-bottom: 1rem;">VARIANT B: Before/After comparison. Toggle between 2004, 2024, and % change.</p>
+  <MapVariantB client:load />
+</Base>

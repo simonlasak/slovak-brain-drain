@@ -230,3 +230,73 @@ Date: 2026-05-23
 - No em-dashes anywhere in frontend
 
 ---
+
+## Section 2 - Data analysis self-correction
+
+Date: 2026-05-27
+
+The initial exploratory analysis of section2_corridor.parquet concluded that "the student pipeline is collapsing while the labour pipeline accelerates," framing the corridor as a behavioural shift from education to direct labour migration. Three verification checks disproved this causal claim. First, Slovakia's 15-19 cohort shrank 37% between 2004 and 2019, matching the 41% student decline almost exactly (demographic, not behavioural). Second, the mean age of EU27 foreigners in CZ rose at 1 year per calendar year from 2015-2024, consistent with a stable cohort aging in place rather than young arrivals refreshing the distribution. Third, OECD annual inflows to CZ have been stable at 6,000-7,000/year since 2012, showing no acceleration. The revised narrative: the corridor is a story of successful retention (people came and stayed) combined with demographic headwinds (fewer young Slovaks available to send), not a behavioural shift or acceleration. This correction is documented in data/processed/sources_report.json and the editorial draft has been rewritten accordingly.
+
+---
+
+## Section 2 - Parquet enrichment and schema fixes
+
+Date: 2026-05-28
+
+### What was fixed
+
+1. **Labour pathway triple-count bug.** The CIZ03 raw data has three
+   indicator types per year/sex (total employment, employees,
+   self-employed) but the transform script ignored the Ukazatel column,
+   producing three indistinguishable rows per year/sex. Any SUM or
+   GROUP BY query would triple-count. Fix: added `employment_status`
+   column with values 'total', 'employed', 'self_employed'. All other
+   pathway rows get 'n/a'.
+
+2. **Labour 2012-2014 false discontinuity.** These rows appeared to be
+   annual flows (~12-14k) vs stock (150k+). Investigation revealed they
+   are self-employed stock only (the total and employee indicators do
+   not exist in CIZ03 before 2015). Not a flow/stock discontinuity but
+   a coverage gap. The `employment_status` column makes this visible:
+   2012-2014 has only 'self_employed' rows, 2015+ has all three types.
+   No `is_stock` column needed.
+
+### What was added
+
+- **Age structure proxy (EU27).** CIZ004T002 provides age distribution
+  of EU27 citizens in CZ by 5-year bands, sex, and year (2015-2024).
+  540 rows added with `metric = 'age_structure_proxy'`, `is_proxy = True`,
+  and `proxy_note` explaining the proxy. Slovak-specific age data does
+  not exist in CSU open data.
+
+### What remains unavailable
+
+- **NACE sector breakdown:** CSU publishes this in the annual
+  "Foreigners in the Czech Republic" report but the table is not in the
+  open-data download (CIZ03 has only total/employed/self-employed).
+  Requires manual extraction from annual PDF or a different CSU table
+  code. Deferred.
+- **Field-of-study for Slovak students:** Confirmed permanent gap.
+  Eurostat educ_uoe_mobs02 has ISCED level only (no subject field).
+  MSMT DSIA files (f21_ciz, f22_ciz) aggregate all foreigners with no
+  nationality dimension. DZS PDFs have field data only for all
+  foreigners combined, not Slovak-specific. Student chart stays as
+  ISCED level split (ED5/6/7/8) only.
+- **Slovak regional origin (SK side of Sankey):** Does not exist in any
+  CSU source. Permanent gap. Sankeys dropped from the visualisation set.
+
+### Row counts
+
+- Before: 620 rows
+- After: 1,160 rows (+540 age structure proxy rows)
+
+### What is now unblocked for frontend work
+
+1. CZ destination map (ArcLayer + ScatterplotLayer, year scrubber 2015-2025)
+2. Stock trend line chart (all/labour/student, with employment_status
+   filter to avoid triple-counting)
+3. Age structure bar chart (EU27 proxy, clearly labelled)
+4. Student ISCED level breakdown over time (ED5/6/7/8 stacked or
+   small multiples)
+
+---

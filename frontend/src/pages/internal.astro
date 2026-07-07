@@ -4,8 +4,101 @@ import Section1App from '../components/Section1App';
 ---
 
 <Base title="Internal Slovakia - Slovak Brain Drain" lang="en">
-  <h1>Section 1: Internal Slovakia</h1>
-  <p>Population change, migration flows, wages, and age structure across Slovakia's regions, 2004-2025.</p>
-
   <Section1App client:load />
 </Base>
+
+<style is:global>
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body { overflow-x: hidden; }
+
+  .section1-editorial {
+    padding: var(--space-16) var(--space-16) var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  .section1-header {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+  }
+  .section1-h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 42px;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .section1-prose {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+  }
+  .section1-prose p {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin: 0 0 1.25rem 0;
+  }
+  .section1-prose p:last-child {
+    margin-bottom: 0;
+  }
+  .section1-chart-wide {
+    max-width: var(--max-content);
+    margin: 0 auto;
+    width: 100%;
+  }
+  .section1-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: var(--space-2);
+  }
+  .section1-h3 {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--text-primary);
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    text-align: center;
+  }
+  .section-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-tertiary);
+    margin: 0 0 var(--space-6) 0;
+  }
+  .stat-callout {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    text-align: center;
+  }
+  .stat-callout-value {
+    font-family: var(--font-serif);
+    font-size: 72px;
+    font-weight: 400;
+    color: var(--accent-primary);
+    line-height: 1;
+    margin: 0;
+  }
+  .stat-callout-label {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin: var(--space-3) 0 0 0;
+  }
+  .section1-closing {
+    margin-top: var(--space-8);
+  }
+</style>

@@ -1,0 +1,177 @@
+{
+  "section1": {
+    "rows": 126600,
+    "columns": {
+      "year": "Int64",
+      "geo_level": "String",
+      "geo_code": "String",
+      "geo_name": "String",
+      "age_bracket": "String",
+      "sex": "String",
+      "education": "String",
+      "metric": "String",
+      "value": "Float64",
+      "is_interpolated": "Boolean",
+      "source": "String"
+    },
+    "sample": [
+      {
+        "year": 2004,
+        "geo_level": "okres",
+        "geo_code": "SK_CAP",
+        "geo_name": "Bratislava (districts I - V)",
+        "age_bracket": "all",
+        "sex": "all",
+        "education": "all",
+        "metric": "population",
+        "value": 425533.0,
+        "is_interpolated": false,
+        "source": "susr_om7011rr"
+      },
+      {
+        "year": 2004,
+        "geo_level": "okres",
+        "geo_code": "SK_CAP",
+        "geo_name": "Bratislava (districts I - V)",
+        "age_bracket": "all",
+        "sex": "all",
+        "education": "all",
+        "metric": "births",
+        "value": 3688.0,
+        "is_interpolated": false,
+        "source": "susr_om7011rr"
+      },
+      {
+        "year": 2004,
+        "geo_level": "okres",
+        "geo_code": "SK_CAP",
+        "geo_name": "Bratislava (districts I - V)",
+        "age_bracket": "all",
+        "sex": "all",
+        "education": "all",
+        "metric": "deaths",
+        "value": 3974.0,
+        "is_interpolated": false,
+        "source": "susr_om7011rr"
+      }
+    ]
+  },
+  "section2": {
+    "rows": 620,
+    "columns": {
+      "year": "Int64",
+      "flow_direction": "String",
+      "pathway": "String",
+      "sk_geo_code": "String",
+      "cz_geo_code": "String",
+      "age_bracket": "String",
+      "sex": "String",
+      "education": "String",
+      "field_or_sector": "String",
+      "metric": "String",
+      "value": "Float64",
+      "is_interpolated": "Boolean",
+      "source": "String"
+    },
+    "sample": [
+      {
+        "year": 2015,
+        "flow_direction": "sk_to_cz",
+        "pathway": "all",
+        "sk_geo_code": "SK",
+        "cz_geo_code": "CZ",
+        "age_bracket": "all",
+        "sex": "all",
+        "education": "all",
+        "field_or_sector": "all",
+        "metric": "stock",
+        "value": 101589.0,
+        "is_interpolated": false,
+        "source": "csu_CIZ002T002"
+      },
+      {
+        "year": 2016,
+        "flow_direction": "sk_to_cz",
+        "pathway": "all",
+        "sk_geo_code": "SK",
+        "cz_geo_code": "CZ",
+        "age_bracket": "all",
+        "sex": "all",
+        "education": "all",
+        "field_or_sector": "all",
+        "metric": "stock",
+        "value": 107251.0,
+        "is_interpolated": false,
+        "source": "csu_CIZ002T002"
+      },
+      {
+        "year": 2017,
+        "flow_direction": "sk_to_cz",
+        "pathway": "all",
+        "sk_geo_code": "SK",
+        "cz_geo_code": "CZ",
+        "age_bracket": "all",
+        "sex": "all",
+        "education": "all",
+        "field_or_sector": "all",
+        "metric": "stock",
+        "value": 111804.0,
+        "is_interpolated": false,
+        "source": "csu_CIZ002T002"
+      }
+    ]
+  },
+  "section3": {
+    "rows": 5708,
+    "columns": {
+      "year": "Int64",
+      "slovak_def": "String",
+      "destination_iso3": "String",
+      "sex": "String",
+      "age_bracket": "String",
+      "education": "String",
+      "metric": "String",
+      "value": "Float64",
+      "is_interpolated": "Boolean",
+      "source": "String"
+    },
+    "sample": [
+      {
+        "year": 2009,
+        "slovak_def": "born",
+        "destination_iso3": "FRA",
+        "sex": "all",
+        "age_bracket": "all",
+        "education": "all",
+        "metric": "stock",
+        "value": 4236.0,
+        "is_interpolated": false,
+        "source": "oecd_mig_popf"
+      },
+      {
+        "year": 2009,
+        "slovak_def": "born",
+        "destination_iso3": "FRA",
+        "sex": "F",
+        "age_bracket": "all",
+        "education": "all",
+        "metric": "stock",
+        "value": 2615.0,
+        "is_interpolated": false,
+        "source": "oecd_mig_popf"
+      },
+      {
+        "year": 2009,
+        "slovak_def": "born",
+        "destination_iso3": "ITA",
+        "sex": "F",
+        "age_bracket": "all",
+        "education": "all",
+        "metric": "stock",
+        "value": 8344.0,
+        "is_interpolated": false,
+        "source": "oecd_mig_popf"
+      }
+    ]
+  }
+}

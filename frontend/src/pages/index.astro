@@ -1,50 +1,147 @@
 ---
 import Base from '../layouts/Base.astro';
+import DiamondTransition from '../components/DiamondTransition';
+import HeroCounter from '../components/HeroCounter';
 ---
 
 <Base title="Slovak Brain Drain" lang="en">
-  <h1>Slovak Brain Drain</h1>
-  <p class="subtitle">A data investigation into Slovakia's emigration since independence</p>
+  <!-- Zone 1: Hero -->
+  <div class="hero">
+    <HeroCounter client:load />
+    <p style="font-family: var(--font-sans); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-secondary); margin-top: 1.5rem; max-width: 400px;">people who left Slovakia since EU accession, 2004-2025</p>
+    <p style="font-family: var(--font-sans); font-size: 14px; color: var(--text-tertiary); margin-top: 2rem; max-width: 480px; line-height: 1.6;">One in every 18 Slovaks. Among EU member states, only Lithuania, Latvia, Romania, and Bulgaria have lost a larger share of their population to emigration since 2004.</p>
+    <p style="font-family: var(--font-sans); font-size: 14px; color: var(--text-tertiary); margin-top: 1.5rem; max-width: 480px; line-height: 1.6;">Among today's Slovak university students, the pattern is sharpening. Roughly 18% study abroad, the highest rate in the EU after Luxembourg, and only about 40% return home. The rest will be added to this number.</p>
+    <div style="position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);">
+      <DiamondTransition client:load />
+    </div>
+  </div>
 
-  <section class="summary">
-    <p>Slovakia has lost more than 300,000 people to emigration since EU accession. This site maps where they went, why they left, and what was lost.</p>
-  </section>
+  <p class="sections-eyebrow">Sections / Sekcie</p>
 
   <section class="sections-grid">
     <a href="/internal" class="section-card">
-      <h2>Section 1: Internal Slovakia</h2>
+      <span class="eyebrow">&sect;1 &middot; INTERNAL</span>
+      <h2>Internal Slovakia</h2>
       <p>Population change, migration flows, and regional divergence across 79 districts, 2004-2025.</p>
     </a>
     <a href="/corridor" class="section-card">
-      <h2>Section 2: The Czech Corridor</h2>
+      <span class="eyebrow">&sect;2 &middot; CORRIDOR</span>
+      <h2>The Czech Corridor</h2>
       <p>240,000 Slovaks in Czechia. The student pipeline, the labour pipeline, and the stay rate.</p>
     </a>
     <a href="/diaspora" class="section-card">
-      <h2>Section 3: Global Diaspora</h2>
+      <span class="eyebrow">&sect;3 &middot; DIASPORA</span>
+      <h2>Global Diaspora</h2>
       <p>Slovak-born populations in 87 countries. Where the brain drain actually goes.</p>
     </a>
     <a href="/people" class="section-card">
-      <h2>Section 4: Notable Departures</h2>
+      <span class="eyebrow">&sect;4 &middot; PEOPLE</span>
+      <h2>Notable Departures</h2>
       <p>Individual stories that illustrate the structural patterns.</p>
     </a>
   </section>
+
+  <!-- Zone 3: Footer links -->
+  <nav class="footer-links">
+    <a href="/methodology">Methodology</a>
+    <span class="dot">&middot;</span>
+    <a href="/resources">Resources</a>
+    <span class="dot">&middot;</span>
+    <a href="/methodology">About this data</a>
+  </nav>
 </Base>
 
 <style>
-  h1 { font-family: var(--font-heading); font-size: 2.5rem; margin-bottom: 0.25rem; }
-  .subtitle { font-size: 1.1rem; color: #666; margin-bottom: 2rem; }
-  .summary { margin-bottom: 2rem; font-size: 1.05rem; max-width: 680px; }
-  .sections-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+  :global(main) {
+    padding-top: 0 !important;
+  }
+  .hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: calc(100vh - 72px);
+    text-align: center;
+    padding: 0 1.5rem;
+  }
+
+  .sections-eyebrow {
+    text-align: center;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    margin-bottom: 1.5rem;
+  }
+
+  .sections-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) {
+    .sections-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 540px) {
+    .sections-grid { grid-template-columns: 1fr; }
+  }
+
   .section-card {
     display: block;
-    padding: 1.25rem;
-    border: 1px solid #e5e5e5;
-    border-radius: 6px;
+    padding: 1rem 1rem 1rem 1.25rem;
+    border: 1px solid var(--border-subtle);
+    border-left: 2px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
     text-decoration: none;
     color: inherit;
-    transition: border-color 0.15s;
+    transition: border-left-color var(--duration-fast);
   }
-  .section-card:hover { border-color: var(--color-accent, #c44d2b); }
-  .section-card h2 { font-family: var(--font-heading); font-size: 1.1rem; margin-bottom: 0.5rem; }
-  .section-card p { font-size: 0.9rem; color: #555; }
+  .section-card:hover {
+    border-left-color: var(--accent-primary);
+  }
+  .eyebrow {
+    display: block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+  .section-card h2 {
+    font-family: var(--font-serif);
+    font-size: 1.05rem;
+    margin-bottom: 0.3rem;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .section-card p {
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    line-height: 1.45;
+  }
+
+  .footer-links {
+    text-align: center;
+    margin-top: 3rem;
+    padding-bottom: 3rem;
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+  .footer-links a {
+    color: var(--text-secondary);
+    text-decoration: none;
+    transition: color var(--duration-fast);
+  }
+  .footer-links a:hover {
+    color: var(--accent-primary);
+  }
+  .dot {
+    color: var(--text-tertiary);
+    margin: 0 0.5rem;
+  }
 </style>
