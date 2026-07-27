@@ -5,8 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "astro dev",
+    "dev:lan": "astro dev --host",
     "build": "astro build",
-    "preview": "astro preview"
+    "preview": "astro preview --host"
   },
   "dependencies": {
     "@astrojs/mdx": "^5.0.6",
