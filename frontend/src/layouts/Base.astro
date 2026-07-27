@@ -8,9 +8,9 @@ const { title, lang = 'sk' } = Astro.props;
 const currentPath = Astro.url.pathname;
 
 const navItems = [
-  { href: '/internal', label: { sk: 'Vnútorné', en: 'Internal' } },
-  { href: '/corridor', label: { sk: 'Koridor', en: 'Corridor' } },
-  { href: '/diaspora', label: { sk: 'Diaspora', en: 'Diaspora' } },
+  { href: '/internal', label: { sk: 'Domáca', en: 'Internal' } },
+  { href: '/corridor', label: { sk: 'Československá', en: 'Corridor' } },
+  { href: '/diaspora', label: { sk: 'Svetová', en: 'Diaspora' } },
   { href: '/people', label: { sk: 'Ľudia', en: 'People' } },
   { href: '/resources', label: { sk: 'Zdroje', en: 'Resources' } },
   { href: '/methodology', label: { sk: 'Metodológia', en: 'Methodology' } },
@@ -171,28 +171,98 @@ const navItems = [
         padding: 2rem 1.5rem;
       }
 
+      /* Hamburger button. Hidden on desktop, where the full nav is visible. */
+      .nav-toggle {
+        display: none;
+        position: relative;
+        width: 44px;
+        height: 44px;
+        margin-right: -10px;
+        flex-shrink: 0;
+        background: none;
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        color: var(--text-primary);
+      }
+      .nav-toggle-bar {
+        position: absolute;
+        left: 50%;
+        width: 18px;
+        height: 2px;
+        margin-left: -9px;
+        background: currentColor;
+        transition:
+          transform var(--duration-fast) var(--easing-default),
+          opacity var(--duration-fast) var(--easing-default);
+      }
+      /* Three bars, centred on the 44px hit area at 6px spacing. */
+      .nav-toggle-bar:nth-child(1) { top: 15px; }
+      .nav-toggle-bar:nth-child(2) { top: 21px; }
+      .nav-toggle-bar:nth-child(3) { top: 27px; }
+      /* Collapse into an X while the drawer is open. */
+      .nav-toggle[aria-expanded='true'] .nav-toggle-bar:nth-child(1) {
+        transform: translateY(6px) rotate(45deg);
+      }
+      .nav-toggle[aria-expanded='true'] .nav-toggle-bar:nth-child(2) {
+        opacity: 0;
+      }
+      .nav-toggle[aria-expanded='true'] .nav-toggle-bar:nth-child(3) {
+        transform: translateY(-6px) rotate(-45deg);
+      }
+
+      /* Slide-down drawer holding the nav links and the locale toggle. */
+      .nav-drawer {
+        display: none;
+        position: fixed;
+        top: 72px;
+        left: 0;
+        right: 0;
+        z-index: 99;
+        flex-direction: column;
+        padding: var(--space-6);
+        background: var(--bg-page);
+        border-bottom: 1px solid var(--border-subtle);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+        transform: translateY(-8px);
+        opacity: 0;
+        visibility: hidden;
+        transition:
+          transform var(--duration-fast) var(--easing-default),
+          opacity var(--duration-fast) var(--easing-default),
+          visibility var(--duration-fast) var(--easing-default);
+      }
+      .nav-drawer.open {
+        transform: translateY(0);
+        opacity: 1;
+        visibility: visible;
+      }
+      .nav-drawer a {
+        font-family: var(--font-sans);
+        font-size: 16px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        text-decoration: none;
+        padding: 0.85rem 0;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+      .nav-drawer a.active { color: var(--text-primary); }
+      .nav-drawer .locale-toggle {
+        display: flex;
+        padding-top: 1.1rem;
+      }
+      .nav-drawer .locale-btn { font-size: 16px; }
+
+      @media (prefers-reduced-motion: reduce) {
+        .nav-toggle-bar, .nav-drawer { transition: none; }
+      }
+
       @media (max-width: 640px) {
         .nav-items { display: none; }
-        .locale-toggle { display: none; }
-        nav::after {
-          content: '';
-          display: block;
-          width: 16px;
-          height: 14px;
-          border-top: 2px solid var(--text-primary);
-          border-bottom: 2px solid var(--text-primary);
-          position: relative;
-        }
-        nav::after {
-          background: linear-gradient(
-            to bottom,
-            transparent 0px, transparent 4px,
-            var(--text-primary) 4px, var(--text-primary) 6px,
-            transparent 6px
-          );
-          border-top: 2px solid var(--text-primary);
-          border-bottom: 2px solid var(--text-primary);
-        }
+        /* The desktop toggle hides; the drawer carries its own copy. */
+        nav > .locale-toggle { display: none; }
+        .nav-toggle { display: block; }
+        .nav-drawer { display: flex; }
       }
     </style>
   </head>
@@ -216,7 +286,36 @@ const navItems = [
         <span class="locale-separator">/</span>
         <button type="button" class="locale-btn" data-locale="en">EN</button>
       </div>
+      <button
+        type="button"
+        class="nav-toggle"
+        id="nav-toggle"
+        aria-label="Menu"
+        aria-controls="nav-drawer"
+        aria-expanded="false"
+      >
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
     </nav>
+    <div class="nav-drawer" id="nav-drawer">
+      {navItems.map(item => (
+        <a
+          href={item.href}
+          class:list={[{ active: currentPath === item.href || currentPath.startsWith(item.href) }]}
+          data-label-sk={item.label.sk}
+          data-label-en={item.label.en}
+        >
+          {item.label[lang]}
+        </a>
+      ))}
+      <div class="locale-toggle">
+        <button type="button" class="locale-btn" data-locale="sk">SK</button>
+        <span class="locale-separator">/</span>
+        <button type="button" class="locale-btn" data-locale="en">EN</button>
+      </div>
+    </div>
     <main>
       <slot />
     </main>
@@ -240,7 +339,7 @@ const navItems = [
           document.querySelectorAll('.locale-btn').forEach(function (btn) {
             btn.classList.toggle('locale-active', btn.dataset.locale === loc);
           });
-          document.querySelectorAll('.nav-items a').forEach(function (a) {
+          document.querySelectorAll('.nav-items a, .nav-drawer a').forEach(function (a) {
             var label = loc === 'sk' ? a.dataset.labelSk : a.dataset.labelEn;
             if (label) a.textContent = label;
           });
@@ -260,6 +359,43 @@ const navItems = [
         window.addEventListener('storage', function (e) { if (e.key === KEY) apply(current()); });
 
         apply(current());
+      })();
+    </script>
+    <script is:inline>
+      // Mobile nav drawer. The hamburger used to be a nav::after pseudo-element,
+      // which is not in the DOM and so could never receive a click.
+      (function () {
+        var btn = document.getElementById('nav-toggle');
+        var drawer = document.getElementById('nav-drawer');
+        if (!btn || !drawer) return;
+
+        function setOpen(open) {
+          drawer.classList.toggle('open', open);
+          btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+
+        btn.addEventListener('click', function (e) {
+          e.stopPropagation();
+          setOpen(btn.getAttribute('aria-expanded') !== 'true');
+        });
+
+        // Navigating is a full page load, but close anyway so the drawer is not
+        // left open behind an in-page anchor jump.
+        drawer.querySelectorAll('a').forEach(function (a) {
+          a.addEventListener('click', function () { setOpen(false); });
+        });
+
+        document.addEventListener('click', function (e) {
+          if (!drawer.contains(e.target) && !btn.contains(e.target)) setOpen(false);
+        });
+        document.addEventListener('keydown', function (e) {
+          if (e.key === 'Escape') setOpen(false);
+        });
+        // Leaving the mobile breakpoint reveals the desktop nav; drop the drawer
+        // so it cannot linger as a floating panel over a wide layout.
+        window.matchMedia('(max-width: 640px)').addEventListener('change', function (ev) {
+          if (!ev.matches) setOpen(false);
+        });
       })();
     </script>
   </body>

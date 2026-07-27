@@ -1,9 +1,33 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
+import { WebMercatorViewport } from '@deck.gl/core';
 import { query, registerParquet } from '../lib/db';
 import { AboutData } from './charts/AboutData';
 import type { SourcePanel } from '../content/internal';
+
+type Bounds = [[number, number], [number, number]]; // [[minLng,minLat],[maxLng,maxLat]]
+
+// Walk every coordinate in a GeoJSON FeatureCollection to find its extent.
+function geojsonBounds(gj: any): Bounds | null {
+  let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+  const visit = (coords: any) => {
+    if (typeof coords[0] === 'number') {
+      const [lng, lat] = coords;
+      if (lng < minLng) minLng = lng;
+      if (lat < minLat) minLat = lat;
+      if (lng > maxLng) maxLng = lng;
+      if (lat > maxLat) maxLat = lat;
+    } else {
+      for (const c of coords) visit(c);
+    }
+  };
+  for (const f of gj.features || []) {
+    if (f.geometry?.coordinates) visit(f.geometry.coordinates);
+  }
+  if (!isFinite(minLng)) return null;
+  return [[minLng, minLat], [maxLng, maxLat]];
+}
 
 const IDN3_TO_SK: Record<number, string> = {
   101:"SK0101",102:"SK0102",103:"SK0103",104:"SK0104",105:"SK0105",106:"SK0106",107:"SK0107",108:"SK0108",
@@ -25,6 +49,18 @@ const STEPS: { metric: string | null; year: number }[] = [
   { metric: 'total_change', year: 2024 },
   { metric: 'intl_net', year: 2024 },
 ];
+
+// How much the map may be scaled down (in px of extra bottom padding) to clear
+// the info card once the free vertical slack is used up. Slovakia is roughly
+// 2:1, so on most screens the fit is width-constrained and there is leftover
+// vertical space to spend for free; past that, clearing the card costs zoom.
+// 80px keeps the map at ~86-90% of its full size in the worst real viewports
+// instead of the ~60-70% a full clearance would cost on a short laptop window.
+const MAX_SHRINK_PX = 80;
+// Never let the reserve squeeze the country below this height.
+const MIN_MAP_PX = 140;
+// Breathing room between the top of the info card and the nearest land.
+const CARD_GAP_PX = 24;
 
 interface StepText { title: string; description: string; }
 
@@ -81,11 +117,76 @@ export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVaria
   const [revealedRegions, setRevealedRegions] = useState<Set<number>>(new Set());
   const [animPhase, setAnimPhase] = useState<'init' | 'drawing' | 'filling' | 'settled'>('init');
   const [isMobile, setIsMobile] = useState(false);
+  const [viewState, setViewState] = useState({ latitude: 48.73, longitude: 19.7, zoom: 7.4, pitch: 0, bearing: 0 });
   const dataReadyRef = useRef(false);
   const tooltipTimer = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const mapWrapRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const maxCardHeightRef = useRef(0);
+  const lastWidthRef = useRef(0);
+  const boundsRef = useRef<Bounds | null>(null);
   const targetStepRef = useRef(0);
   const preloadedData = useRef<Record<string, number>[]>([]);
+
+  // Fit Slovakia's bounds to the current container size. Recomputed on mount
+  // and on every resize so the map scales to fit instead of being cropped.
+  //
+  // The info card overlays the bottom of the map, so we reserve room for it as
+  // extra *bottom* padding. That pushes the fitted country upward, out from
+  // under the card. Because the fit is usually width-constrained, most of that
+  // reserve is paid out of leftover vertical space and costs no zoom at all;
+  // only the remainder (capped at MAX_SHRINK_PX) shrinks the map.
+  function fitToContainer() {
+    const el = mapWrapRef.current;
+    const bounds = boundsRef.current;
+    if (!el || !bounds) return;
+    const width = el.clientWidth;
+    const height = el.clientHeight;
+    if (width <= 0 || height <= 0) return;
+    const base = width < 640 ? 12 : 48;
+    // The card reflows to a different height when the layout width changes
+    // (notably across the mobile breakpoint), so drop the remembered maximum.
+    if (width !== lastWidthRef.current) {
+      lastWidthRef.current = width;
+      maxCardHeightRef.current = 0;
+    }
+    try {
+      // First fit with symmetric padding to learn how tall the country renders
+      // and therefore how much vertical slack is available for free.
+      const probe = new WebMercatorViewport({ width, height });
+      const fit = probe.fitBounds(bounds, { padding: base });
+      const v0 = new WebMercatorViewport({
+        width, height,
+        longitude: fit.longitude, latitude: fit.latitude, zoom: fit.zoom,
+      });
+      const top = v0.project([bounds[0][0], bounds[1][1]])[1];
+      const bottom = v0.project([bounds[1][0], bounds[0][1]])[1];
+      const slack = Math.max(0, height - 2 * base - (bottom - top));
+
+      // How much vertical space the card actually occupies, measured from the
+      // DOM so the reserve tracks real content (and translated copy) instead of
+      // a guessed constant. Fall back to the CSS offsets before first paint.
+      // Each step's card has a different amount of copy. Reserve for the
+      // tallest one seen so far so the map holds a steady zoom while scrolling
+      // instead of nudging on every step change.
+      const cardOffset = width < 640 ? 16 : 40;
+      const measured = cardRef.current?.offsetHeight || 0;
+      if (measured > maxCardHeightRef.current) maxCardHeightRef.current = measured;
+      const cardHeight = maxCardHeightRef.current || (width < 640 ? 230 : 330);
+      const reserve = cardHeight + cardOffset + CARD_GAP_PX;
+
+      let extra = Math.min(reserve, slack + MAX_SHRINK_PX);
+      extra = Math.max(0, Math.min(extra, height - 2 * base - MIN_MAP_PX));
+
+      const { longitude, latitude, zoom } = probe.fitBounds(bounds, {
+        padding: { top: base, left: base, right: base, bottom: base + extra },
+      });
+      setViewState(v => ({ ...v, longitude, latitude, zoom }));
+    } catch (e) {
+      // Keep the last good view if fitBounds fails (e.g. zero-area bounds).
+    }
+  }
 
   // Preload all step data once on mount
   useEffect(() => {
@@ -130,6 +231,8 @@ export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVaria
 
     fetch('/data/sk_okresy.geojson').then(r => r.json()).then(gj => {
       setGeojson(gj);
+      boundsRef.current = geojsonBounds(gj);
+      fitToContainer();
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       const ids: number[] = gj.features
@@ -164,6 +267,22 @@ export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVaria
       setTimeout(() => setAnimPhase('filling'), drawingDuration);
       setTimeout(() => setAnimPhase('settled'), drawingDuration + 700);
     });
+
+    // Refit the map whenever its container changes size (window resize,
+    // device rotation, sidebar toggles) so Slovakia scales instead of cropping.
+    // Also observe the info card: its height is what we reserve room for, and
+    // it is only measurable after it has rendered its first step of copy.
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => fitToContainer());
+      if (mapWrapRef.current) ro.observe(mapWrapRef.current);
+      if (cardRef.current) ro.observe(cardRef.current);
+    }
+
+    return () => {
+      mq.removeEventListener('change', onMq);
+      if (ro) ro.disconnect();
+    };
   }, []);
 
   const cardTimer = useRef<number | null>(null);
@@ -278,9 +397,9 @@ export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVaria
     <div style={{ margin: '-2rem -1.5rem 0' }}>
       {/* Scrollytelling map section */}
       <div ref={containerRef} style={{ height: `${STEPS.length * 100}vh`, position: 'relative' }}>
-        <div style={{ position: 'sticky', top: '72px', height: 'calc(100dvh - 72px)', width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
+        <div ref={mapWrapRef} style={{ position: 'sticky', top: '72px', height: 'calc(100dvh - 72px)', width: '100vw', marginLeft: 'calc(-50vw + 50%)' }}>
           <DeckGL
-            initialViewState={{ latitude: 48.73, longitude: 19.7, zoom: 7.4, pitch: 0, bearing: 0 }}
+            viewState={viewState}
             controller={false}
             layers={layers}
             onHover={({ object }: any) => {
@@ -331,7 +450,7 @@ export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVaria
           </div>
 
           {/* Info card - bottom right (desktop) / full-width bottom (mobile) */}
-          <div style={{
+          <div ref={cardRef} style={{
             position: 'absolute',
             ...(isMobile
               ? { bottom: '1rem', left: '1rem', right: '1rem', maxWidth: 'none', padding: '1.1rem 1.25rem' }
