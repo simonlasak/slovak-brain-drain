@@ -2,6 +2,9 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { WebMercatorViewport } from '@deck.gl/core';
+import { AboutData } from './AboutData';
+import { useLocale } from '../../lib/locale';
+import type { SourcePanel } from '../../content/internal';
 
 interface RegionRow {
   cz_geo_code: string;
@@ -9,10 +12,27 @@ interface RegionRow {
   year: number;
 }
 
+interface CorridorMapLabels {
+  eyebrow: string;
+  totalSuffix: string;
+  tooltipUnit: string;
+  sinceLabel: string;
+  scrollHint: string;
+}
+
 interface CorridorMapProps {
   data: RegionRow[];
   years: number[];
+  labels: CorridorMapLabels;
+  aboutLabel: string;
+  sourcePanel: SourcePanel;
 }
+
+// Matches MapVariantA: how much the map may shrink to clear the info card once
+// the free viewport slack is spent, and a floor on the rendered country height.
+const MAX_SHRINK_PX = 80;
+const MIN_MAP_PX = 140;
+const CARD_GAP_PX = 24;
 
 function computeBBox(geojson: any): [[number, number], [number, number]] {
   let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
@@ -55,7 +75,13 @@ function interpolateGrowth(pctChange: number, maxPct: number): [number, number, 
   return [r, g, b, 220];
 }
 
-export function CorridorMap({ data, years }: CorridorMapProps) {
+export function CorridorMap({ data, years, labels, aboutLabel, sourcePanel }: CorridorMapProps) {
+  // Slovak groups thousands with a space (125 280), English with a comma.
+  const locale = useLocale();
+  const [isMobile, setIsMobile] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const maxCardHeightRef = useRef(0);
+  const lastWidthRef = useRef(0);
   const [geojson, setGeojson] = useState<any>(null);
   const [viewState, setViewState] = useState<any>(null);
   const [activeYear, setActiveYear] = useState(years[0] || 2015);
@@ -68,6 +94,7 @@ export function CorridorMap({ data, years }: CorridorMapProps) {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
+  const geojsonRef = useRef<any>(null);
   const activeYearRef = useRef(activeYear);
   const dataReady = useRef(false);
 
@@ -157,24 +184,80 @@ export function CorridorMap({ data, years }: CorridorMapProps) {
       });
   }, []);
 
+  // Fit Czechia to the container, reserving room for the info card so the
+  // country is not left sitting under it. Same approach as MapVariantA, except
+  // this card sits at the TOP of the map, so the reserve becomes top padding.
+  // Most of it is paid out of leftover vertical slack and costs no zoom.
+  function fitToContainer() {
+    const el = stickyRef.current;
+    const gj = geojsonRef.current;
+    if (!el || !gj) return;
+    const width = el.clientWidth;
+    const height = el.clientHeight;
+    if (width <= 0 || height <= 0) return;
+    const base = width < 640 ? 12 : 40;
+    if (width !== lastWidthRef.current) {
+      lastWidthRef.current = width;
+      maxCardHeightRef.current = 0;
+    }
+    try {
+      const bbox = computeBBox(gj);
+      const probe = new WebMercatorViewport({ width, height });
+      const fit = probe.fitBounds(bbox, { padding: base });
+      const v0 = new WebMercatorViewport({
+        width, height,
+        longitude: fit.longitude, latitude: fit.latitude, zoom: fit.zoom,
+      });
+      const top = v0.project([bbox[0][0], bbox[1][1]])[1];
+      const bottom = v0.project([bbox[1][0], bbox[0][1]])[1];
+      const slack = Math.max(0, height - 2 * base - (bottom - top));
+
+      const cardOffset = width < 640 ? 16 : 40;
+      const measured = cardRef.current?.offsetHeight || 0;
+      if (measured > maxCardHeightRef.current) maxCardHeightRef.current = measured;
+      const cardHeight = maxCardHeightRef.current || (width < 640 ? 150 : 190);
+      const reserve = cardHeight + cardOffset + CARD_GAP_PX;
+
+      let extra = Math.min(reserve, slack + MAX_SHRINK_PX);
+      extra = Math.max(0, Math.min(extra, height - 2 * base - MIN_MAP_PX));
+
+      const fitted = probe.fitBounds(bbox, {
+        padding: { top: base + extra, bottom: base, left: base, right: base },
+      });
+      setViewState({
+        longitude: fitted.longitude,
+        latitude: fitted.latitude,
+        zoom: fitted.zoom,
+        pitch: 0,
+        bearing: 0,
+      });
+    } catch (e) {
+      // Keep the last good view if fitBounds fails.
+    }
+  }
+
   useEffect(() => {
-    if (!geojson || !stickyRef.current) return;
-    const { width, height } = stickyRef.current.getBoundingClientRect();
-    if (width === 0 || height === 0) return;
+    if (!geojson) return;
+    geojsonRef.current = geojson;
+    fitToContainer();
 
-    const bbox = computeBBox(geojson);
-    const viewport = new WebMercatorViewport({ width, height });
-    const fitted = viewport.fitBounds(bbox, {
-      padding: { top: 40, bottom: 40, left: 40, right: 40 },
-    });
+    const mq = window.matchMedia('(max-width: 640px)');
+    const onMq = () => setIsMobile(mq.matches);
+    onMq();
+    mq.addEventListener('change', onMq);
 
-    setViewState({
-      longitude: fitted.longitude,
-      latitude: fitted.latitude,
-      zoom: fitted.zoom,
-      pitch: 0,
-      bearing: 0,
-    });
+    // Refit when the container or the card changes size, so the map scales
+    // instead of being cropped on resize / rotation.
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(() => fitToContainer());
+      if (stickyRef.current) ro.observe(stickyRef.current);
+      if (cardRef.current) ro.observe(cardRef.current);
+    }
+    return () => {
+      mq.removeEventListener('change', onMq);
+      if (ro) ro.disconnect();
+    };
   }, [geojson]);
 
   useEffect(() => {
@@ -260,7 +343,7 @@ export function CorridorMap({ data, years }: CorridorMapProps) {
       >
         {viewState && (
           <DeckGL
-            initialViewState={viewState}
+            viewState={viewState}
             controller={false}
             layers={layers}
             onHover={({ object }: any) => {
@@ -286,18 +369,16 @@ export function CorridorMap({ data, years }: CorridorMapProps) {
           />
         )}
 
-        {/* Info card - top right */}
-        <div style={{
+        {/* Info card - top right (desktop) / full-width top (mobile) */}
+        <div ref={cardRef} style={{
           position: 'absolute',
-          top: '2.5rem',
-          right: '2.5rem',
-          maxWidth: '320px',
+          ...(isMobile
+            ? { top: '1rem', left: '1rem', right: '1rem', maxWidth: 'none', padding: '1rem 1.15rem' }
+            : { top: '2.5rem', right: '2.5rem', maxWidth: '320px', padding: '1.25rem 1.5rem' }),
           background: 'rgba(255, 255, 255, 0.94)',
           backdropFilter: 'blur(10px)',
           borderRadius: '8px',
-          padding: '1.25rem 1.5rem',
           boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
-          pointerEvents: 'none',
         }}>
           <p style={{
             fontSize: '0.7rem',
@@ -308,7 +389,7 @@ export function CorridorMap({ data, years }: CorridorMapProps) {
             fontFamily: 'var(--font-sans)',
             fontWeight: 500,
           }}>
-            Slovaks registered in Czech regions
+            {labels.eyebrow}
           </p>
           <h2 style={{
             margin: 0,
@@ -326,20 +407,24 @@ export function CorridorMap({ data, years }: CorridorMapProps) {
             fontFamily: 'var(--font-mono)',
             color: '#6B4A2F',
           }}>
-            {total.toLocaleString('en')} total
+            {total.toLocaleString(locale)} {labels.totalSuffix}
             {activeYear !== baselineYear && baseTotal > 0 && (
               <span style={{ marginLeft: '0.5em', color: '#2A6B8B' }}>
                 +{((total - baseTotal) / baseTotal * 100).toFixed(1)}%
               </span>
             )}
           </p>
+          <div style={{ marginTop: '0.6rem' }}>
+            <AboutData label={aboutLabel} panel={sourcePanel} />
+          </div>
         </div>
 
-        {/* Tooltip - emerges to the left from under the info card */}
+        {/* Tooltip - left of the info card (desktop) / below it (mobile) */}
         <div style={{
           position: 'absolute',
-          top: '2.5rem',
-          right: '23rem',
+          ...(isMobile
+            ? { bottom: '1.5rem', left: '1rem', right: '1rem' }
+            : { top: '2.5rem', right: '23rem' }),
           opacity: tooltipVisible && hoveredId ? 1 : 0,
           transform: tooltipVisible && hoveredId ? 'translateX(0)' : 'translateX(20px)',
           transition: 'opacity 0.25s ease, transform 0.25s ease',
@@ -355,19 +440,19 @@ export function CorridorMap({ data, years }: CorridorMapProps) {
           </p>
           <p style={{ fontSize: '0.75rem', color: 'rgba(251,247,240,0.7)', margin: '2px 0 0 0', fontFamily: 'var(--font-mono)' }}>
             {hoveredId && currentAbsolute[hoveredId] !== undefined
-              ? `${currentAbsolute[hoveredId].toLocaleString('en')} Slovaks`
+              ? `${currentAbsolute[hoveredId].toLocaleString(locale)} ${labels.tooltipUnit}`
               : ' '}
           </p>
           {hoveredId && activeYear !== baselineYear && currentChange[hoveredId] !== undefined && (
             <p style={{ fontSize: '0.75rem', color: '#6FA0B8', margin: '2px 0 0 0', fontFamily: 'var(--font-mono)' }}>
-              +{currentChange[hoveredId].toFixed(1)}% since {baselineYear}
+              +{currentChange[hoveredId].toFixed(1)}% {labels.sinceLabel} {baselineYear}
             </p>
           )}
         </div>
 
         {activeYear === years[0] && (
           <div className="corridor-map-scroll-hint">
-            scroll to advance through years
+            {labels.scrollHint}
           </div>
         )}
       </div>

@@ -16,6 +16,7 @@ const LEVEL_COLORS: Record<string, string> = {
   ED8: 'var(--bg-inverse)',
 };
 
+// Fallbacks only. The section passes localised labels via `levelLabels`.
 const LEVEL_LABELS: Record<string, string> = {
   ED6: 'Bachelor',
   ED7: 'Master',
@@ -69,7 +70,7 @@ function AnimatedBar({ x, yFinal, width, heightFinal, innerH, fill, animated, de
   );
 }
 
-function Chart({ data, width, height, animated }: { data: StudentRow[]; width: number; height: number; animated: boolean }) {
+function Chart({ data, width, height, animated, labels }: { data: StudentRow[]; width: number; height: number; animated: boolean; labels: Record<string, string> }) {
   const [tooltip, setTooltip] = useState<BarTooltip | null>(null);
   const margin = { top: 24, right: 24, bottom: 44, left: 56 };
   const innerW = width - margin.left - margin.right;
@@ -154,7 +155,7 @@ function Chart({ data, width, height, animated }: { data: StudentRow[]; width: n
               fontFamily="var(--font-mono)"
               fill="#FBF7F0"
             >
-              {LEVEL_LABELS[tooltip.level]}: {tooltip.value >= 1000 ? `${(tooltip.value / 1000).toFixed(1)}k` : tooltip.value.toLocaleString('en')}
+              {labels[tooltip.level] || LEVEL_LABELS[tooltip.level]}: {tooltip.value >= 1000 ? `${(tooltip.value / 1000).toFixed(1)}k` : tooltip.value.toLocaleString('en')}
             </text>
           </g>
         )}
@@ -192,7 +193,7 @@ function Chart({ data, width, height, animated }: { data: StudentRow[]; width: n
           <g key={level} transform={`translate(${i * 100}, 0)`}>
             <rect width={12} height={12} fill={LEVEL_COLORS[level]} rx={2} />
             <text x={16} y={10} fontSize={11} fontFamily="var(--font-sans)" fill="var(--text-secondary)">
-              {LEVEL_LABELS[level]}
+              {labels[level] || LEVEL_LABELS[level]}
             </text>
           </g>
         ))}
@@ -201,11 +202,15 @@ function Chart({ data, width, height, animated }: { data: StudentRow[]; width: n
   );
 }
 
-export function StudentBreakdownChart({ data, animated = true }: { data: StudentRow[]; animated?: boolean }) {
+export function StudentBreakdownChart({ data, animated = true, levelLabels }: {
+  data: StudentRow[];
+  animated?: boolean;
+  levelLabels?: Record<string, string>;
+}) {
   return (
     <div style={{ width: '100%', height: 340 }}>
       <ParentSize>
-        {({ width }) => <Chart data={data} width={width} height={340} animated={animated} />}
+        {({ width }) => <Chart data={data} width={width} height={340} animated={animated} labels={levelLabels || LEVEL_LABELS} />}
       </ParentSize>
     </div>
   );

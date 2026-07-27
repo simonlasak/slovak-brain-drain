@@ -18,6 +18,7 @@ const PATHWAY_COLORS: Record<string, string> = {
   student: 'var(--accent-primary)',
 };
 
+// Fallbacks only. The section passes localised labels via `seriesLabels`.
 const PATHWAY_LABELS: Record<string, string> = {
   labour: 'Labour (economically active)',
   all: 'Residence registered',
@@ -34,7 +35,7 @@ interface TooltipData {
   value: number;
 }
 
-function Chart({ data, width, height, animated }: { data: StockRow[]; width: number; height: number; animated: boolean }) {
+function Chart({ data, width, height, animated, labels }: { data: StockRow[]; width: number; height: number; animated: boolean; labels: Record<string, string> }) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const margin = { top: 24, right: 160, bottom: 44, left: 64 };
   const innerW = width - margin.left - margin.right;
@@ -122,7 +123,7 @@ function Chart({ data, width, height, animated }: { data: StockRow[]; width: num
                 opacity={animated ? 1 : 0}
                 style={{ transition: 'opacity 0.4s ease', transitionDelay: `${idx * 200 + 1000}ms` }}
               >
-                {PATHWAY_LABELS[pathway] || pathway}
+                {labels[pathway] || PATHWAY_LABELS[pathway] || pathway}
               </text>
             </g>
           );
@@ -228,11 +229,15 @@ function diamondPoints(cx: number, cy: number, r: number): string {
   return `${cx},${cy - r} ${cx + r},${cy} ${cx},${cy + r} ${cx - r},${cy}`;
 }
 
-export function StockTrendChart({ data, animated = true }: { data: StockRow[]; animated?: boolean }) {
+export function StockTrendChart({ data, animated = true, seriesLabels }: {
+  data: StockRow[];
+  animated?: boolean;
+  seriesLabels?: Record<string, string>;
+}) {
   return (
     <div style={{ width: '100%', height: 360 }}>
       <ParentSize>
-        {({ width }) => <Chart data={data} width={width} height={360} animated={animated} />}
+        {({ width }) => <Chart data={data} width={width} height={360} animated={animated} labels={seriesLabels || PATHWAY_LABELS} />}
       </ParentSize>
     </div>
   );

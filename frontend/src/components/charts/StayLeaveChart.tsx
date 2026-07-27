@@ -1,31 +1,48 @@
 import React from 'react';
+import { AboutData } from './AboutData';
+import type { SourcePanel } from '../../content/internal';
 
-const DATA = [
-  { label: 'Stay in Czechia', value: 54, color: 'var(--accent-secondary)' },
-  { label: 'Return to Slovakia', value: 33, color: 'var(--accent-primary)' },
-  { label: 'Try another country', value: 13, color: 'var(--accent-tertiary)' },
+interface StayLeaveLabels {
+  stay: string;
+  return: string;
+  other: string;
+  caption: string;
+}
+
+interface StayLeaveChartProps {
+  labels: StayLeaveLabels;
+  aboutLabel: string;
+  sourcePanel: SourcePanel;
+}
+
+// DZS 2023 survey shares. The values are fixed; only the labels localise.
+const SHARES: { key: 'stay' | 'return' | 'other'; value: number; color: string }[] = [
+  { key: 'stay', value: 54, color: 'var(--accent-secondary)' },
+  { key: 'return', value: 33, color: 'var(--accent-primary)' },
+  { key: 'other', value: 13, color: 'var(--accent-tertiary)' },
 ];
 
-export function StayLeaveChart() {
+export function StayLeaveChart({ labels, aboutLabel, sourcePanel }: StayLeaveChartProps) {
   return (
     <div className="stay-leave-bar">
       <div className="stay-leave-bar-inner">
-        {DATA.map(d => (
+        {SHARES.map(d => (
           <div
-            key={d.label}
+            key={d.key}
             className="stay-leave-segment"
             style={{
               width: `${d.value}%`,
               backgroundColor: d.color,
             }}
           >
-            {d.value >= 20 ? `${d.label} ${d.value}%` : `${d.value}%`}
+            {d.value >= 20 ? `${labels[d.key]} ${d.value}%` : `${d.value}%`}
           </div>
         ))}
       </div>
-      <p className="stay-leave-caption">
-        src: DZS 2023 survey of international students at Czech universities (N approx. 3,200 Slovak respondents). Survey proportions, not administrative data.
-      </p>
+      <div className="chart-caption-row">
+        <p className="stay-leave-caption">{labels.caption}</p>
+        <AboutData label={aboutLabel} panel={sourcePanel} />
+      </div>
     </div>
   );
 }

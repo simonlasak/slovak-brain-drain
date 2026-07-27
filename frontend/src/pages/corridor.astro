@@ -152,4 +152,138 @@ import Section2App from '../components/Section2App';
     color: var(--text-tertiary);
     margin-top: var(--space-2);
   }
+
+  /* ─── Translation-in-progress notice ─────────────────────────── */
+  .section2-translation-notice {
+    max-width: var(--max-content);
+    margin: 0 auto var(--space-8);
+    padding: var(--space-3) var(--space-4);
+    background: var(--accent-tertiary-light);
+    border-left: 3px solid var(--accent-tertiary);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  /* ─── About this data ────────────────────────────────────────── */
+  .chart-caption-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-top: var(--space-2);
+  }
+  .chart-caption-row .section2-caption,
+  .chart-caption-row .stay-leave-caption {
+    margin-top: 0;
+    flex: 1 1 auto;
+  }
+  .about-data-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    padding: 2px 0;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--easing-default);
+  }
+  .about-data-trigger:hover { color: var(--accent-primary); }
+  .about-data-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 10px;
+    line-height: 1;
+  }
+  .about-data-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(42, 24, 16, 0.32);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: flex-end;
+    animation: about-fade var(--duration-fast) var(--easing-default);
+  }
+  @keyframes about-fade { from { opacity: 0; } to { opacity: 1; } }
+  .about-data-panel {
+    position: relative;
+    width: min(420px, 100%);
+    height: 100%;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-floating);
+    padding: var(--space-16) var(--space-8) var(--space-8);
+    animation: about-slide var(--duration-base) var(--easing-decelerate);
+  }
+  @keyframes about-slide { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .about-data-close {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    width: 32px;
+    height: 32px;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .about-data-close:hover { color: var(--text-primary); }
+  .about-data-title {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-6) 0;
+  }
+  .about-data-heading {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin: var(--space-6) 0 var(--space-2) 0;
+  }
+  .about-data-body {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  /* ─── Mobile ─────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .section2-editorial {
+      padding: var(--space-8) var(--space-4) var(--space-16);
+      gap: var(--space-8);
+    }
+    .section2-h1 { font-size: 32px; }
+    .section2-prose p { font-size: 16px; }
+    .section2-h3 { font-size: 20px; }
+    .stat-callout-value { font-size: 52px; }
+    .about-data-panel {
+      width: 100%;
+      padding: var(--space-12) var(--space-4) var(--space-6);
+    }
+    /* Segment labels do not fit at phone widths; show percentages only. */
+    .stay-leave-segment { font-size: 11px; }
+  }
 </style>
