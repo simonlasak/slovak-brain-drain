@@ -6,7 +6,7 @@ import type { Locale } from '../lib/locale';
  * This module is the single render source for all Section 1 prose, subheads,
  * stat callouts, chart captions, scrollytelling map step text, and the source
  * metadata behind each "About this data" panel. It supersedes
- * src/content/sections/internal.en.mdx as the render source (MDX cannot
+ * src/content/sections/internal.en.md as the render source (MDX cannot
  * interleave the scrollytelling map + charts inside JSX cleanly).
  *
  * English (`en`) is authoritative and approved.

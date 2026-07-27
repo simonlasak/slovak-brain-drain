@@ -10,7 +10,6 @@
     "preview": "astro preview --host"
   },
   "dependencies": {
-    "@astrojs/mdx": "^5.0.6",
     "@astrojs/react": "^5.0.5",
     "@deck.gl/geo-layers": "^9.3.2",
     "@deck.gl/layers": "^9.3.2",

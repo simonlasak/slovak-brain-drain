@@ -1,10 +1,10 @@
-{/*
+<!--
   SUPERSEDED as a render source by src/content/corridor.ts, which holds the
   bilingual {en, sk} copy the page actually renders. Kept as the editorial
   draft: the beat markers below record the intended chart order, and the
   AgeStructureChart beat is still unbuilt (Section 2 currently covers the
   aging-in-place finding in prose only). Edit corridor.ts, not this file.
-*/}
+-->
 
 # The Czech Corridor
 
@@ -14,19 +14,19 @@ This corridor did not emerge in a surge. Both figures accumulated over two decad
 
 The question this section answers is not "why do Slovaks leave?" but "what happened to the ones who left for Czechia twenty years ago?" The answer, visible in both the employment stock and the age structure, is that they stayed.
 
-{/* [Beat 1]: Stock trend line showing residence registration (CIZ003T003 national), labour total (CIZ03), and student enrolment (Eurostat) from 2013-2025, annotated for 2021 COVID dip */}
+<!-- [Beat 1]: Stock trend line showing residence registration (CIZ003T003 national), labour total (CIZ03), and student enrolment (Eurostat) from 2013-2025, annotated for 2021 COVID dip -->
 
 <StockTrendChart />
 
 The labour stock reached 240,297 in 2023: 216,239 on standard employment contracts and 24,058 operating as self-employed holders of a Czech trade licence. Growth from 164,710 in 2015 to 240,297 in 2023 represents a 46 percent increase over eight years, driven almost entirely by the retention of existing residents rather than acceleration of new arrivals. OECD annual inflow data confirms that the rate of new Slovak arrivals to Czechia has remained stable at approximately 6,000 to 7,000 per year throughout this period. The residence-registered population grew more slowly, from 101,589 in 2015 to 125,280 in 2025 (23 percent), suggesting that a portion of the labour growth came from Slovaks formalising work arrangements without changing their registered address.
 
-{/* [Beat 2]: CZ destination map showing geographic concentration, using residence registration data (CIZ003T003) */}
+<!-- [Beat 2]: CZ destination map showing geographic concentration, using residence registration data (CIZ003T003) -->
 
 <CorridorMap />
 
 The geographic distribution has not been static. Praha held the largest absolute concentration in 2025 with 33,459 registered Slovaks, but Jihomoravský kraj, centred on Brno, grew fastest: from 10,677 in 2015 to 18,771 in 2025, a 76 percent increase against Praha's 21 percent over the same decade. The Středočeský commuter belt (21,457) and Moravskoslezský (9,473), bordering northeastern Slovakia, each grew at 17 percent. At the other end, Liberecký kraj added fewer than 150 Slovaks across the entire period, a 2.6 percent change consistent with its orientation toward the German border rather than the Slovak one. Slovak settlement is following economic diversification within Czechia, not further concentration in the capital.
 
-{/* [Beat 3]: Student ISCED breakdown showing bachelor/master/doctoral split 2013-2024 */}
+<!-- [Beat 3]: Student ISCED breakdown showing bachelor/master/doctoral split 2013-2024 -->
 
 <StudentBreakdownChart />
 
@@ -34,7 +34,7 @@ The student pathway tells a counterintuitive story of resilience. In 2013, Euros
 
 Within the student stock, bachelor enrolment fell from 13,396 to 11,645 while master programmes held near 9,000 and doctoral numbers remained stable around 1,800. The DZS 2023 survey of international students at Czech universities reports that Slovaks most often study information and communication technologies (15 percent of Slovak respondents), natural sciences (14 percent), and social sciences, journalism and information (13 percent). These are survey proportions from the 2023 DZS report, not administrative enrolment counts, and reflect the broad field distribution rather than precise headcounts.
 
-{/* [Beat 4]: Age structure bar chart (EU27 proxy) showing the aging-in-place signal */}
+<!-- [Beat 4]: Age structure bar chart (EU27 proxy) showing the aging-in-place signal -->
 
 <AgeStructureChart />
 
@@ -42,6 +42,6 @@ The connection between the student pipeline and the labour stock becomes clearer
 
 The age structure of EU27 citizens in Czechia (of whom Slovaks comprise approximately half, according to CSU registration data) reveals the downstream result of this retention. The distribution peaks sharply in the 35-to-39 band (33,276 people in 2023) and falls off steeply below age 25. This is not the profile of a young-arrival population constantly refreshed by new migrants. It is the signature of a cohort that arrived in their twenties during the 2004-2010 period and has been aging in place ever since. The mean age rose from 39.9 in 2015 to 40.9 in 2024, advancing at almost exactly one year per calendar year.
 
-{/* [Beat 5]: Summary annotation - COVID 2021 dip visible across all series */}
+<!-- [Beat 5]: Summary annotation - COVID 2021 dip visible across all series -->
 
 One anomaly warrants annotation. In 2021, the registered Slovak population in Czechia fell by 8 percent (from 124,544 to 114,630) before recovering to 117,265 the following year. This coincides with the first full year of COVID-19 restrictions and likely reflects temporary return migration. The recovery in 2022-2025 confirms this reading. The dip is marked on every time-series chart in this section; it should be read as a one-year disruption, not a trend reversal.

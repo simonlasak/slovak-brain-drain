@@ -8,7 +8,7 @@ import type { SourcePanel } from './internal';
  * captions, map/chart labels, and the source metadata behind each "About this
  * data" panel. Mirrors the structure of src/content/internal.ts, which is the
  * pattern for every section. It supersedes
- * src/content/sections/corridor.en.mdx as the render source (MDX cannot
+ * src/content/sections/corridor.en.md as the render source (MDX cannot
  * interleave the year-stepped map + charts inside JSX cleanly).
  *
  * English (`en`) is authoritative: the prose here is the copy Simon approved,
