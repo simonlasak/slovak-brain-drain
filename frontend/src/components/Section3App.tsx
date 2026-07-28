@@ -1,77 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { query, registerParquet } from '../lib/db';
-import { scaleBand, scaleLinear } from '@visx/scale';
-import { Bar } from '@visx/shape';
-import { AxisBottom, AxisLeft } from '@visx/axis';
-import { Group } from '@visx/group';
-import { ParentSize } from '@visx/responsive';
+import { DiasporaMap } from './charts/DiasporaMap';
+import { DiasporaRankedChart } from './charts/DiasporaRankedChart';
+import { SectionEyebrow } from './charts/SectionEyebrow';
+import { StatCallout } from './charts/StatCallout';
+import { AnimateOnScroll } from './charts/AnimateOnScroll';
+import { AboutData } from './charts/AboutData';
+import { useLocale } from '../lib/locale';
+import { getSection3Content } from '../content/diaspora';
+import { countryName } from '../content/countryNames';
 
-interface DiasporaRow {
-  destination: string;
-  value: number;
-}
+/** The UN DESA snapshot the map and both ranked charts are built on. */
+const SNAPSHOT_YEAR = 2020;
+const BASELINE_YEAR = 1990;
+const DESA_SOURCE = 'un_desa_bilateral_2020';
+const TOP_N = 12;
 
-const COUNTRY_NAMES: Record<string, string> = {
-  CZE: 'Czechia', '203': 'Czechia',
-  GBR: 'United Kingdom', '826': 'United Kingdom',
-  DEU: 'Germany', '276': 'Germany',
-  AUT: 'Austria', '40': 'Austria',
-  CHE: 'Switzerland', '756': 'Switzerland',
-  USA: 'United States', '840': 'United States',
-  HUN: 'Hungary', '348': 'Hungary',
-  IRL: 'Ireland', '372': 'Ireland',
-  ITA: 'Italy', '380': 'Italy',
-  NLD: 'Netherlands', '528': 'Netherlands',
-  CAN: 'Canada', '124': 'Canada',
-  AUS: 'Australia', '36': 'Australia',
-  DNK: 'Denmark', '208': 'Denmark',
-  SWE: 'Sweden', '752': 'Sweden',
-  NOR: 'Norway', '578': 'Norway',
-  FRA: 'France', '250': 'France',
-  ESP: 'Spain', '724': 'Spain',
-  BEL: 'Belgium', '56': 'Belgium',
-  POL: 'Poland', '616': 'Poland',
-};
+interface StockRow { code: string; year: number; value: number }
 
-function BarChart({ data, width, height }: { data: DiasporaRow[]; width: number; height: number }) {
-  const margin = { top: 10, right: 20, bottom: 60, left: 60 };
-  const innerW = width - margin.left - margin.right;
-  const innerH = height - margin.top - margin.bottom;
+function Section3App() {
+  const locale = useLocale();
+  const c = getSection3Content(locale);
 
-  const xScale = scaleBand({ domain: data.map(d => d.destination), range: [0, innerW], padding: 0.3 });
-  const yScale = scaleLinear({ domain: [0, Math.max(...data.map(d => d.value)) * 1.1], range: [innerH, 0] });
-
-  return (
-    <svg width={width} height={height}>
-      <Group left={margin.left} top={margin.top}>
-        {data.map(d => (
-          <Bar
-            key={d.destination}
-            x={xScale(d.destination)}
-            y={yScale(d.value)}
-            width={xScale.bandwidth()}
-            height={innerH - yScale(d.value)}
-            fill="#c44d2b"
-          />
-        ))}
-        <AxisBottom
-          scale={xScale}
-          top={innerH}
-          tickLabelProps={{ fontSize: 10, angle: -35, textAnchor: 'end', dy: '-0.2em' }}
-        />
-        <AxisLeft
-          scale={yScale}
-          tickFormat={v => `${(Number(v) / 1000).toFixed(0)}k`}
-          numTicks={5}
-          tickLabelProps={{ fontSize: 11 }}
-        />
-      </Group>
-    </svg>
-  );
-}
-
-function Section3() {
-  const [data, setData] = useState<DiasporaRow[]>([]);
+  const [mapData, setMapData] = useState<
+    { code: string; value: number; trend: { year: number; value: number }[] }[]
+  >([]);
+  const [ranked, setRanked] = useState<
+    { code: string; name: string; value: number; growth: number | null }[]
+  >([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,26 +36,55 @@ function Section3() {
     async function load() {
       try {
         await registerParquet('s3.parquet', '/data/section3_diaspora.parquet');
+
+        // Every UN DESA snapshot year, so the map's per-country detail panel can
+        // draw a trend without a second round trip.
         const rows = await query(`
-          SELECT destination_iso3 as destination, MAX(value) as value
+          SELECT destination_iso3 AS code, year, value
           FROM 's3.parquet'
-          WHERE metric = 'stock' AND sex = 'all'
-          GROUP BY destination_iso3
-          ORDER BY value DESC
-          LIMIT 15
-        `) as DiasporaRow[];
+          WHERE metric = 'stock'
+            AND source = '${DESA_SOURCE}'
+            AND sex = 'all'
+          ORDER BY destination_iso3, year
+        `) as StockRow[];
 
-        const merged: Record<string, number> = {};
+        const byCode = new Map<string, { year: number; value: number }[]>();
         for (const r of rows) {
-          const name = COUNTRY_NAMES[r.destination] || r.destination;
-          merged[name] = Math.max(merged[name] || 0, r.value);
+          const list = byCode.get(r.code) || [];
+          list.push({ year: Number(r.year), value: Number(r.value) });
+          byCode.set(r.code, list);
         }
-        const sorted = Object.entries(merged)
-          .map(([destination, value]) => ({ destination, value }))
-          .sort((a, b) => b.value - a.value)
-          .slice(0, 12);
 
-        setData(sorted);
+        const snapshot: typeof mapData = [];
+        for (const [code, series] of byCode) {
+          const current = series.find(s => s.year === SNAPSHOT_YEAR);
+          if (!current) continue;
+          snapshot.push({
+            code,
+            value: current.value,
+            // A single point cannot be drawn as a trend; the map falls back to
+            // the "no trend data" line in that case.
+            trend: series.length > 1 ? series : [],
+          });
+        }
+        snapshot.sort((a, b) => b.value - a.value);
+        setMapData(snapshot);
+        setTotal(snapshot.reduce((sum, d) => sum + d.value, 0));
+
+        setRanked(
+          snapshot.slice(0, TOP_N).map(d => {
+            const series = byCode.get(d.code) || [];
+            const base = series.find(s => s.year === BASELINE_YEAR);
+            return {
+              code: d.code,
+              name: countryName(d.code, locale),
+              value: d.value,
+              growth: base && base.value > 0
+                ? ((d.value - base.value) / base.value) * 100
+                : null,
+            };
+          })
+        );
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -106,25 +92,94 @@ function Section3() {
       }
     }
     load();
-  }, []);
+  }, [locale]);
 
-  if (loading) return <p>Loading Section 3 data...</p>;
-  if (error) return <p style={{ color: 'red' }}>Error: {error}</p>;
-  if (data.length === 0) return <p>No data returned.</p>;
+  if (loading) return null;
+  if (error) return <p className="section3-error">Error: {error}</p>;
 
   return (
-    <div>
-      <h2>Top Destinations for Slovaks Abroad</h2>
-      <div style={{ width: '100%', height: 380 }}>
-        <ParentSize>
-          {({ width }) => <BarChart data={data} width={width} height={380} />}
-        </ParentSize>
+    <>
+      <DiasporaMap
+        data={mapData}
+        total={total}
+        labels={c.map}
+        aboutLabel={c.aboutLabel}
+        sourcePanel={c.sources.map}
+      />
+
+      <div className="section3-editorial">
+
+        {!c.reviewed && c.translationNotice && (
+          <p className="section3-translation-notice">{c.translationNotice}</p>
+        )}
+
+        <header className="section3-header">
+          <SectionEyebrow>{c.eyebrow}</SectionEyebrow>
+          <h1 className="section3-h1">{c.h1}</h1>
+        </header>
+
+        <div className="section3-prose">
+          {c.intro.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+
+        <StatCallout value={c.callout1.value} label={c.callout1.label} />
+
+        <h3 className="section3-h3">{c.sub1}</h3>
+
+        <AnimateOnScroll>
+          {() => (
+            <div className="section3-chart-wide">
+              <DiasporaRankedChart data={ranked} mode="absolute" />
+              <div className="chart-caption-row">
+                <p className="section3-caption">{c.caption1}</p>
+                <AboutData label={c.aboutLabel} panel={c.sources.ranked} />
+              </div>
+            </div>
+          )}
+        </AnimateOnScroll>
+
+        <div className="section3-prose">
+          {c.bridge1.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+
+        <StatCallout value={c.callout2.value} label={c.callout2.label} />
+
+        <h3 className="section3-h3">{c.sub2}</h3>
+
+        <AnimateOnScroll>
+          {() => (
+            <div className="section3-chart-wide">
+              <DiasporaRankedChart data={ranked} mode="growth" />
+              <div className="chart-caption-row">
+                <p className="section3-caption">{c.caption2}</p>
+                <AboutData label={c.aboutLabel} panel={c.sources.growth} />
+              </div>
+            </div>
+          )}
+        </AnimateOnScroll>
+
+        <div className="section3-prose">
+          {c.bridge2.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+
+        <h3 className="section3-h3">{c.sub3}</h3>
+
+        <div className="section3-prose">
+          {c.bridge3.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+
+        <h3 className="section3-h3">{c.sub4}</h3>
+
+        <div className="section3-prose section3-closing">
+          {c.closing.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+
+        {/* Deliberately understated: a data limitation, not a headline. */}
+        <p className="section3-data-note">{c.dataNote}</p>
+
       </div>
-      <p style={{ fontSize: '0.8rem', color: '#666', marginTop: '0.5rem' }}>
-        Maximum recorded stock per country (any year). Source: OECD + UN DESA bilateral. 87 countries total.
-      </p>
-    </div>
+    </>
   );
 }
 
-export default Section3;
+export default Section3App;

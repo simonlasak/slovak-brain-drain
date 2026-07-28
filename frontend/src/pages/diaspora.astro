@@ -4,8 +4,354 @@ import Section3App from '../components/Section3App';
 ---
 
 <Base title="Global Diaspora - Slovak Brain Drain" lang="en">
-  <h1>Section 3: Global Diaspora</h1>
-  <p>Slovak-born populations across 87 countries, 1990-2024.</p>
-
   <Section3App client:load />
 </Base>
+
+<style is:global>
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  body { overflow-x: hidden; }
+
+  /* ─── Interactive world map ──────────────────────────────────── */
+  .diaspora-map-wrap {
+    position: relative;
+    width: 100vw;
+    margin-left: calc(-50vw + 50%);
+    height: calc(100dvh - 72px);
+    background: #EDF3F5;
+  }
+  .diaspora-card {
+    position: absolute;
+    top: 2.5rem;
+    left: 2.5rem;
+    max-width: 320px;
+    padding: 1.25rem 1.5rem;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(10px);
+    border-radius: 10px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  }
+  .diaspora-card.is-mobile {
+    top: 1rem;
+    left: 1rem;
+    right: 1rem;
+    max-width: none;
+    padding: 1rem 1.15rem;
+  }
+  .diaspora-card-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin: 0 0 0.3rem 0;
+  }
+  .diaspora-card-value {
+    font-family: var(--font-serif);
+    font-size: 2.4rem;
+    font-weight: 400;
+    line-height: 1;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .diaspora-card-sub {
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0.4rem 0 0.75rem 0;
+  }
+  .diaspora-card-note {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    color: var(--text-tertiary);
+    margin: 0.6rem 0 0.75rem 0;
+  }
+  .diaspora-spark { margin: 0.7rem 0 0.5rem; }
+  .diaspora-spark-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--text-secondary);
+    margin: 0.2rem 0 0 0;
+  }
+  .diaspora-reset {
+    font-family: var(--font-sans);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--accent-secondary);
+    background: none;
+    border: none;
+    padding: 0.35rem 0 0;
+    cursor: pointer;
+  }
+  .diaspora-reset:hover { color: var(--text-primary); }
+
+  .diaspora-tooltip {
+    position: absolute;
+    bottom: 2.5rem;
+    left: 2.5rem;
+    pointer-events: none;
+    background: rgba(42, 24, 16, 0.88);
+    backdrop-filter: blur(6px);
+    border-radius: 6px;
+    padding: 0.55rem 0.95rem;
+    min-width: 150px;
+  }
+  .diaspora-tooltip-name {
+    font-family: var(--font-sans);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #FBF7F0;
+    margin: 0;
+  }
+  .diaspora-tooltip-value {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: rgba(251, 247, 240, 0.72);
+    margin: 2px 0 0 0;
+  }
+  .diaspora-hint {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    opacity: 0.7;
+    pointer-events: none;
+  }
+
+  /* ─── Editorial ──────────────────────────────────────────────── */
+  .section3-editorial {
+    padding: var(--space-16) var(--space-16) var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+  .section3-header {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+  }
+  .section3-h1 {
+    font-family: var(--font-serif);
+    font-weight: 500;
+    font-size: 42px;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .section3-prose {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+  }
+  .section3-prose p {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin: 0 0 1.25rem 0;
+  }
+  .section3-prose p:last-child { margin-bottom: 0; }
+  .section3-chart-wide {
+    max-width: var(--max-content);
+    margin: 0 auto;
+    width: 100%;
+  }
+  .section3-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: var(--space-2);
+  }
+  .section3-h3 {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--text-primary);
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    text-align: center;
+  }
+  .section3-closing { margin-top: var(--space-8); }
+  /* Understated by design: a limitation, not a finding. */
+  .section3-data-note {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-subtle);
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--text-tertiary);
+  }
+  .section-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-tertiary);
+    margin: 0 0 var(--space-6) 0;
+  }
+  .stat-callout {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    text-align: center;
+  }
+  .stat-callout-value {
+    font-family: var(--font-serif);
+    font-size: 72px;
+    font-weight: 400;
+    color: var(--accent-primary);
+    line-height: 1;
+    margin: 0;
+  }
+  .stat-callout-label {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    margin: var(--space-3) 0 0 0;
+  }
+  .section3-translation-notice {
+    max-width: var(--max-content);
+    margin: 0 auto var(--space-8);
+    padding: var(--space-3) var(--space-4);
+    background: var(--accent-tertiary-light);
+    border-left: 3px solid var(--accent-tertiary);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  /* ─── About this data ────────────────────────────────────────── */
+  .chart-caption-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+    margin-top: var(--space-2);
+  }
+  .chart-caption-row .section3-caption {
+    margin-top: 0;
+    flex: 1 1 auto;
+  }
+  .about-data-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: none;
+    border: none;
+    padding: 2px 0;
+    cursor: pointer;
+    transition: color var(--duration-fast) var(--easing-default);
+  }
+  .about-data-trigger:hover { color: var(--accent-primary); }
+  .about-data-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 10px;
+    line-height: 1;
+  }
+  .about-data-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(42, 24, 16, 0.32);
+    backdrop-filter: blur(2px);
+    display: flex;
+    justify-content: flex-end;
+    animation: about-fade var(--duration-fast) var(--easing-default);
+  }
+  @keyframes about-fade { from { opacity: 0; } to { opacity: 1; } }
+  .about-data-panel {
+    position: relative;
+    width: min(420px, 100%);
+    height: 100%;
+    overflow-y: auto;
+    background: var(--bg-surface);
+    box-shadow: var(--shadow-floating);
+    padding: var(--space-16) var(--space-8) var(--space-8);
+    animation: about-slide var(--duration-base) var(--easing-decelerate);
+  }
+  @keyframes about-slide { from { transform: translateX(24px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+  .about-data-close {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    width: 32px;
+    height: 32px;
+    font-size: 24px;
+    line-height: 1;
+    color: var(--text-tertiary);
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+  .about-data-close:hover { color: var(--text-primary); }
+  .about-data-title {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-6) 0;
+  }
+  .about-data-heading {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin: var(--space-6) 0 var(--space-2) 0;
+  }
+  .about-data-body {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .about-data-overlay, .about-data-panel { animation: none; }
+  }
+
+  /* ─── Mobile ─────────────────────────────────────────────────── */
+  @media (max-width: 640px) {
+    .section3-editorial {
+      padding: var(--space-8) var(--space-4) var(--space-16);
+      gap: var(--space-8);
+    }
+    .section3-h1 { font-size: 32px; }
+    .section3-prose p { font-size: 16px; }
+    .section3-h3 { font-size: 20px; }
+    .stat-callout-value { font-size: 52px; }
+    .diaspora-card-value { font-size: 2rem; }
+    .diaspora-hint { bottom: 0.75rem; }
+    .about-data-panel {
+      width: 100%;
+      padding: var(--space-12) var(--space-4) var(--space-6);
+    }
+  }
+</style>
