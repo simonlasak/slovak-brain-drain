@@ -382,3 +382,85 @@ Both decided by Simon this session (see agent memory `project_section_pattern`):
 ### Your decision (Simon to fill in)
 
 [ ]
+
+---
+
+## Checkpoint 6 — Section 2 done, Section 3 data repaired
+
+Date: 2026-07-28
+
+### Committed this session
+
+- `1793fb8` §1 map fits above the info card; real mobile nav (the hamburger was
+  a `nav::after` pseudo-element, so it could never be clicked); SK nav adjectives.
+- `3465921` **Production bug:** `tokens.css` was linked as `/src/styles/...`,
+  which Vite serves in dev but which 404s in the built site. Every design token
+  fell back to its initial value in production. Now imported so Astro bundles it.
+- `7d843ac` §2 `/corridor` brought to the §1 standard: bilingual content module,
+  `useLocale`, About panels on all four visuals, localised chart labels, card-
+  clearing map fit, mobile styles.
+- `99e2a3d` Removed the unused MDX integration. It was registering a renderer
+  whose capability probe *calls* each island component outside React's render
+  cycle, which produced spurious "Invalid hook call" SSR warnings.
+- `f208339` §3 pipeline: three data bugs fixed (below) + world boundaries
+  TopoJSON -> GeoJSON conversion.
+
+### Section 3 data bugs found and fixed
+
+1. **OECD flows collapsed five measures into one.** B11-B16 are stacked in one
+   CSV, distinguished only by a `MEASURE` column the transform never read.
+   Germany 2019 existed as four contradictory rows. B15 is a population STOCK,
+   so the "inflow" series contained Czechia's residence figure and summed to an
+   absurd 7.4M arrivals since 2004. Now split by measure; only B11 is inflow.
+2. **The UN DESA reader did not exist.** The docstring claimed it; `run()` never
+   called it. The 2020 snapshot (419,651 / 51 countries) was in a committed
+   parquet the pipeline could not regenerate.
+3. **UN DESA sex blocks.** Table 1 repeats its year block three times (both /
+   male / female). Keying by year alone let the female block overwrite the
+   combined one, halving every figure. Fixed; verified 2020 = 419,651 exactly
+   and M+F == all with zero discrepancy.
+
+   Consequence: **male stock data exists after all.** The earlier "no gender
+   breakdown" finding was an artefact of this bug.
+
+### §1/§2 transform audit (prompted by the above)
+
+Checked whether the same measure-collapse class of bug affects sections 1 and 2.
+It does exist in both parquets, but **not in any rendered figure**:
+
+- §1: `om7007rr` carries two indicators (mid-year and 31-December population),
+  both written as `metric='population'` with no distinction, and fine age codes
+  are mapped to coarse brackets without summing. Affects age-bracketed
+  `population` rows only. `cohort_retention`, `total_change`, `intl_net`,
+  `avg_wage_eur` are all clean, and the map's population step reads
+  `age_bracket='all'` from `om7011rr` (0 duplicates).
+- §2: duplicates are confined to the unused `csu_CIZ002T002` source. Every chart
+  and the map filter on `csu_CIZ003T003`, which has 0 duplicate year or
+  region-year tuples.
+
+**Not yet fixed** (deliberately deferred, no visible impact): the §1
+age-bracketed population rows. Fixing means picking one indicator and summing
+the age groups. Worth doing before any chart uses an age profile.
+
+### Section 3 decisions locked with Šimon
+
+- **No scrollytelling.** Interactive click-to-zoom world map as the loaded
+  centrepiece, same structural role as the §1/§2 scroll maps. Supporting charts
+  still needed for the prose. Exact interaction still to be designed with Šimon.
+- Click a country -> show the one number, plus a trend where data exists and no
+  trend where it does not.
+- 2020 UN DESA snapshot, not a year series (coverage is spiky).
+- Primary lens: growth since 1990 (GBR +4,946%, HUN +6,539%, IRL +3,194%,
+  CZE +62%).
+- Map colours all countries with data; charts cut to top 12 (93.7% of total).
+- Slovak: **one authoring pass at the end**, all sections stubbed until then.
+- Numbers to restate: the old "87 countries" caption is wrong (that is the count
+  across all years and sources; only 51 have 2020 data, 45 have 1990).
+
+### Open question for Šimon
+
+`internal.ts` says "the headline number of Slovaks **living abroad** approaches
+300,000". Šimon reads 300k as *departures since 2004* and 419,651 as *total
+diaspora stock*, which are indeed different quantities, but the sentence as
+written describes a stock and so collides with 419,651. Needs either a rewording
+to a flow or an explicit reconciliation. Left untouched: it is approved copy.
