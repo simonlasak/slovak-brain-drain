@@ -1,5 +1,13 @@
 # Methodological Notes
 
+> **Numeric claim convention.** Every numeric figure in this document carries a
+> status marker: `verified` (reproducible, source named), `unverified` (plausible
+> but not reproduced here), or `illustrative` (a placeholder showing format, NOT
+> a measurement). **A figure with no marker is unusable.** Introduced July 2026
+> after an illustrative 300,000 in `07-editorial-content.md` escaped into the
+> landing page as fact.
+
+
 ## Core definitional matrix
 
 | Filter | Source | What it actually measures | Best dataset |
@@ -26,7 +34,9 @@ For Section 3 (diaspora), stock-based metric is primary (because flow data has t
 - Gross outflow of educated Slovaks
 - Net = gross outflow minus inflow of educated foreigners to SK (or, for Section 1, to that region)
 
-The inflow comparator is needed because Slovakia has been gaining ~21k immigrants per year (mostly Ukrainian, Hungarian, Czech labour) which partially offsets the educated outflow.
+The inflow comparator is needed because Slovakia has been gaining ~21k immigrants per year (mostly Ukrainian, Hungarian, Czech labour) which partially offsets the educated outflow. `verified` (pipeline mean `intl_in` 2004-2025 = 23,562; note Ukrainians under temporary protection are EXCLUDED from this series per Eurostat ESMS, so it is not a total immigration figure).
+
+**WARNING on netting:** do not present `intl_net` anywhere. `intl_in` and `intl_out` are collected through different institutions (municipal registration offices for nationals, Foreign Police for foreigners) with different enforcement, so the inflow register is near-complete and the outflow register is a severe undercount. Their difference is an artefact of that asymmetry, not a migration balance. Registered outflow is a lower bound and should be shown as a rate, not netted.
 
 ## Interpolation strategy
 
@@ -84,13 +94,17 @@ Source-attribute his quotes carefully — The Athletic article by Arpon Basu (Oc
 1. **Always show date of last update** on every chart
 2. **Distinguish actual vs interpolated** points visually (solid dot vs hollow ring)
 3. **Show data source as clickable link** below every chart
-4. **Acknowledge undercounting** with a persistent banner in Section 1: "Slovak emigration registers undercount by ~300k people"
+4. **Acknowledge undercounting** with a persistent banner in Section 1. `unverified`
+   The "~300k" figure previously given here has no source: it traces to the same
+   illustrative example in `07-editorial-content.md` as the landing hero, not to
+   any dataset. State the undercount only once it is derived. A feasible route
+   exists via Eurostat `migr_pop1ctz` mirror comparison (see `06-sources-page.md`).
 5. **Compare definitions** in Section 3 — show side-by-side counts for "Slovak-born vs citizen vs identified" so users see the methodological gap
 6. **Don't aggregate everything to a single Brain Drain Index** — the existing Fund for Peace HFBDI is one input but shouldn't be the headline number
 
 ## What we explicitly will NOT claim
 
 - We will NOT claim to know how many Slovak doctors are abroad to within ±10% — the SLK register doesn't track that and destination data is fragmented
-- We will NOT claim a single dollar figure for "cost of brain drain to Slovakia" — Blue Europe's €2.8M per graduate figure is a defensible estimate but range-bound
+- We will NOT claim a single dollar figure for "cost of brain drain to Slovakia" — Blue Europe's €2.8M per graduate figure is a defensible estimate but range-bound `unverified` (source not fetched)
 - We will NOT extrapolate trends past the last data point
 - We will NOT compare Slovakia to "successful" or "unsuccessful" countries without showing the comparator's full distribution

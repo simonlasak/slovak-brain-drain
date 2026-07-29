@@ -1,5 +1,13 @@
 # Data Manifest — Sources, Endpoints, Coverage
 
+> **Numeric claim convention.** Every numeric figure in this document carries a
+> status marker: `verified` (reproducible, source named), `unverified` (plausible
+> but not reproduced here), or `illustrative` (a placeholder showing format, NOT
+> a measurement). **A figure with no marker is unusable.** Introduced July 2026
+> after an illustrative 300,000 in `07-editorial-content.md` escaped into the
+> landing page as fact.
+
+
 Every dataset Claude Code should fetch, in priority order. All licences confirmed open / public.
 
 ## Tier 1 — Slovak primary sources
@@ -85,7 +93,7 @@ Every dataset Claude Code should fetch, in priority order. All licences confirme
 - **Format:** web search interface; no bulk export
 - **Use:** spot-checks; can't be scraped at scale
 - **AEMH 2025 National Report (Slovakia)** is the practical alternative: https://www.aemh.org/images/AEMH_documents/2025/AEMH-25-017-National-Report-Slovakia.pdf
-  - Concrete numbers: ~2,400 Slovak doctors in CZ, ~1,200 DE, ~300-350 AT, ~600 UK (2024-25)
+  - Concrete numbers: ~2,400 Slovak doctors in CZ, ~1,200 DE, ~300-350 AT, ~600 UK (2024-25) `unverified` (AEMH PDF never fetched; not in any parquet)
 
 ### 1.6 Centrálny register študentov (CRŠ) via portalvs.sk
 
@@ -137,7 +145,7 @@ Every dataset Claude Code should fetch, in priority order. All licences confirme
 
 - **Czech Statistical Office "Foreigners studying at Czech universities" annual release**
 - **DZS comprehensive 2020 report:** https://www.dzs.cz/sites/default/files/2021-10/DZS_zprava_o_zahranicnich_studentech_EN_WEB.pdf
-- **Key facts to validate:** Slovaks = 38% of foreign HE students in CZ (peaked ~22k in 2018-2019); declining since
+- **Key facts to validate:** Slovaks = 38% of foreign HE students in CZ `unverified` (no denominator fetched). Enrolment peaked at 24,300 in 2013, NOT ~22k in 2018-2019 `verified` (Eurostat educ_uoe_mobs02, in section2_corridor.parquet); declining since
 - **Time series:** academic year 1997/98 onwards
 
 ---
@@ -309,7 +317,7 @@ Well under 1 GB. Storage-everything strategy is fine.
 
 ## Known data gaps that will need methodological caveats
 
-1. **Census undercount.** ~300k Slovaks may not appear in Slovak registers (commuters, weekly migrants, unreported emigrants). Display the Czech-side count alongside Slovak emigration register figures to flag the discrepancy.
+1. **Census undercount.** `unverified` The "~300k" has no derivation and traces to the illustrative example in `07-editorial-content.md`. Slovaks not appearing in Slovak registers (commuters, weekly migrants, unreported emigrants) is a real phenomenon but the magnitude is unestablished. Display the Czech-side count alongside Slovak emigration register figures to flag the discrepancy.
 
 2. **Pre-1993 ambiguity.** Slovak-born people abroad before 1993 are often coded as Czechoslovak in destination censuses. Display "Slovak / Czechoslovak born" merged for time series pre-2000.
 

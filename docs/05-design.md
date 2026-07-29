@@ -1,5 +1,13 @@
 # Design System — Slovak Brain Drain Case Study
 
+> **Numeric claim convention.** Every numeric figure in this document carries a
+> status marker: `verified` (reproducible, source named), `unverified` (plausible
+> but not reproduced here), or `illustrative` (a placeholder showing format, NOT
+> a measurement). **A figure with no marker is unusable.** Introduced July 2026
+> after an illustrative 300,000 in `07-editorial-content.md` escaped into the
+> landing page as fact.
+
+
 This is the single source of truth for every visual decision in the project. Paste the entire file (or its relevant sections) into Claude Code or Claude Design at the start of any session that generates UI. Do not assume previous context carries over.
 
 ## Visual personality

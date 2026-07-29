@@ -1,5 +1,13 @@
 # Editorial Content Specification
 
+> **Numeric claim convention.** Every numeric figure in this document carries a
+> status marker: `verified` (reproducible, source named), `unverified` (plausible
+> but not reproduced here), or `illustrative` (a placeholder showing format, NOT
+> a measurement). **A figure with no marker is unusable.** Introduced July 2026
+> after an illustrative 300,000 in `07-editorial-content.md` escaped into the
+> landing page as fact.
+
+
 The interactive maps and charts are necessary but not sufficient. This project is a piece of data journalism, not a dashboard. Every section needs analytical prose that explains why the data matters, how it was sourced, what the surprising finding is, and what the limitations are.
 
 The reference standard is articles like the Slovak Ministry of Education's piece on student return rates (minedu.sk), serious newspaper data investigations (FT, NYT, Reuters), and the long-form pieces on The Pudding. Not corporate dashboards, not marketing copy.
@@ -12,7 +20,17 @@ A single-page introduction to the entire project. Roughly 800–1,200 words of p
 
 Structure:
 
-1. **Opening hook** (one paragraph). The most surprising single finding from the data, stated plainly. Example: "Slovakia has lost more than 300,000 people to emigration since EU accession — a figure the official Slovak statistics undercount because most movers never deregister."
+1. **Opening hook** (one paragraph). The most surprising single finding from the data, stated plainly.
+
+   > **ILLUSTRATIVE PHRASING ONLY, THE NUMBER IS NOT A FINDING.** `illustrative`
+   > The example below escaped this document and became the hardcoded landing-page
+   > hero (HeroCounter.tsx), then acquired a derived "one in 18" ratio, then was
+   > reframed as a stock in §1 prose. No source was ever attached to it. Do not
+   > lift a figure from this file into copy.
+
+   Example shape: "Slovakia has lost more than [N] people to emigration since EU
+   accession, a figure the official Slovak statistics undercount because most
+   movers never deregister."
 
 2. **Why this project exists** (one paragraph). What question prompted the work. Honest about author motivation.
 

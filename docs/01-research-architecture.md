@@ -1,5 +1,13 @@
 # Slovak Brain Drain Case Study — Research Architecture
 
+> **Numeric claim convention.** Every numeric figure in this document carries a
+> status marker: `verified` (reproducible, source named), `unverified` (plausible
+> but not reproduced here), or `illustrative` (a placeholder showing format, NOT
+> a measurement). **A figure with no marker is unusable.** Introduced July 2026
+> after an illustrative 300,000 in `07-editorial-content.md` escaped into the
+> landing page as fact.
+
+
 ## The unifying thread
 
 Every section follows the same protagonist: **an educated Slovak person**, traced through their life trajectory. The cross-cutting filters at the top of the site propagate into all three interactive sections (Section 4 is a static narrative dashboard):
@@ -22,7 +30,7 @@ Every section follows the same protagonist: **an educated Slovak person**, trace
 **Geographic unit.** Three-tier zoom:
 - Kraj (8 regions) — default
 - Okres (79 districts) — second tier
-- Obec (~2,891 municipalities) — only on deep zoom, with selected indicators
+- Obec (municipality count `unresolved`: 2,891 per this doc and Wikipedia, 2,924 in the ŠÚ SR cube after removing 4 vojenské obvody and 5 Košice aggregates, 2,927 on the /methodology page. The official register was unreachable in July 2026. Do not adopt one until resolved.) — only on deep zoom, with selected indicators
 
 **Core metrics.**
 - Net internal migration by age bracket
@@ -44,7 +52,7 @@ Every section follows the same protagonist: **an educated Slovak person**, trace
 **Question.** Why does Slovak-to-Czech mobility dominate, who is moving, into what sectors, and at what life stage?
 
 **Two co-equal pathways within Section 2.** The data should make clear that the Slovak-to-Czech flow has two distinct entry points that often connect:
-- **The student pathway** — leaving SK at 18-19 for Czech university (~22,000 Slovak HE students in CZ at peak, the largest single foreign-student community in the EU)
+- **The student pathway** — leaving SK at 18-19 for Czech university (peak 24,300 Slovak HE students in CZ in 2013 `verified`, declining to 22,401 by 2024; the largest single foreign-student community in the EU `unverified`)
 - **The labour pathway** — leaving SK already credentialed for a Czech job (~240,000 working-age Slovaks in CZ as of 2023)
 The two pathways connect: a large share of labour-pathway Slovaks entered via the student pathway and stayed after graduating. The "stay-after-graduation rate" is itself a key metric.
 
@@ -75,7 +83,7 @@ With a connecting bridge visual showing what share of student-pathway Slovaks tr
 
 **Question.** Where do Slovaks end up worldwide, and how does the picture change depending on how we define "Slovak"?
 
-**Geographic unit.** Destination country (~200 countries from UN DESA), bilateral.
+**Geographic unit.** Destination country, bilateral. NOTE: UN DESA covers ~200 countries overall, but the Slovak-origin block of the 2020 revision contains only **51 destination country rows** `verified`, and no row for the United States. Do not plan for 200.
 
 **Core metrics.**
 - Stock of Slovak-born / Slovak-citizen / Slovak-identified per destination, 1990–2024 (UN DESA bilateral + OECD DIOC + destination-country censuses)

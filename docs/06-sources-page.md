@@ -1,5 +1,13 @@
 # Sources & Methodology Page Specification
 
+> **Numeric claim convention.** Every numeric figure in this document carries a
+> status marker: `verified` (reproducible, source named), `unverified` (plausible
+> but not reproduced here), or `illustrative` (a placeholder showing format, NOT
+> a measurement). **A figure with no marker is unusable.** Introduced July 2026
+> after an illustrative 300,000 in `07-editorial-content.md` escaped into the
+> landing page as fact.
+
+
 ## Purpose
 
 The `/methodology` page is the audit trail for the entire project. Its job is to let any reader — a journalist, a researcher, a Slovak government official, another student — trace every number shown on the site back to a primary source. It is also where we are honest about what we do not know and what we had to estimate.
@@ -112,10 +120,15 @@ Every data point in the processed files that is estimated rather than directly o
 
 **Format:**
 
+> **ILLUSTRATIVE TEMPLATE.** `illustrative` The ±3%, ±15% and ±5% figures below
+> are placeholders showing entry shape. No interpolation register has been built,
+> and as of July 2026 `is_interpolated` was hardcoded and computed nowhere, so
+> there are no measured uncertainties to report.
+
 ```
 Metric:          population (obec-level, 18–24 age group)
 Period:          2012–2020
-Geography:       All 2,891 municipalities
+Geography:       All municipalities (count `unresolved`, see 01-research-architecture.md)
 Method:          Linear interpolation between Census 2011 and Census 2021
 Anchor points:   2011-04-01 (Census 2011) and 2021-01-01 (Census 2021)
 Cross-checked:   Against Eurostat lfst_r_lfu3rt regional aggregates
@@ -135,19 +148,39 @@ Where two independent sources measure the same thing and we compare them. This i
 
 **Format per entry:**
 
+> **ILLUSTRATIVE TEMPLATE, NOT A FINDING.** The figures below show the shape of
+> an entry. They are not measured values. The "23-38%" in particular was read as
+> a documented result during the July 2026 audit and is not one: see the note
+> after this block.
+
 ```
 What was compared:   Slovaks registered as leaving Slovakia (ŠÚ SR) vs
                      Slovaks registered as arriving in Czechia (ČSÚ)
 Period:              2004–2023
 Expected direction:  ČSÚ > ŠÚ SR because not all movers deregister in SK
-Observed discrepancy: ČSÚ stock is 23–38% higher than ŠÚ SR cumulative outflow
-                      in 2023. Gap has widened since 2010.
+Observed discrepancy: [illustrative] ČSÚ stock is NN% higher than ŠÚ SR
+                      cumulative outflow in [year].
 Decision:            Display ČSÚ figure as primary stock estimate.
                      Show ŠÚ SR figure as a "formally registered" sub-series.
                      Difference displayed as the "unregistered/commuter" estimate.
 UI treatment:        The two lines are shown together in §2 with the gap
                      shaded and labelled "estimated unregistered movers"
 ```
+
+**Status: this comparison is NOT DERIVABLE and must not be published.** `unverified`
+
+It requires ŠÚ SR emigration disaggregated by destination country. No such series
+exists: all 668 datasets in the ŠÚ SR DATAcube API were checked (July 2026) and
+none carries an emigration-by-destination dimension. `om7001rr` has 258 countries
+but is country of *birth* for residents of Slovakia, an immigrant-stock cube, not
+emigrant destinations. Comparing ČSÚ stock against cumulative outflow to *all*
+destinations gives the opposite sign (ČSÚ runs 28-47% below it), which is not a
+like-for-like comparison and should not be substituted.
+
+A defensible mirror comparison does exist on the **citizen** definition, using
+Eurostat `migr_pop1ctz` (destination-reported Slovak citizens) against ŠÚ SR
+cumulative registered outflow. Feasibility confirmed July 2026: 25 reporting
+countries for 2020 totalling 297,234, Germany included. Not yet implemented.
 
 **Cases to document** (at minimum):
 
