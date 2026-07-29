@@ -37,6 +37,15 @@ INDICATOR_MAP_OM7011 = {
     "IN010082": ("total_change", "Total increase of population"),
 }
 
+# om7007rr (age structure) carries two population indicators on the same
+# dimensions. They are different quantities and must not share a metric name.
+# `population_midyear` is kept as the primary age-structure series because it is
+# the one the cohort-retention derivation uses.
+INDICATOR_MAP_OM7007 = {
+    "IN010052": "population_midyear",
+    "IN010053": "population_yearend",
+}
+
 GEO_LEVEL_MAP = {
     2: "kraj",   # SK01, SK02, ...
     3: "okres",  # SK010, SK021, ...
@@ -132,7 +141,7 @@ def transform_population_movement() -> pl.DataFrame:
                 "education": "all",
                 "metric": metric,
                 "value": float(row["_value"]),
-                "is_interpolated": False,
+                "is_interpolated": None,
                 "source": "susr_om7011rr",
             })
 
@@ -164,7 +173,7 @@ def transform_wages() -> pl.DataFrame:
                 "education": "all",
                 "metric": "avg_wage_eur",
                 "value": float(val),
-                "is_interpolated": False,
+                "is_interpolated": None,
                 "source": "susr_pr0204qs",
             })
             break  # one value per year (national average)
@@ -216,7 +225,7 @@ def transform_wages_regional() -> pl.DataFrame:
                 "education": "all",
                 "metric": "avg_wage_eur",
                 "value": float(val),
-                "is_interpolated": False,
+                "is_interpolated": None,
                 "source": "susr_np3112qr",
             })
 
@@ -269,6 +278,16 @@ def transform_age_structure() -> pl.DataFrame:
             if age_bracket is None:
                 continue
 
+            # The cube stacks two different population indicators: IN010052 is
+            # the mid-year count and IN010053 the 31-December count. Both were
+            # previously written as metric='population' with nothing to tell them
+            # apart, which produced up to 14 contradictory rows per
+            # district-year-age tuple. Keep them as distinct metrics.
+            indicator_code = row.get("om7007rr_ukaz", "")
+            metric = INDICATOR_MAP_OM7007.get(indicator_code)
+            if metric is None:
+                continue
+
             geo_name = row["_labels"].get("om7007rr_vuc", geo_code)
             val = row.get("_value")
             if val is None or val == 0:
@@ -282,13 +301,33 @@ def transform_age_structure() -> pl.DataFrame:
                 "age_bracket": age_bracket,
                 "sex": "all",
                 "education": "all",
-                "metric": "population",
+                "metric": metric,
                 "value": float(val),
-                "is_interpolated": False,
+                "is_interpolated": None,
                 "source": "susr_om7007rr",
             })
 
-    return pl.DataFrame(all_rows)
+    if not all_rows:
+        return pl.DataFrame()
+
+    # Several fine age codes map onto one display bracket (Y_LE4, Y5-9 and
+    # Y10-14 all become "0-14", and seven codes from Y65-69 up become "65+").
+    # Appending them individually left one row per source code, so a single
+    # district-year-bracket tuple carried up to 14 contradictory values. Sum
+    # them into the bracket they belong to.
+    return (
+        pl.DataFrame(all_rows)
+        .group_by([
+            "year", "geo_level", "geo_code", "geo_name",
+            "age_bracket", "sex", "education", "metric",
+            "is_interpolated", "source",
+        ])
+        .agg(pl.col("value").sum())
+        .select([
+            "year", "geo_level", "geo_code", "geo_name", "age_bracket", "sex",
+            "education", "metric", "value", "is_interpolated", "source",
+        ])
+    )
 
 
 def run() -> pl.DataFrame:

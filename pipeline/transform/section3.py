@@ -21,6 +21,41 @@ log = logging.getLogger(__name__)
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 RAW_OECD = REPO_ROOT / "data" / "raw" / "oecd"
 RAW_UN_DESA = REPO_ROOT / "data" / "raw" / "un_desa"
+
+# UN DESA identifies destinations by UN M49 numeric code; OECD uses ISO 3166-1
+# alpha-3. `04-spec.md` specifies `destination_iso3`, so ISO3 is the canonical
+# key and the UN DESA side is the one that must convert. Emitting both systems
+# into one column (introduced in f208339) split 57 real countries across 87 keys,
+# double-counting 30 of them and making the frontend join miss the United States
+# entirely. Covers every numeric code that appears in the Slovak-origin block.
+M49_TO_ISO3 = {
+    "036": "AUS", "040": "AUT", "056": "BEL", "068": "BOL", "070": "BIH",
+    "076": "BRA", "100": "BGR", "112": "BLR", "124": "CAN", "188": "CRI",
+    "191": "HRV", "196": "CYP", "203": "CZE", "208": "DNK", "218": "ECU",
+    "233": "EST", "246": "FIN", "250": "FRA", "276": "DEU", "300": "GRC",
+    "348": "HUN", "352": "ISL", "372": "IRL", "380": "ITA", "400": "JOR",
+    "428": "LVA", "438": "LIE", "440": "LTU", "442": "LUX", "470": "MLT",
+    "484": "MEX", "496": "MNG", "499": "MNE", "528": "NLD", "578": "NOR",
+    "591": "PAN", "616": "POL", "620": "PRT", "642": "ROU", "643": "RUS",
+    "688": "SRB", "705": "SVN", "710": "ZAF", "724": "ESP", "752": "SWE",
+    "756": "CHE", "792": "TUR", "807": "MKD", "818": "EGY", "826": "GBR",
+    "862": "VEN",
+}
+
+# OECD SDMX observation status. Only "A" (normal) is an actual observation; the
+# rest indicate the value was modelled, provisional, or otherwise not a direct
+# measurement. `03-methodology.md` display honesty principle 2 requires actual
+# and interpolated points to be distinguished visually, which needs this flag
+# carried rather than hardcoded. Anything not in this map yields null, not false:
+# "we do not know" is not the same claim as "this is an observation".
+OBS_STATUS_INTERPOLATED = {
+    "A": False,   # Normal value
+    "E": True,    # Estimated
+    "P": False,   # Provisional, but still an observation
+    "I": True,    # Imputed
+    "M": None,    # Missing
+    "L": True,    # Missing, data exist but were not collected
+}
 OUT_PATH = REPO_ROOT / "data" / "processed" / "section3_diaspora.parquet"
 
 
@@ -51,6 +86,9 @@ def transform_oecd_popf() -> pl.DataFrame:
         sex_raw = row.get("SEX", "_T")
         sex = {"_T": "all", "M": "M", "F": "F"}.get(str(sex_raw), "all")
 
+        measure = str(row.get("MEASURE", "") or "").strip()
+        obs_status = str(row.get("OBS_STATUS", "") or "").strip()
+
         rows.append({
             "year": year,
             "slovak_def": "born",
@@ -60,8 +98,13 @@ def transform_oecd_popf() -> pl.DataFrame:
             "education": "all",
             "metric": "stock",
             "value": float(value),
-            "is_interpolated": False,
+            "is_interpolated": OBS_STATUS_INTERPOLATED.get(obs_status),
             "source": "oecd_mig_popf",
+            "measure_code": measure or None,
+            "obs_status": obs_status or None,
+            # UN DESA-only provenance; null for OECD rows.
+            "data_type": None,
+            "data_type_note": None,
         })
 
     return pl.DataFrame(rows)
@@ -155,6 +198,7 @@ def transform_oecd_flows() -> pl.DataFrame:
 
         sex_raw = row.get("SEX", "_T")
         sex = {"_T": "all", "M": "M", "F": "F"}.get(str(sex_raw), "all")
+        obs_status = str(row.get("OBS_STATUS", "") or "").strip()
 
         rows.append({
             "year": year,
@@ -165,8 +209,12 @@ def transform_oecd_flows() -> pl.DataFrame:
             "education": "all",
             "metric": metric,
             "value": value,
-            "is_interpolated": False,
+            "is_interpolated": OBS_STATUS_INTERPOLATED.get(obs_status),
             "source": f"oecd_mig_flows_{measure}",
+            "measure_code": measure,
+            "obs_status": obs_status or None,
+            "data_type": None,
+            "data_type_note": None,
         })
 
     if dropped:
@@ -176,6 +224,18 @@ def transform_oecd_flows() -> pl.DataFrame:
 
 
 # UN DESA location code for Slovakia, used to select the origin row.
+# UN DESA "Type of data of destination" codes, documented on the workbook's own
+# Notes sheet. Preserved as a field because the codes are not interchangeable:
+# Czechia is the single C row among the 51 Slovak-origin destinations, so the
+# site's largest figure is a CITIZEN count sitting beside 50 birth-based ones.
+# Flattening this column away is what hid that.
+DESA_DATA_TYPES = {
+    "B": "Derived from data on the foreign-born population",
+    "C": "Derived from data on foreign citizens",
+    "R": "Includes refugees, asylum seekers or Venezuelans displaced abroad",
+    "I": "Imputed from a regional or country model",
+}
+
 SVK_LOCATION_CODE = 703
 # Aggregate rows (WORLD, regions, development groups) share the 900+ code space
 # and must not be mistaken for destination countries.
@@ -211,6 +271,7 @@ def transform_un_desa() -> pl.DataFrame:
     # blocks overwrite the combined one and silently halve every figure.
     sex_year_cols: dict[tuple[str, int], int] = {}
     sex_blocks: list[tuple[int, str]] = []
+    unmapped_codes: set[str] = set()
 
     for raw in ws.iter_rows(values_only=True):
         if header is None:
@@ -272,6 +333,23 @@ def transform_un_desa() -> pl.DataFrame:
         if dest_code >= UN_AGGREGATE_MIN:
             continue
 
+        # Canonicalise to ISO3 so the column holds one code system. A numeric
+        # code with no mapping is skipped rather than emitted raw, which would
+        # silently reintroduce the two-key split.
+        m49 = str(dest_code).zfill(3)
+        iso3 = M49_TO_ISO3.get(m49)
+        if iso3 is None:
+            unmapped_codes.add(m49)
+            continue
+
+        # Column 4 is "Type of data of destination": one or more of B/C/R/I.
+        raw_type = str(raw[4] or "").strip()
+        type_codes = [t for t in raw_type.split() if t in DESA_DATA_TYPES]
+        data_type = " ".join(type_codes) or None
+        data_type_note = (
+            "; ".join(DESA_DATA_TYPES[t] for t in type_codes) or None
+        )
+
         for (sex, year), col in sex_year_cols.items():
             value = raw[col] if col < len(raw) else None
             if value is None:
@@ -286,20 +364,32 @@ def transform_un_desa() -> pl.DataFrame:
             rows.append({
                 "year": year,
                 "slovak_def": "born",
-                # Keep the UN M49 numeric code as a zero-padded string so it
-                # matches the `m49` property emitted by the world-boundaries
-                # transform; the frontend joins via that mapping.
-                "destination_iso3": str(dest_code).zfill(3),
+                "destination_iso3": iso3,
                 "sex": sex,
                 "age_bracket": "all",
                 "education": "all",
                 "metric": "stock",
                 "value": value,
-                "is_interpolated": False,
+                # Per the 2020 revision Methodology Report section 6, every one
+                # of the seven reference years is produced by interpolation or
+                # extrapolation between whatever empirical points exist for the
+                # corridor. None of these is a direct observation, so the flag
+                # is true throughout, and true independently of the I code,
+                # which marks model-imputed countries specifically.
+                "is_interpolated": True,
                 "source": "un_desa_bilateral_2020",
+                "measure_code": None,
+                "obs_status": None,
+                "data_type": data_type,
+                "data_type_note": data_type_note,
             })
 
     wb.close()
+    if unmapped_codes:
+        log.warning(
+            "transform.section3.un_desa_unmapped_m49 %s (rows dropped; add to M49_TO_ISO3)",
+            sorted(unmapped_codes),
+        )
     return pl.DataFrame(rows)
 
 
