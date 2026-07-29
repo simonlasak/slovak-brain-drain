@@ -245,7 +245,7 @@ export function RegionTrendChart({ animated = true }: { animated?: boolean }) {
         SELECT year, geo_code, value
         FROM 's1.parquet'
         WHERE metric = 'population'
-          AND geo_level = 'kraj'
+          AND geo_level = 'oblast'
           AND geo_code IN ('SK01','SK02','SK03','SK04')
           AND age_bracket = 'all'
           AND education = 'all'

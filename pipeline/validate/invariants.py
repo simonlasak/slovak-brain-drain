@@ -43,11 +43,10 @@ def check_population_consistency() -> CheckResult:
     for year in range(2004, 2026):
         yr_data = pop.filter(pl.col("year") == year)
 
-        # Kraj-level totals (SK01..SK04 are NUTS-2)
-        kraj_total = yr_data.filter(
-            (pl.col("geo_level") == "kraj") &
-            (pl.col("geo_code").str.len_chars() == 4)
-        )["value"].sum()
+        # NUTS-2 oblast totals. SK01..SK04 are oblasti, not kraje; the old
+        # length-4 filter on geo_level='kraj' selected them only because the
+        # taxonomy conflated the two levels.
+        kraj_total = yr_data.filter(pl.col("geo_level") == "oblast")["value"].sum()
 
         # Okres-level totals
         okres_total = yr_data.filter(pl.col("geo_level") == "okres")["value"].sum()
@@ -81,7 +80,7 @@ def check_migration_accounting() -> CheckResult:
         (pl.col("metric") == "population") &
         (pl.col("age_bracket") == "all") &
         (pl.col("education") == "all") &
-        (pl.col("geo_level") == "kraj") &
+        (pl.col("geo_level") == "nation") &
         (pl.col("geo_code") == "SK0")
     ).sort("year")
 
@@ -321,11 +320,87 @@ def generate_report(results: list[CheckResult]) -> str:
     return html
 
 
+def check_geo_levels_tile() -> CheckResult:
+    """Every territorial level must sum to the national total, every year.
+
+    Slovakia's geography is published as nested levels that each cover the whole
+    country: 4 oblasti, 8 kraje, 79 okresy. Any level therefore has to sum to the
+    national figure. A level that overshoots is double-counting, which is exactly
+    what happened when SK_CAP ("Bratislava districts I - V") was classified as an
+    okres and summed alongside its own five components: the okres level ran 7.9
+    percent above the national total in 2004, rising to 8.8 percent by 2025.
+
+    This check would have caught that in May. It is cheap and it is the one
+    invariant that makes an aggregate-labelled-as-a-unit impossible to miss.
+
+    `okres_aggregate` and `urban_rural` are deliberately excluded: the former is a
+    partial subset by construction, the latter is an orthogonal city/country
+    split rather than a territorial tiling.
+    """
+    df = pl.read_parquet(PROCESSED / "section1_internal.parquet")
+    pop = df.filter((pl.col("metric") == "population") & (pl.col("age_bracket") == "all"))
+
+    national = {
+        r["year"]: r["value"]
+        for r in pop.filter(pl.col("geo_level") == "nation").iter_rows(named=True)
+    }
+
+    details: list[str] = []
+    worst = "green"
+
+    if not national:
+        return CheckResult(
+            name="Geo levels tile to national total",
+            severity="red",
+            summary="no national-level rows found",
+            details=["Cannot verify tiling: no geo_level='nation' population rows."],
+        )
+
+    TILING_LEVELS = ["oblast", "kraj", "okres"]
+    for level in TILING_LEVELS:
+        sums = (
+            pop.filter(pl.col("geo_level") == level)
+            .group_by("year")
+            .agg(pl.col("value").sum().alias("s"))
+        )
+        if len(sums) == 0:
+            details.append(f"{level}: NO ROWS")
+            worst = "red"
+            continue
+
+        failures = []
+        for r in sums.iter_rows(named=True):
+            nat = national.get(r["year"])
+            if nat is None or nat == 0:
+                continue
+            pct = abs(r["s"] - nat) / nat * 100
+            # Tolerance is for float noise only, not for a real discrepancy.
+            if pct > 0.01:
+                failures.append(
+                    f"{r['year']}: {level} sum={r['s']:,.0f} vs national={nat:,.0f} ({pct:.1f}%)"
+                )
+
+        if failures:
+            worst = "red"
+            details.append(f"{level}: {len(failures)} of {len(sums)} years do NOT tile")
+            details.extend(failures[:5])
+        else:
+            details.append(f"{level}: tiles exactly in all {len(sums)} years")
+
+    return CheckResult(
+        name="Geo levels tile to national total",
+        severity=worst,
+        summary=f"{len(TILING_LEVELS)} levels checked across {len(national)} years",
+        details=details,
+    )
+
+
 def run() -> list[CheckResult]:
     log.info("validate.start")
 
     results = [
         check_population_consistency(),
+        check_geo_levels_tile(),
         check_migration_accounting(),
         check_cz_corridor_crosscheck(),
         check_un_desa_vs_oecd(),

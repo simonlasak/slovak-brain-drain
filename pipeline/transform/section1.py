@@ -46,23 +46,45 @@ INDICATOR_MAP_OM7007 = {
     "IN010053": "population_yearend",
 }
 
-GEO_LEVEL_MAP = {
-    2: "kraj",   # SK01, SK02, ...
-    3: "okres",  # SK010, SK021, ...
+# Every geo code in the SUSR cubes gets an explicit level. Slovakia has exactly
+# 79 okresy, and the cubes carry 80 six-character codes: the extra is SK_CAP,
+# "Bratislava (districts I - V)", an aggregate of SK0101-SK0105. It was
+# previously classified as an okres by an explicit special case, so it entered
+# every district-level statistic alongside its own five components. The same
+# applied to SK0422_0425 ("Kosice (districts I - IV)"), and SK0 (the nation) was
+# labelled a kraj.
+#
+# Aggregates are LABELLED, not deleted, so they remain available for display
+# while being excludable from district statistics.
+GEO_LEVELS = {
+    "SK0": "nation",
+    # NUTS-2 oblasti
+    "SK01": "oblast", "SK02": "oblast", "SK03": "oblast", "SK04": "oblast",
+    # NUTS-3 kraje
+    "SK010": "kraj", "SK021": "kraj", "SK022": "kraj", "SK023": "kraj",
+    "SK031": "kraj", "SK032": "kraj", "SK041": "kraj", "SK042": "kraj",
+    # City / country split published alongside the territorial hierarchy
+    "M": "urban_rural", "V": "urban_rural",
+    # Multi-district aggregates, NOT okresy
+    "SK_CAP": "okres_aggregate",       # Bratislava I-V
+    "SK0422_0425": "okres_aggregate",  # Kosice I-IV
 }
+
+# The 79 true okresy are the six-character codes minus the SK_CAP aggregate,
+# which is also six characters and so cannot be separated by length alone.
+OKRES_AGGREGATES = {"SK_CAP"}
 
 
 def _classify_geo(code: str) -> str | None:
-    if not code.startswith("SK"):
-        return None
-    if len(code) == 3:
-        return "kraj"  # SK0 = national
-    elif len(code) == 4:
-        return "kraj"  # SK01..SK04 = NUTS-2 regions
-    elif len(code) == 5:
-        return "kraj"  # SK010..SK042 = NUTS-3 kraje
-    elif len(code) == 6 or code == "SK_CAP":
-        return "okres"  # SK0101..SK0813 = LAU-1 okresy
+    """Map a SUSR geo code to its territorial level.
+
+    Returns None only for codes with no known level; the caller must log and
+    drop those rather than defaulting them into a level.
+    """
+    if code in GEO_LEVELS:
+        return GEO_LEVELS[code]
+    if len(code) == 6 and code.startswith("SK") and code not in OKRES_AGGREGATES:
+        return "okres"
     return None
 
 
@@ -161,9 +183,11 @@ def transform_population_movement() -> pl.DataFrame:
             dict(sorted(skipped_indicators.items())),
         )
     if skipped_geo:
-        log.info(
-            "transform.section1.om7011rr_unclassified_geo %s",
-            sorted(skipped_geo)[:12],
+        raise ValueError(
+            "section1: unclassified geo codes in om7011rr: "
+            f"{sorted(skipped_geo)}. Every code must be assigned a level in "
+            "GEO_LEVELS; refusing to guess, because defaulting an aggregate to "
+            "okres is what contaminated the district statistics with SK_CAP."
         )
 
     return pl.DataFrame(all_rows)
@@ -257,6 +281,7 @@ def transform_age_structure() -> pl.DataFrame:
     """Parse om7007rr — age groups at okres level."""
     cube_dir = RAW_SUSR / "om7007rr"
     all_rows = []
+    unclassified_geo: set[str] = set()
 
     AGE_CODE_MAP = {
         "Y_LE4": "0-14",
@@ -292,6 +317,7 @@ def transform_age_structure() -> pl.DataFrame:
             geo_code = row.get("om7007rr_vuc", "")
             geo_level = _classify_geo(geo_code)
             if geo_level is None:
+                unclassified_geo.add(geo_code)
                 continue
 
             age_code = row.get("om7007rr_vsk", "")
@@ -327,6 +353,13 @@ def transform_age_structure() -> pl.DataFrame:
                 "is_interpolated": None,
                 "source": "susr_om7007rr",
             })
+
+    if unclassified_geo:
+        raise ValueError(
+            "section1: unclassified geo codes in om7007rr: "
+            f"{sorted(unclassified_geo)}. Every code must be assigned a level in "
+            "GEO_LEVELS; refusing to guess."
+        )
 
     if not all_rows:
         return pl.DataFrame()
