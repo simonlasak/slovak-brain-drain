@@ -111,6 +111,11 @@ def transform_population_movement() -> pl.DataFrame:
     """Parse om7011rr — population, births, deaths, migration at okres/kraj level."""
     cube_dir = RAW_SUSR / "om7011rr"
     all_rows = []
+    # Log-and-drop, not silent pass-through: an unrecognised code must announce
+    # itself. The same guard in section3 caught GBR missing from the M49 map,
+    # which would otherwise have dropped the second-largest destination.
+    skipped_indicators: dict[str, int] = {}
+    skipped_geo: set[str] = set()
 
     for fpath in sorted(cube_dir.glob("om7011rr_*.json")):
         if "manifest" in fpath.name:
@@ -122,10 +127,14 @@ def transform_population_movement() -> pl.DataFrame:
             geo_code = row.get("om7011rr_vuc", "")
             geo_level = _classify_geo(geo_code)
             if geo_level is None:
+                skipped_geo.add(geo_code)
                 continue
 
             indicator_code = row.get("om7011rr_ukaz", "")
             if indicator_code not in INDICATOR_MAP_OM7011:
+                skipped_indicators[indicator_code] = (
+                    skipped_indicators.get(indicator_code, 0) + 1
+                )
                 continue
 
             metric, _ = INDICATOR_MAP_OM7011[indicator_code]
@@ -144,6 +153,18 @@ def transform_population_movement() -> pl.DataFrame:
                 "is_interpolated": None,
                 "source": "susr_om7011rr",
             })
+
+    if skipped_indicators:
+        log.info(
+            "transform.section1.om7011rr_unmapped_indicators %s "
+            "(intentional: 28 of 34 cube indicators are not used)",
+            dict(sorted(skipped_indicators.items())),
+        )
+    if skipped_geo:
+        log.info(
+            "transform.section1.om7011rr_unclassified_geo %s",
+            sorted(skipped_geo)[:12],
+        )
 
     return pl.DataFrame(all_rows)
 
@@ -330,6 +351,107 @@ def transform_age_structure() -> pl.DataFrame:
     )
 
 
+def derive_cohort_metrics(df_age: pl.DataFrame) -> pl.DataFrame:
+    """Derive cohort_retention and young_change_pct from the age-structure frame.
+
+    RECOVERED DERIVATION. These metrics shipped in the committed parquet with
+    source='derived_om7007rr' but no code in the pipeline produced them: the
+    derivation was run outside version control and lost. They were recovered by
+    reverse-engineering the deployed values against the raw cube.
+
+    `cohort_retention` = 100 * (people aged 35-39 in 2024) / (people aged 15-19
+    in 2004), same district. A synthetic cohort: it combines migration and
+    mortality and does not track the same individuals.
+
+    The cube publishes two population indicators per year, IN010052 (mid-year)
+    and IN010053 (31 December). The original averaged the two for BOTH the
+    numerator and the denominator. Using either indicator alone reproduces the
+    deployed values to within 2.6 percentage points on four high-churn urban
+    districts; averaging reproduces all 80 to within 0.05pp, which is the
+    rounding to one decimal. That is what identifies the definition.
+
+    `young_change_pct` = percent change in the 15-34 population between 2004 and
+    2024, recovered the same way (0 of 80 districts differ by more than 1pp).
+
+    `young_share` is NOT derived here. No combination of age brackets and
+    denominators reproduces it; the deployed series falls monotonically from 65
+    to 42 across 2004-2025, which no age share does, so its definition remains
+    unknown. Nothing in the frontend reads it, so it is dropped rather than
+    guessed at.
+    """
+    base = df_age.filter(pl.col("geo_level") == "okres")
+
+    def averaged(year: int, bracket: str, alias: str) -> pl.DataFrame:
+        return (
+            base.filter(
+                (pl.col("year") == year)
+                & (pl.col("age_bracket") == bracket)
+                & (pl.col("metric").is_in(["population_midyear", "population_yearend"]))
+            )
+            .group_by(["geo_code", "geo_name"])
+            .agg(pl.col("value").mean().alias(alias))
+        )
+
+    def averaged_range(year: int, brackets: list[str], alias: str) -> pl.DataFrame:
+        # Sum the brackets within each indicator, then average the indicators.
+        per_indicator = (
+            base.filter(
+                (pl.col("year") == year)
+                & (pl.col("age_bracket").is_in(brackets))
+                & (pl.col("metric").is_in(["population_midyear", "population_yearend"]))
+            )
+            .group_by(["geo_code", "metric"])
+            .agg(pl.col("value").sum().alias("v"))
+        )
+        return per_indicator.group_by("geo_code").agg(pl.col("v").mean().alias(alias))
+
+    rows: list[pl.DataFrame] = []
+
+    cohort = (
+        averaged(2004, "15-19", "base")
+        .join(averaged(2024, "35-39", "later").drop("geo_name"), on="geo_code")
+        .filter(pl.col("base") > 0)
+        .with_columns((100 * pl.col("later") / pl.col("base")).round(1).alias("value"))
+    )
+    rows.append(cohort.select([
+        pl.lit(2024).cast(pl.Int64).alias("year"),
+        pl.lit("okres").alias("geo_level"),
+        "geo_code", "geo_name",
+        pl.lit("all").alias("age_bracket"),
+        pl.lit("all").alias("sex"),
+        pl.lit("all").alias("education"),
+        pl.lit("cohort_retention").alias("metric"),
+        "value",
+        pl.lit(None).cast(pl.Boolean).alias("is_interpolated"),
+        pl.lit("derived_om7007rr").alias("source"),
+    ]))
+
+    young = ["15-19", "20-24", "25-29", "30-34"]
+    yc = (
+        averaged_range(2004, young, "base")
+        .join(averaged_range(2024, young, "later"), on="geo_code")
+        .join(base.select(["geo_code", "geo_name"]).unique(), on="geo_code")
+        .filter(pl.col("base") > 0)
+        .with_columns(
+            (100 * (pl.col("later") - pl.col("base")) / pl.col("base")).round(1).alias("value")
+        )
+    )
+    rows.append(yc.select([
+        pl.lit(2024).cast(pl.Int64).alias("year"),
+        pl.lit("okres").alias("geo_level"),
+        "geo_code", "geo_name",
+        pl.lit("all").alias("age_bracket"),
+        pl.lit("all").alias("sex"),
+        pl.lit("all").alias("education"),
+        pl.lit("young_change_pct").alias("metric"),
+        "value",
+        pl.lit(None).cast(pl.Boolean).alias("is_interpolated"),
+        pl.lit("derived_om7007rr").alias("source"),
+    ]))
+
+    return pl.concat(rows, how="vertical_relaxed")
+
+
 def run() -> pl.DataFrame:
     log.info("transform.section1.start")
 
@@ -345,8 +467,37 @@ def run() -> pl.DataFrame:
     df_age = transform_age_structure()
     log.info("transform.section1.age_structure rows=%d", len(df_age))
 
-    frames = [f for f in [df_pop, df_wages, df_wages_regional, df_age] if len(f) > 0]
+    df_cohort = derive_cohort_metrics(df_age)
+    log.info("transform.section1.cohort rows=%d", len(df_cohort))
+
+    frames = [f for f in [df_pop, df_wages, df_wages_regional, df_age, df_cohort] if len(f) > 0]
     df = pl.concat(frames, how="vertical_relaxed")
+
+    # Hard guard. cohort_retention is Section 1's headline metric: the 89 percent
+    # median, the Senec and Snina outliers, and both beeswarm charts read it.
+    # It was previously derived outside the pipeline, so a transform run emitted a
+    # parquet silently missing it. Refuse to write rather than ship a file that
+    # would blank the section.
+    REQUIRED_METRICS = {
+        "cohort_retention": 79,   # one row per okres, excluding the SK_CAP aggregate
+        "population": 1,
+        "avg_wage_eur": 1,
+        "total_change": 1,
+        "intl_out": 1,
+    }
+    counts = dict(df.group_by("metric").len().iter_rows())
+    missing = {
+        m: (minimum, counts.get(m, 0))
+        for m, minimum in REQUIRED_METRICS.items()
+        if counts.get(m, 0) < minimum
+    }
+    if missing:
+        raise ValueError(
+            "section1 transform refusing to write: required metrics missing or "
+            "short. metric -> (minimum expected, actual): "
+            f"{missing}. Fix the derivation before writing; a parquet without "
+            "these silently blanks rendered Section 1 content."
+        )
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(OUT_PATH)
