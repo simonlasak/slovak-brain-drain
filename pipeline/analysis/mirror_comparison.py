@@ -70,6 +70,21 @@ PANEL = [
     "LT", "LV", "NL", "NO", "RO", "SE", "SI",
 ]
 
+# The widest panel whose members report Slovak citizens at BOTH endpoints of the
+# full EU-accession window, 1 Jan 2004 to 1 Jan 2025. Four of the 15 above are
+# dropped because they have no 2004 observation (BE, IS, LT, RO). This panel
+# exists so the comparison can be stated over the same window as the landing
+# hero, which counts registered departures 2004-2025.
+#
+# Requiring both endpoints rather than every intervening year is a weaker
+# condition, and it is the right one here: the quantity is a stock DIFFERENCE, so
+# only the endpoints enter it. Germany is missing 2011 and Austria 2010-2011,
+# gaps that do not touch either endpoint.
+#
+# SK is excluded explicitly. Slovakia reports its own resident Slovak citizens in
+# this dataset, and including it would count people who never left.
+PANEL_2004 = ["AT", "CZ", "DE", "FI", "HU", "IT", "LV", "NL", "NO", "SE", "SI"]
+
 # The window. 2013 is the first year the full panel reports without gaps.
 YEAR_START = 2013
 YEAR_END = 2025
@@ -168,13 +183,13 @@ def load_slovak_naturalisations() -> pl.DataFrame:
 def load_susr_registered_departures() -> pl.DataFrame:
     """SU SR registered emigration, NATIONAL level only.
 
-    Below the national level intl_out counts moves out of the unit including
+    Below the national level migr_out counts moves out of the unit including
     moves to other Slovak districts, so it does not aggregate to a national
     emigration figure. geo_level='nation' is the only usable slice.
     """
     df = pl.read_parquet(PROCESSED / "section1_internal.parquet")
     out = df.filter(
-        (pl.col("metric") == "intl_out")
+        (pl.col("metric") == "migr_out")
         & (pl.col("geo_level") == "nation")
         & (pl.col("age_bracket") == "all")
         & (pl.col("sex") == "all")
@@ -182,7 +197,7 @@ def load_susr_registered_departures() -> pl.DataFrame:
     ).select("year", "value").sort("year")
     if len(out) == 0:
         raise ValueError(
-            "mirror: no national intl_out rows in section1_internal.parquet. "
+            "mirror: no national migr_out rows in section1_internal.parquet. "
             "Run the section1 transform first."
         )
     return out
@@ -239,6 +254,12 @@ def compute(panel: list[str] | None = None,
             year_end: int = YEAR_END) -> dict:
     """Run one specification of the mirror comparison."""
     panel = panel or PANEL
+    if SLOVAK_CITIZEN in panel:
+        raise ValueError(
+            f"mirror: {SLOVAK_CITIZEN!r} is in the destination panel. Slovakia "
+            "reports its own resident Slovak citizens in migr_pop1ctz, so "
+            "including it counts people who never left."
+        )
     stock = load_slovak_citizen_stock()
     nat = load_slovak_naturalisations()
     susr = load_susr_registered_departures()
@@ -326,6 +347,26 @@ def specifications() -> list[dict]:
     })
 
     specs.append({
+        "name": "accession_window_2004_2025",
+        "description": (
+            "The widest constant panel covering the full EU-accession window, "
+            "1 Jan 2004 to 1 Jan 2025 (11 countries; BE, IS, LT and RO have no "
+            "2004 observation). Matches the window the landing hero states."
+        ),
+        **compute(panel=PANEL_2004, year_start=2004, year_end=2025),
+    })
+
+    specs.append({
+        "name": "accession_window_excluding_czechia",
+        "description": (
+            "The 2004-2025 panel with Czechia removed. Sensitivity check on the "
+            "largest single destination, not a rival estimate."
+        ),
+        **compute(panel=[c for c in PANEL_2004 if c != "CZ"],
+                  year_start=2004, year_end=2025),
+    })
+
+    specs.append({
         "name": "top_five_destinations_only",
         "description": (
             "Only the five destinations with the largest Slovak stock. Tests "
@@ -365,7 +406,7 @@ def run() -> dict:
             "implied figure DOWN, so this also biases the ratio toward the floor.",
             "Destination registration is more complete than Slovak "
             "deregistration but is not a census. Its own undercount is unknown.",
-            "SU SR intl_out is usable at the NATIONAL level only. Below that it "
+            "SU SR migr_out is usable at the NATIONAL level only. Below that it "
             "counts moves out of the district including moves to other Slovak "
             "districts.",
         ],

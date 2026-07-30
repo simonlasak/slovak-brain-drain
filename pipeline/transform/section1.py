@@ -34,17 +34,41 @@ OUT_PATH = REPO_ROOT / "data" / "processed" / "section1_internal.parquet"
 # IN010076 was previously named `internal_net`, implying net INTERNAL migration.
 # It is natural increase, births minus deaths, and has nothing to do with
 # migration. The identity total_change = IN010076 + IN010080 closes exactly at
-# every geo level and year, which confirms the reading. The cube carries NO
-# internal-migration indicator at all: it publishes only total net migration
-# (IN010080), so internal and international cannot be separated from this cube.
+# every geo level and year, which confirms the reading.
+#
+# IN010078/79/80 were named intl_in / intl_out / intl_net, implying
+# INTERNATIONAL migration. They are not international. SUSR publishes ONE
+# migration family whose meaning depends entirely on the geographic level it is
+# read at:
+#
+#   geo_level='nation'  the only unit with no "other district" to move to, so
+#                       these ARE international. Verified: national migr_out
+#                       matches Eurostat migr_emi1ctz for SK exactly, to the
+#                       person, for every year 2013-2024.
+#   any sub-national    moves across THAT unit's boundary, internal moves
+#                       included. The okres sum runs 8-12x the national figure.
+#
+# So the names now say what the indicator is (migration across the unit's
+# boundary) and the geo_level says which boundary. No cube we hold separates
+# internal from international below the national level: searched every indicator
+# of all 13 held SUSR cubes, and only om7011rr, om7013rr and om7104rr carry
+# migration at all, all three with this same undifferentiated family.
+#
+# `internal_in` and `internal_out` therefore never existed as data. They were
+# declared in the output schema and in 04-spec.md, and nothing ever produced
+# them, because the source cannot.
 INDICATOR_MAP_OM7011 = {
     "IN010051": ("population", "Permanently living population on 1 January"),
     "IN010054": ("births", "Birth"),
+    # Live births, kept as its own metric because it is what natural increase is
+    # computed from. It runs ~180/yr below IN010054 nationally, and conflating the
+    # two is why the older migration-accounting check carries a residual.
+    "IN010106": ("births_live", "Live births"),
     "IN010061": ("deaths", "Mortality"),
     "IN010076": ("natural_increase", "Natural increase"),
-    "IN010078": ("intl_in", "Immigrants (in-migrants) on permanent residence"),
-    "IN010079": ("intl_out", "Emigrants (out-migrants) from permanent residence"),
-    "IN010080": ("intl_net", "Net migration"),
+    "IN010078": ("migr_in", "Immigrants (in-migrants) on permanent residence"),
+    "IN010079": ("migr_out", "Emigrants (out-migrants) from permanent residence"),
+    "IN010080": ("migr_net", "Net migration"),
     "IN010082": ("total_change", "Total increase of population"),
 }
 
@@ -577,7 +601,10 @@ def run() -> pl.DataFrame:
         "population": 1,
         "avg_wage_eur": 1,
         "total_change": 1,
-        "intl_out": 1,
+        # The hero and the mirror comparison both read this at national level.
+        "migr_out": 22,
+        "births_live": 1,
+        "natural_increase": 1,
     }
     counts = dict(df.group_by("metric").len().iter_rows())
     missing = {

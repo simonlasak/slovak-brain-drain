@@ -37,23 +37,23 @@
             <h3 style="margin: 0; color: #2d6a4f;">[GREEN] No ambiguous keys (a dropped dimension collapses rows)</h3>
             <p style="margin: 4px 0; font-style: italic;">PASS: every row uniquely keyed</p>
             <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
-                <li>section1_internal.parquet: 67,949 rows, all keys unique</li><li>section2_corridor.parquet: 978 rows, all keys unique</li><li>section3_diaspora.parquet: 4,980 rows, all keys unique</li>
+                <li>section1_internal.parquet: 70,061 rows, all keys unique</li><li>section2_corridor.parquet: 978 rows, all keys unique</li><li>section3_diaspora.parquet: 4,980 rows, all keys unique</li>
             </ul>
         </div>
         
         <div style="border-left: 4px solid #2d6a4f; background: #d8f3dc; padding: 12px 16px; margin: 12px 0; border-radius: 4px;">
-            <h3 style="margin: 0; color: #2d6a4f;">[GREEN] Component identity (natural increase + net migration = total change)</h3>
-            <p style="margin: 4px 0; font-style: italic;">PASS: identity exact for all 2,097 year x geo observations</p>
+            <h3 style="margin: 0; color: #2d6a4f;">[GREEN] Metric definitions (each metric tied to an independent quantity)</h3>
+            <p style="margin: 4px 0; font-style: italic;">PASS: all four definition checks hold</p>
             <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
-                <li>natural_increase + intl_net = total_change to the unit, at every geo level. Confirms IN010076 is natural increase, not migration.</li>
+                <li>natural_increase == live_births - deaths for all 2,108 observations</li><li>migr_net == migr_in - migr_out for all 2,104 observations</li><li>national migr_out matches Eurostat migr_emi1ctz exactly for all 21 shared years (2004-2024): confirms the national level is international migration</li><li>migr_out at 'okres' sums to 11.5-29.4x the national figure, as expected: sub-national rows include internal moves</li><li>migr_out at 'oblast' sums to 4.7-10.7x the national figure, as expected: sub-national rows include internal moves</li><li>migr_out at 'kraj' sums to 6.0-14.0x the national figure, as expected: sub-national rows include internal moves</li>
             </ul>
         </div>
         
         <div style="border-left: 4px solid #e9c46a; background: #fff3cd; padding: 12px 16px; margin: 12px 0; border-radius: 4px;">
-            <h3 style="margin: 0; color: #e9c46a;">[YELLOW] Migration accounting (pop change vs births-deaths+migration)</h3>
-            <p style="margin: 4px 0; font-style: italic;">FLAGS: 11 observations</p>
+            <h3 style="margin: 0; color: #e9c46a;">[YELLOW] Population reconciles with total change (census re-basings excepted)</h3>
+            <p style="margin: 4px 0; font-style: italic;">PASS: only the 2011 and 2021 census re-basings break the identity</p>
             <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
-                <li>2007: actual change=4,457, computed=7,568, residual=-3,111 (70%)</li><li>2008: actual change=7,361, computed=11,482, residual=-4,121 (56%)</li><li>2011: actual change=-32,479, computed=12,066, residual=-44,545 (137%)</li><li>2012: actual change=11,876, computed=6,694, residual=5,182 (44%)</li><li>2016: actual change=4,903, computed=9,251, residual=-4,348 (89%)</li><li>2020: actual change=7,452, computed=2,088, residual=5,364 (72%)</li><li>2021: actual change=-8,603, computed=-14,369, residual=5,766 (67%)</li><li>2022: actual change=-14,558, computed=-5,738, residual=-8,820 (61%)</li><li>2023: actual change=-5,920, computed=-3,944, residual=-1,976 (33%)</li><li>2024: actual change=-4,105, computed=-5,054, residual=949 (23%)</li><li>2025: actual change=-5,236, computed=-9,892, residual=4,656 (89%)</li>
+                <li>identity exact to the person for 19 of 21 year transitions at national level</li><li>2010->2011 census re-basing: population moved -32,479 but flows explain +10,348. The -42,827 residual is the census correction, not a data error.</li><li>2020->2021 census re-basing: population moved -8,603 but flows explain +1,908. The -10,511 residual is the census correction, not a data error.</li>
             </ul>
         </div>
         
@@ -69,7 +69,7 @@
             <h3 style="margin: 0; color: #e9c46a;">[YELLOW] UN DESA vs OECD stock comparison</h3>
             <p style="margin: 4px 0; font-style: italic;">18 observations</p>
             <ul style="margin: 4px 0; padding-left: 20px; font-size: 0.9em;">
-                <li>2020 ESP: OECD=7,523 DESA=9,849 (31% diff)</li><li>2005 ISL: OECD=75 DESA=120 (60% diff)</li><li>2005 AUT: OECD=16,753 DESA=20,847 (24% diff)</li><li>1995 DNK: OECD=38 DESA=113 (197% diff)</li><li>2000 FIN: OECD=17 DESA=14 (18% diff)</li><li>2020 EST: OECD=137 DESA=177 (29% diff)</li><li>2005 DNK: OECD=188 DESA=502 (167% diff)</li><li>2010 HUN: OECD=5,235 DESA=22,121 (323% diff)</li><li>2020 MEX: OECD=54 DESA=117 (117% diff)</li><li>2020 DEU: OECD=52,000 DESA=60,815 (17% diff)</li><li>2015 GBR: OECD=95,000 DESA=76,005 (20% diff)</li><li>2020 ITA: OECD=1,095 DESA=10,611 (869% diff)</li><li>2005 FIN: OECD=37 DESA=68 (84% diff)</li><li>2015 DEU: OECD=42,000 DESA=35,425 (16% diff)</li><li>2000 MEX: OECD=23 DESA=34 (48% diff)</li><li>2015 TUR: OECD=524 DESA=308 (41% diff)</li><li>2020 TUR: OECD=364 DESA=428 (18% diff)</li><li>2010 GRC: OECD=510 DESA=914 (79% diff)</li>
+                <li>2020 EST: OECD=137 DESA=177 (29% diff)</li><li>2020 ESP: OECD=7,523 DESA=9,849 (31% diff)</li><li>1995 DNK: OECD=38 DESA=113 (197% diff)</li><li>2010 HUN: OECD=5,235 DESA=22,121 (323% diff)</li><li>2005 DNK: OECD=188 DESA=502 (167% diff)</li><li>2005 AUT: OECD=16,753 DESA=20,847 (24% diff)</li><li>2000 MEX: OECD=23 DESA=34 (48% diff)</li><li>2005 ISL: OECD=75 DESA=120 (60% diff)</li><li>2015 TUR: OECD=524 DESA=308 (41% diff)</li><li>2015 DEU: OECD=42,000 DESA=35,425 (16% diff)</li><li>2000 FIN: OECD=17 DESA=14 (18% diff)</li><li>2005 FIN: OECD=37 DESA=68 (84% diff)</li><li>2020 MEX: OECD=54 DESA=117 (117% diff)</li><li>2015 GBR: OECD=95,000 DESA=76,005 (20% diff)</li><li>2020 ITA: OECD=1,095 DESA=10,611 (869% diff)</li><li>2020 DEU: OECD=52,000 DESA=60,815 (17% diff)</li><li>2010 GRC: OECD=510 DESA=914 (79% diff)</li><li>2020 TUR: OECD=364 DESA=428 (18% diff)</li>
             </ul>
         </div>
         

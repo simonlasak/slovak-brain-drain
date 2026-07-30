@@ -1,11 +1,19 @@
 """
 Stage 3: Validate - Cross-source sanity checks.
 
-Runs 5 invariant checks against the processed parquet files and produces
-an HTML report at pipeline/validate/report.html with green/yellow/red severity.
+Runs invariant checks against the processed parquet files and produces an HTML
+report at pipeline/validate/report.html with green/yellow/red severity.
+
+A note on what makes a check worth having: an assertion that cannot fail is not
+a check. The first version of check_metric_definitions asserted
+natural_increase + migr_net = total_change, which SUSR derives inside the same
+cube, so it held by construction whatever we named the three metrics. Prefer
+assertions that tie a metric to a DIFFERENT indicator, a different geographic
+level, or a different publisher.
 """
 from __future__ import annotations
 
+import gzip
 import json
 import logging
 from dataclasses import dataclass, field
@@ -17,7 +25,45 @@ log = logging.getLogger(__name__)
 
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 PROCESSED = REPO_ROOT / "data" / "processed"
+RAW_EUROSTAT = REPO_ROOT / "data" / "raw" / "eurostat"
 REPORT_PATH = REPO_ROOT / "pipeline" / "validate" / "report.html"
+
+
+def _eurostat_sk_emigration() -> dict[int, float]:
+    """Total emigration from Slovakia per year, per Eurostat migr_emi1ctz.
+
+    An independent publisher for the same quantity SUSR reports as IN010079 at
+    the national level. Returns {} if the file is absent so the caller can report
+    that rather than crash.
+    """
+    path = RAW_EUROSTAT / "migr_emi1ctz.tsv.gz"
+    if not path.exists():
+        return {}
+    out: dict[int, float] = {}
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        header = fh.readline().rstrip("\n").split("\t")
+        dims = header[0].split("\\")[0].split(",")
+        years = [int(h.strip()) for h in header[1:] if h.strip()]
+        for line in fh:
+            if not line.strip():
+                continue
+            cells = line.rstrip("\n").split("\t")
+            row = dict(zip(dims, cells[0].split(",")))
+            if not (row.get("geo") == "SK" and row.get("citizen") == "TOTAL"
+                    and row.get("age") == "TOTAL" and row.get("sex") == "T"
+                    and row.get("unit") == "NR"):
+                continue
+            for year, raw in zip(years, cells[1:]):
+                token = raw.strip()
+                if not token or token.startswith(":"):
+                    continue
+                number = token.split(" ")[0].replace(",", "")
+                try:
+                    out[year] = float(number)
+                except ValueError:
+                    continue
+            break
+    return out
 
 
 @dataclass
@@ -72,130 +118,220 @@ def check_population_consistency() -> CheckResult:
     )
 
 
-def check_migration_accounting() -> CheckResult:
-    """pop[t] = pop[t-1] + births - deaths + intl_net + internal_net (approx)."""
+def check_population_reconciles() -> CheckResult:
+    """pop[Y+1] - pop[Y] == total_change[Y], except at census re-basings.
+
+    REPLACES check_migration_accounting, which reported 11 breaches at the
+    national level. Those breaches were an artefact of the check, not of the
+    data. Two defects:
+
+    1. OFF BY ONE YEAR. `population` is dated 1 JANUARY, and total_change for
+       year Y is the change DURING Y, so it reconciles against
+       pop[Y+1] - pop[Y]. The old check compared it against pop[Y] - pop[Y-1],
+       i.e. each year's flows against the PREVIOUS year's change. That alone
+       produced 9 of the 11 breaches, with residuals as large as 8,638 in years
+       where the correctly-aligned identity is exact to the person.
+    2. WRONG BIRTH SERIES. It used `births` (IN010054, all births) where SUSR
+       computes natural increase from live births (IN010106), a further ~180/yr.
+
+    Correctly aligned, the identity is exact for every year except two, and both
+    are real: the 2011 and 2021 census re-basings. SUSR re-anchors the population
+    series to each census without restating the flow components, so the residual
+    IS the census correction. Those two are reported as yellow, with the size of
+    the correction, because they are a documented property of the source that a
+    reader of any long time series needs to know about.
+    """
     df = pl.read_parquet(PROCESSED / "section1_internal.parquet")
 
-    pop = df.filter(
-        (pl.col("metric") == "population") &
-        (pl.col("age_bracket") == "all") &
-        (pl.col("education") == "all") &
-        (pl.col("geo_level") == "nation") &
-        (pl.col("geo_code") == "SK0")
-    ).sort("year")
+    def series(metric: str) -> dict[int, float]:
+        f = df.filter(
+            (pl.col("metric") == metric)
+            & (pl.col("geo_level") == "nation")
+            & (pl.col("age_bracket") == "all")
+            & (pl.col("education") == "all")
+        )
+        return {r["year"]: r["value"] for r in f.select("year", "value").iter_rows(named=True)}
 
-    births = df.filter(
-        (pl.col("metric") == "births") & (pl.col("geo_code") == "SK0")
-    ).sort("year")
+    pop = series("population")
+    total_change = series("total_change")
 
-    deaths = df.filter(
-        (pl.col("metric") == "deaths") & (pl.col("geo_code") == "SK0")
-    ).sort("year")
+    # Years where SUSR re-anchors the population series to a census. The flow
+    # components are not restated, so the identity cannot close across them.
+    CENSUS_REBASE_YEARS = {2010: 2011, 2020: 2021}
 
-    intl_net = df.filter(
-        (pl.col("metric") == "intl_net") & (pl.col("geo_code") == "SK0")
-    ).sort("year")
-
-    details = []
+    details: list[str] = []
     worst = "green"
+    exact = 0
+    unexplained = 0
 
-    pop_dict = {r["year"]: r["value"] for r in pop.iter_rows(named=True)}
-    births_dict = {r["year"]: r["value"] for r in births.iter_rows(named=True)}
-    deaths_dict = {r["year"]: r["value"] for r in deaths.iter_rows(named=True)}
-    intl_dict = {r["year"]: r["value"] for r in intl_net.iter_rows(named=True)}
-
-    for year in range(2005, 2026):
-        if year not in pop_dict or (year - 1) not in pop_dict:
+    for year in sorted(total_change):
+        if year not in pop or (year + 1) not in pop:
             continue
-        actual_change = pop_dict[year] - pop_dict[year - 1]
-        b = births_dict.get(year, 0)
-        d = deaths_dict.get(year, 0)
-        m = intl_dict.get(year, 0)
-        expected_change = b - d + m
-
-        if abs(actual_change) > 0:
-            residual = actual_change - expected_change
-            pct = abs(residual) / abs(actual_change) * 100 if actual_change != 0 else 0
-            if pct > 20:
-                details.append(f"{year}: actual change={actual_change:,.0f}, computed={expected_change:,.0f}, residual={residual:,.0f} ({pct:.0f}%)")
+        observed = pop[year + 1] - pop[year]
+        residual = observed - total_change[year]
+        if abs(residual) <= 0.5:
+            exact += 1
+            continue
+        if year in CENSUS_REBASE_YEARS:
+            details.append(
+                f"{year}->{CENSUS_REBASE_YEARS[year]} census re-basing: population moved "
+                f"{observed:+,.0f} but flows explain {total_change[year]:+,.0f}. The "
+                f"{residual:+,.0f} residual is the census correction, not a data error."
+            )
+            if worst == "green":
                 worst = "yellow"
+            continue
+        unexplained += 1
+        worst = "red"
+        details.append(
+            f"{year}: population moved {observed:+,.0f}, total_change says "
+            f"{total_change[year]:+,.0f}, residual {residual:+,.0f} and this year is "
+            "not a known census re-basing"
+        )
 
-    if not details:
-        details.append("Migration accounting holds within 20% for all years at SR level")
+    details.insert(
+        0,
+        f"identity exact to the person for {exact} of {exact + unexplained + len(CENSUS_REBASE_YEARS)} "
+        "year transitions at national level",
+    )
 
     return CheckResult(
-        name="Migration accounting (pop change vs births-deaths+migration)",
+        name="Population reconciles with total change (census re-basings excepted)",
         severity=worst,
-        summary=f"{'PASS' if worst == 'green' else 'FLAGS'}: {len(details)} observations",
+        summary=("PASS: only the 2011 and 2021 census re-basings break the identity"
+                 if worst != "red" else
+                 f"FAIL: {unexplained} unexplained break(s) in the population identity"),
         details=details,
     )
 
 
-def check_component_identity() -> CheckResult:
-    """total_change must equal natural_increase + intl_net exactly, everywhere.
+def check_metric_definitions() -> CheckResult:
+    """Tie each named metric to an INDEPENDENT quantity, not to its own siblings.
 
-    SUSR publishes the components and the total as separate indicators of the
-    same cube, so this identity is a property of the source, not an estimate. It
-    is the check that names each indicator correctly: IN010076 was mapped to
-    `internal_net`, implying net internal migration, when it is natural increase.
-    A metric named after what we wanted rather than what the indicator is cannot
-    be caught downstream, but it cannot survive this identity.
+    WHY NOT THE OBVIOUS IDENTITY. natural_increase + migr_net = total_change is
+    tautological: SUSR derives all three inside the same cube, so the identity
+    holds by construction no matter what we NAME them. Verified directly against
+    the raw cube - swapping the labels on any two of the three would leave the
+    sum untouched. A check that cannot fail cannot catch the next mislabelling,
+    so it is not a check.
 
-    Note this is exact, unlike check_migration_accounting, which compares against
-    the `births` series (IN010054, all births) where the natural-increase
-    indicator uses live births (IN010106). That difference is why the looser
-    check carries a permanent residual.
+    These four assertions can each fail. Each pins one metric to a quantity
+    derived from a DIFFERENT indicator or a different source:
+
+    1. natural_increase == live_births - deaths. Ties it to the birth and death
+       series. Note it is LIVE births (IN010106), not all births (IN010054);
+       the two differ by ~180/yr nationally, which is one of the two reasons
+       the old check_migration_accounting carried a permanent residual.
+    2. migr_net == migr_in - migr_out. Ties the net series to its own gross
+       components rather than to the total.
+    3. National migr_out == Eurostat migr_emi1ctz for SK. A genuinely external
+       source. This is what confirms that at geo_level='nation' the migration
+       family really is INTERNATIONAL.
+    4. Sub-national migration must NOT tile to the national figure. If a future
+       transform made it tile, the series would have silently become something
+       else. The okres sum currently runs 8-12x the national figure because
+       below the national level these indicators count moves across that unit's
+       boundary, internal moves included.
     """
     df = pl.read_parquet(PROCESSED / "section1_internal.parquet")
+    details: list[str] = []
+    worst = "green"
+
+    def fail(msg: str) -> None:
+        nonlocal worst
+        worst = "red"
+        details.append(msg)
 
     wide = (df
-        .filter(pl.col("metric").is_in(["natural_increase", "intl_net", "total_change"]))
+        .filter(pl.col("metric").is_in(
+            ["natural_increase", "migr_in", "migr_out", "migr_net",
+             "births_live", "deaths", "total_change"]))
         .pivot(on="metric", index=["year", "geo_level", "geo_code"], values="value")
     )
-    needed = {"natural_increase", "intl_net", "total_change"}
-    missing_cols = needed - set(wide.columns)
-    if missing_cols:
-        return CheckResult(
-            name="Component identity (natural increase + net migration = total change)",
-            severity="red",
-            summary=f"FAIL: metrics absent from section1: {sorted(missing_cols)}",
-            details=[
-                "Cannot verify the identity because a component is missing. If an "
-                "indicator was renamed, the rename dropped a quantity the identity "
-                "depends on."
-            ],
+
+    # 1. natural_increase == live births - deaths
+    if {"births_live", "deaths", "natural_increase"} <= set(wide.columns):
+        sub = wide.drop_nulls(subset=["births_live", "deaths", "natural_increase"])
+        bad = sub.filter(
+            (pl.col("births_live") - pl.col("deaths") - pl.col("natural_increase")).abs() > 0.5
         )
+        if len(bad):
+            fail(f"natural_increase != live_births - deaths for {len(bad):,} of {len(sub):,} observations")
+        else:
+            details.append(f"natural_increase == live_births - deaths for all {len(sub):,} observations")
+    else:
+        fail("cannot check natural_increase: births_live, deaths or natural_increase missing")
 
-    checked = wide.drop_nulls(subset=list(needed)).with_columns(
-        (pl.col("natural_increase") + pl.col("intl_net") - pl.col("total_change")).abs().alias("resid")
-    )
-    bad = checked.filter(pl.col("resid") > 0.5)
-
-    if len(bad) == 0:
-        return CheckResult(
-            name="Component identity (natural increase + net migration = total change)",
-            severity="green",
-            summary=f"PASS: identity exact for all {len(checked):,} year x geo observations",
-            details=[
-                "natural_increase + intl_net = total_change to the unit, at every "
-                "geo level. Confirms IN010076 is natural increase, not migration.",
-            ],
+    # 2. migr_net == migr_in - migr_out
+    if {"migr_in", "migr_out", "migr_net"} <= set(wide.columns):
+        sub = wide.drop_nulls(subset=["migr_in", "migr_out", "migr_net"])
+        bad = sub.filter(
+            (pl.col("migr_in") - pl.col("migr_out") - pl.col("migr_net")).abs() > 0.5
         )
+        if len(bad):
+            fail(f"migr_net != migr_in - migr_out for {len(bad):,} of {len(sub):,} observations")
+        else:
+            details.append(f"migr_net == migr_in - migr_out for all {len(sub):,} observations")
+    else:
+        fail("cannot check migr_net: migr_in, migr_out or migr_net missing")
 
-    details = [
-        f"{r['geo_code']} {r['year']}: natural={r['natural_increase']:,.0f} "
-        f"net_mig={r['intl_net']:,.0f} total={r['total_change']:,.0f} "
-        f"residual={r['resid']:,.0f}"
-        for r in bad.head(8).iter_rows(named=True)
-    ]
+    # 3. National emigration must match Eurostat, an independent source.
+    euro = _eurostat_sk_emigration()
+    nat_out = {
+        r["year"]: r["value"]
+        for r in df.filter(
+            (pl.col("metric") == "migr_out") & (pl.col("geo_level") == "nation")
+        ).select("year", "value").iter_rows(named=True)
+    }
+    shared = sorted(set(euro) & set(nat_out))
+    if not shared:
+        fail("no overlapping years between national migr_out and Eurostat migr_emi1ctz")
+    else:
+        mism = [y for y in shared if abs(euro[y] - nat_out[y]) > 0.5]
+        if mism:
+            fail(
+                f"national migr_out disagrees with Eurostat migr_emi1ctz in {len(mism)} "
+                f"of {len(shared)} shared years, e.g. "
+                + ", ".join(f"{y}: SUSR={nat_out[y]:,.0f} vs Eurostat={euro[y]:,.0f}" for y in mism[:3])
+            )
+        else:
+            details.append(
+                f"national migr_out matches Eurostat migr_emi1ctz exactly for all "
+                f"{len(shared)} shared years ({min(shared)}-{max(shared)}): confirms "
+                "the national level is international migration"
+            )
+
+    # 4. Sub-national migration must NOT tile to the national total.
+    for level in ("okres", "oblast", "kraj"):
+        nat = df.filter((pl.col("metric") == "migr_out") & (pl.col("geo_level") == "nation"))
+        sub = df.filter((pl.col("metric") == "migr_out") & (pl.col("geo_level") == level))
+        if len(nat) == 0 or len(sub) == 0:
+            continue
+        n_tot = nat.group_by("year").agg(pl.col("value").sum().alias("n"))
+        s_tot = sub.group_by("year").agg(pl.col("value").sum().alias("s"))
+        j = n_tot.join(s_tot, on="year").filter(pl.col("n") > 0)
+        if len(j) == 0:
+            continue
+        ratios = (j["s"] / j["n"]).to_list()
+        if max(ratios) < 1.5:
+            fail(
+                f"migr_out at geo_level='{level}' now tiles to the national total "
+                f"(max ratio {max(ratios):.2f}x). It previously ran far above it "
+                "because sub-national rows count internal moves too. Either the "
+                "source changed meaning or the transform started filtering."
+            )
+        else:
+            details.append(
+                f"migr_out at '{level}' sums to {min(ratios):.1f}-{max(ratios):.1f}x the "
+                "national figure, as expected: sub-national rows include internal moves"
+            )
+
     return CheckResult(
-        name="Component identity (natural increase + net migration = total change)",
-        severity="red",
-        summary=f"FAIL: identity broken for {len(bad):,} of {len(checked):,} observations",
-        details=details + [
-            "An indicator is mapped to the wrong metric name, or two indicators "
-            "were collapsed onto one name.",
-        ],
+        name="Metric definitions (each metric tied to an independent quantity)",
+        severity=worst,
+        summary=("PASS: all four definition checks hold" if worst == "green"
+                 else "FAIL: a metric does not measure what its name says"),
+        details=details,
     )
 
 
@@ -532,8 +668,8 @@ def run() -> list[CheckResult]:
         check_population_consistency(),
         check_geo_levels_tile(),
         check_no_ambiguous_keys(),
-        check_component_identity(),
-        check_migration_accounting(),
+        check_metric_definitions(),
+        check_population_reconciles(),
         check_cz_corridor_crosscheck(),
         check_un_desa_vs_oecd(),
         check_eurostat_vs_susr(),

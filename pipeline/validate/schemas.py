@@ -54,17 +54,22 @@ class Education(str, Enum):
 class Section1Metric(str, Enum):
     population = "population"
     births = "births"
+    births_live = "births_live"
     deaths = "deaths"
-    internal_in = "internal_in"
-    internal_out = "internal_out"
-    # No internal-migration net metric: om7011rr publishes only TOTAL net
-    # migration (IN010080 -> intl_net), so internal and international cannot be
-    # separated from it. `internal_net` previously existed here and was fed by
-    # IN010076, which is natural increase.
+    # `internal_in`, `internal_out` and `internal_net` are DELIBERATELY ABSENT.
+    # No SUSR cube we hold separates internal from international migration:
+    # every indicator of all 13 held cubes was searched, and only om7011rr,
+    # om7013rr and om7104rr carry migration at all, each with the same
+    # undifferentiated family. internal_in/out were declared here and in
+    # 04-spec.md and nothing ever produced them, because the source cannot.
+    # internal_net did exist, fed by IN010076, which is natural increase.
     natural_increase = "natural_increase"
-    intl_in = "intl_in"
-    intl_out = "intl_out"
-    intl_net = "intl_net"
+    # One migration family whose meaning depends on geo_level: international at
+    # geo_level='nation' (verified against Eurostat migr_emi1ctz), moves across
+    # the unit's own boundary (internal included) at every sub-national level.
+    migr_in = "migr_in"
+    migr_out = "migr_out"
+    migr_net = "migr_net"
     total_change = "total_change"
     avg_wage_eur = "avg_wage_eur"
     unemployment_rate = "unemployment_rate"
