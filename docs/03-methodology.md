@@ -42,6 +42,27 @@ Note also that Ukrainians under temporary protection are EXCLUDED from this seri
 
 **WARNING on netting:** do not present `intl_net` anywhere. `intl_in` and `intl_out` are collected through different institutions (municipal registration offices for nationals, Foreign Police for foreigners) with different enforcement, so the inflow register is near-complete and the outflow register is a severe undercount. Their difference is an artefact of that asymmetry, not a migration balance. Registered outflow is a lower bound and should be shown as a rate, not netted.
 
+## Which flags are evidence and which restate a document
+
+`is_interpolated` and `is_proxy` look like data. Two of their populations are not,
+and copy must not cite them as if the file had discovered something.
+
+| Population | Provenance | Citable as evidence? |
+|---|---|---|
+| OECD rows, §3 | Mapped from the file's own `OBS_STATUS` column (`E`, `I`, `L` → true) | **Yes.** Per-observation, from the publisher. |
+| UN DESA rows, §3 | **Constant `True`.** The bilateral matrix has no per-observation status column. Set because the 2020 revision Methodology Report section 6 says every reference year is interpolated or extrapolated. | **No.** Cite the report directly. |
+| §1 and §2 rows | `None` throughout. No interpolation register was ever built. | No. Absence of a flag, not evidence of a direct observation. |
+| `is_proxy`, §2 age structure | **Constant `True`**, with `proxy_note` explaining that EU27-in-CZ substitutes for a Slovak age profile that ČSÚ does not publish. | **No.** It records our own substitution. |
+
+The rule: a flag set from a document is provenance-by-assertion. Writing "the data
+flags all seven reference years as interpolated" would be circular, because we set
+the flag from the claim we would be using it to support. Say instead that UN DESA
+states this in its methodology report, and name the report.
+
+`data_type` in §3 is different and **is** citable: it is read from column 4 of the
+bilateral matrix, "Type of data of destination", where `B` is place of birth and
+`C` is foreign citizenship.
+
 ## Interpolation strategy
 
 Where data exists annually, no interpolation. Where it doesn't:

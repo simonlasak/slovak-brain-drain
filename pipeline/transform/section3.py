@@ -370,12 +370,18 @@ def transform_un_desa() -> pl.DataFrame:
                 "education": "all",
                 "metric": "stock",
                 "value": value,
-                # Per the 2020 revision Methodology Report section 6, every one
-                # of the seven reference years is produced by interpolation or
-                # extrapolation between whatever empirical points exist for the
-                # corridor. None of these is a direct observation, so the flag
-                # is true throughout, and true independently of the I code,
-                # which marks model-imputed countries specifically.
+                # NOT DERIVED FROM THE FILE. This is a constant, set because the
+                # 2020 revision Methodology Report section 6 states that every
+                # reference year is produced by interpolation or extrapolation.
+                # The bilateral matrix itself carries no per-observation status
+                # column, so nothing here can confirm or contradict it: the flag
+                # restates a document.
+                #
+                # Consequence for copy: a claim that "the parquet flags all seven
+                # reference years as interpolated" is circular. Cite the
+                # methodology report directly instead. Kept as True because it is
+                # the right value and downstream display logic depends on it, but
+                # it is provenance-by-assertion, not evidence.
                 "is_interpolated": True,
                 "source": "un_desa_bilateral_2020",
                 "measure_code": None,
