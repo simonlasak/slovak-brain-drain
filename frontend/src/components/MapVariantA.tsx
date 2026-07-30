@@ -42,12 +42,19 @@ const IDN3_TO_SK: Record<number, string> = {
 
 // Structural step metadata (which metric colours the map at each scroll step).
 // The step title/description text is bilingual and supplied via props.
+//
+// There is no international-migration step. intl_net is total net migration, not
+// international: internal moves cancel in the difference, so it is identical at
+// every geographic level. It is also the difference between a near-complete
+// inflow register (Foreign Police) and an unenforced outflow register (municipal
+// offices), so its sign is an artefact of that asymmetry. intl_out cannot stand
+// in for it either: below the national level it counts moves out of the unit,
+// including moves to other Slovak districts.
 const STEPS: { metric: string | null; year: number }[] = [
   { metric: null, year: 2024 },
   { metric: 'population', year: 2024 },
   { metric: 'cohort_retention', year: 2024 },
   { metric: 'total_change', year: 2024 },
-  { metric: 'intl_net', year: 2024 },
 ];
 
 // How much the map may be scaled down (in px of extra bottom padding) to clear

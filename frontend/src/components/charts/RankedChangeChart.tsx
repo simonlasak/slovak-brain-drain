@@ -280,8 +280,9 @@ export function RankedChangeChart({ animated = true }: { animated?: boolean }) {
         ORDER BY pct_change DESC
       `)) as { geo_name: string; geo_code: string; pct_change: number }[];
 
-      const filtered = rows.filter(r => r.geo_code !== 'SK_CAP');
-      setData(filtered.map(r => ({ geo_name: r.geo_name, pct_change: r.pct_change })));
+      // geo_level = 'okres' already excludes the SK_CAP aggregate, which now
+      // carries geo_level = 'okres_aggregate'. No row-level filter needed.
+      setData(rows.map(r => ({ geo_name: r.geo_name, pct_change: r.pct_change })));
     }
     load();
   }, []);

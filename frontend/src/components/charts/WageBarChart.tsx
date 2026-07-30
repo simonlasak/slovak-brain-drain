@@ -17,17 +17,19 @@ interface TooltipData {
   wage_eur: number;
 }
 
-const NATIONAL_AVG = 1524;
+// The reference line is read from the same parquet as the bars, not hardcoded.
+// It was previously a literal that drifted from the series it was drawn against.
+const WAGE_YEAR = 2024;
 
-function colorFor(value: number): string {
-  return value >= NATIONAL_AVG ? 'var(--accent-secondary)' : 'var(--accent-primary)';
+function colorFor(value: number, nationalAvg: number): string {
+  return value >= nationalAvg ? 'var(--accent-secondary)' : 'var(--accent-primary)';
 }
 
 function shortName(name: string): string {
   return name.replace('Region of ', '');
 }
 
-function Chart({ data, width, height, animated }: { data: Row[]; width: number; height: number; animated: boolean }) {
+function Chart({ data, nationalAvg, width, height, animated }: { data: Row[]; nationalAvg: number; width: number; height: number; animated: boolean }) {
   const [tooltip, setTooltip] = useState<TooltipData | null>(null);
   const margin = { top: 24, right: 56, bottom: 40, left: 160 };
   const innerW = width - margin.left - margin.right;
@@ -43,7 +45,7 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
     padding: 0.25,
   });
 
-  const refX = xScale(NATIONAL_AVG);
+  const refX = xScale(nationalAvg);
   const barH = yScale.bandwidth();
 
   return (
@@ -75,7 +77,7 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
                 y={y}
                 width={w}
                 height={barH}
-                fill={colorFor(d.wage_eur)}
+                fill={colorFor(d.wage_eur, nationalAvg)}
                 opacity={isHovered ? 1 : 0.9}
                 rx={2}
                 style={{
@@ -128,7 +130,7 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
           fill="var(--text-secondary)"
           textAnchor="end"
         >
-          National average 1,524 EUR
+          National average {nationalAvg.toLocaleString('en')} EUR
         </text>
 
         {tooltip && (() => {
@@ -183,31 +185,47 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
 
 export function WageBarChart({ animated = true }: { animated?: boolean }) {
   const [data, setData] = useState<Row[]>([]);
+  const [nationalAvg, setNationalAvg] = useState<number | null>(null);
 
   useEffect(() => {
     async function load() {
       await registerParquet('s1.parquet', '/data/section1_internal.parquet');
-      const rows = (await query(`
-        SELECT geo_name, value AS wage_eur
-        FROM 's1.parquet'
-        WHERE metric = 'avg_wage_eur'
-          AND geo_level = 'kraj'
-          AND year = 2024
-        ORDER BY value DESC
-      `)) as Row[];
+      const [krajRows, natRows] = await Promise.all([
+        query(`
+          SELECT geo_name, value AS wage_eur
+          FROM 's1.parquet'
+          WHERE metric = 'avg_wage_eur'
+            AND geo_level = 'kraj'
+            AND year = ${WAGE_YEAR}
+          ORDER BY value DESC
+        `),
+        query(`
+          SELECT value AS wage_eur
+          FROM 's1.parquet'
+          WHERE metric = 'avg_wage_eur'
+            AND geo_level = 'national'
+            AND year = ${WAGE_YEAR}
+        `),
+      ]);
+      const rows = krajRows as unknown as Row[];
+      const nat = natRows as unknown as { wage_eur: number }[];
       setData(rows);
+      // Both series must be the same reference period. If the national figure
+      // is absent, render nothing rather than a chart whose reference line is
+      // invented.
+      if (nat.length === 1) setNationalAvg(Number(nat[0].wage_eur));
     }
     load();
   }, []);
 
-  if (data.length === 0) return null;
+  if (data.length === 0 || nationalAvg === null) return null;
 
   const height = 24 + 40 + data.length * 36;
 
   return (
     <div style={{ width: '100%', height }}>
       <ParentSize>
-        {({ width }) => <Chart data={data} width={width} height={height} animated={animated} />}
+        {({ width }) => <Chart data={data} nationalAvg={nationalAvg} width={width} height={height} animated={animated} />}
       </ParentSize>
     </div>
   );

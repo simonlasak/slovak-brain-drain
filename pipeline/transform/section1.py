@@ -193,10 +193,26 @@ def transform_population_movement() -> pl.DataFrame:
     return pl.DataFrame(all_rows)
 
 
+# pr0204qs is a QUARTERLY cube. Its quarter dimension carries both single
+# quarters and cumulative periods, and "1. Q." sorts first. Taking the first row
+# per year therefore yields Q1, not the annual average: for 2024 that is 1,447
+# EUR against an annual 1,524. The regional cube np3112qr publishes only the
+# annual aggregate ("1Q4Q"), so a Q1 national figure was being compared against
+# annual regional figures. Select the cumulative full-year period explicitly.
+WAGE_ANNUAL_PERIOD = "1. - 4. Q."
+WAGE_NOMINAL_UNIT = "EUR"
+
+
 def transform_wages() -> pl.DataFrame:
-    """Parse pr0204qs — average monthly wage for the whole economy (national)."""
+    """Parse pr0204qs — average monthly wage for the whole economy (national).
+
+    Takes the full-year cumulative period only. A year whose fourth quarter is
+    not yet published has no annual figure and is skipped rather than falling
+    back to a partial-year value that would not be comparable to the others.
+    """
     cube_dir = RAW_SUSR / "pr0204qs"
     all_rows = []
+    missing_annual = []
 
     for fpath in sorted(cube_dir.glob("pr0204qs_*.json")):
         if "manifest" in fpath.name:
@@ -204,24 +220,43 @@ def transform_wages() -> pl.DataFrame:
         year = int(fpath.stem.split("_")[-1])
         parsed = _parse_jsonstat_cube(fpath)
 
-        for row in parsed:
-            val = row.get("_value")
-            if val is None or val == 0:
-                continue
-            all_rows.append({
-                "year": year,
-                "geo_level": "national",
-                "geo_code": "SK0",
-                "geo_name": "Slovenská republika",
-                "age_bracket": "all",
-                "sex": "all",
-                "education": "all",
-                "metric": "avg_wage_eur",
-                "value": float(val),
-                "is_interpolated": None,
-                "source": "susr_pr0204qs",
-            })
-            break  # one value per year (national average)
+        annual = [
+            row for row in parsed
+            if row["_labels"].get("pr0204qs_stv") == WAGE_ANNUAL_PERIOD
+            and row["_labels"].get("pr0204qs_mj") == WAGE_NOMINAL_UNIT
+            and row.get("_value") not in (None, 0)
+        ]
+        if not annual:
+            if parsed:
+                missing_annual.append(year)
+            continue
+        if len(annual) > 1:
+            raise ValueError(
+                f"section1: pr0204qs_{year} has {len(annual)} rows matching "
+                f"period={WAGE_ANNUAL_PERIOD} unit={WAGE_NOMINAL_UNIT}; expected "
+                "exactly one. The cube's dimensions changed, so the selection is "
+                "no longer unambiguous."
+            )
+
+        all_rows.append({
+            "year": year,
+            "geo_level": "national",
+            "geo_code": "SK0",
+            "geo_name": "Slovenská republika",
+            "age_bracket": "all",
+            "sex": "all",
+            "education": "all",
+            "metric": "avg_wage_eur",
+            "value": float(annual[0]["_value"]),
+            "is_interpolated": None,
+            "source": "susr_pr0204qs",
+        })
+
+    if missing_annual:
+        log.warning(
+            "transform.section1.wages: no full-year figure for %s, skipped",
+            missing_annual,
+        )
 
     return pl.DataFrame(all_rows)
 
@@ -252,6 +287,13 @@ def transform_wages_regional() -> pl.DataFrame:
         year = int(fpath.stem.split("_")[-1])
         parsed = _parse_jsonstat_cube(fpath)
 
+        # This cube publishes only the annual aggregate ("1Q4Q") and a single
+        # EUR indicator, so one row per kraj per year. If a quarterly breakdown
+        # or a second indicator ever appears, the rows below would silently
+        # duplicate each kraj and the chart would show whichever survived the
+        # last write. Fail instead.
+        seen_kraj: set[str] = set()
+
         for row in parsed:
             geo_code = row.get("nuts13", "")
             if geo_code not in KRAJ_CODES:
@@ -259,6 +301,14 @@ def transform_wages_regional() -> pl.DataFrame:
             val = row.get("_value")
             if val is None:
                 continue
+            if geo_code in seen_kraj:
+                raise ValueError(
+                    f"section1: np3112qr_{year} has more than one value for "
+                    f"{geo_code}. The cube gained a dimension (period or "
+                    "indicator), so the annual EUR figure must now be selected "
+                    "explicitly, as transform_wages does for pr0204qs."
+                )
+            seen_kraj.add(geo_code)
             geo_name = row["_labels"].get("nuts13", KRAJ_CODES[geo_code])
             all_rows.append({
                 "year": year,
@@ -531,6 +581,26 @@ def run() -> pl.DataFrame:
             f"{missing}. Fix the derivation before writing; a parquet without "
             "these silently blanks rendered Section 1 content."
         )
+
+    # The national wage series is a quarterly cube reduced to one figure per
+    # year. Selecting the wrong period yields a plausible number that is not
+    # comparable to the regional series, which is annual only: the deployed
+    # chart drew its national reference line at Q1 2024 (1,447 EUR) while the
+    # bars were annual. Both series must agree at the national level, so check
+    # the national figure sits above the lowest kraj and below the highest.
+    wage = df.filter(pl.col("metric") == "avg_wage_eur")
+    nat = wage.filter(pl.col("geo_level") == "national")
+    kraj = wage.filter(pl.col("geo_level") == "kraj")
+    for year in sorted(set(nat["year"]) & set(kraj["year"])):
+        n = nat.filter(pl.col("year") == year)["value"][0]
+        k = kraj.filter(pl.col("year") == year)["value"]
+        if not (k.min() <= n <= k.max()):
+            raise ValueError(
+                f"section1 transform refusing to write: national average wage "
+                f"for {year} is {n:.0f} EUR but the eight kraj span "
+                f"{k.min():.0f}-{k.max():.0f}. The two series are on different "
+                "reference periods (pr0204qs is quarterly, np3112qr is annual)."
+            )
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     df.write_parquet(OUT_PATH)

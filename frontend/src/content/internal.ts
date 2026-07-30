@@ -85,7 +85,13 @@ const en: Section1Content = {
   h1: 'Where the country went',
 
   intro: [
-    'Slovakia has not been emptying evenly. While the headline number of Slovaks living abroad approaches 300,000, the population that remained has been redistributing itself with almost equal force. The same two decades that sent workers to Bratislava, Prague, and Vienna also rearranged the people who stayed behind, pulling them toward a single dominant node and draining the rest.',
+    // TODO(copy, needs Simon): the opening clause was cut, not rewritten. It
+    // said the headline number of Slovaks abroad "approaches 300,000", which
+    // traces to the same illustrative example in 07-editorial-content.md as the
+    // dead landing hero, not to any dataset. Section 3 has no publishable total
+    // to substitute yet, so the sentence now opens on the redistribution claim,
+    // which the rest of this section actually evidences.
+    'Slovakia has not been emptying evenly. The population that remained has been redistributing itself with almost equal force. The same two decades that sent workers to Bratislava, Prague, and Vienna also rearranged the people who stayed behind, pulling them toward a single dominant node and draining the rest.',
     'The clearest measure of that pull is what happened to Slovakia’s teenagers. Take every 15-to-19-year-old living in a district in 2004. Count how many 35-to-39-year-olds that same district holds in 2024. Across all 79 districts, the median answer is 89 percent: the typical Slovak district retains nine tenths of its young cohort by the time they reach their late thirties. But that median conceals a range that tells the whole story. Senec, in Bratislava’s commuter belt, registered 234 percent, meaning it more than doubled its teenage cohort as young adults moved in. Snina, in the Vihorlat uplands of northeastern Slovakia, kept 76 percent, meaning roughly one in four of the teenagers who grew up there had left and not been replaced by the time they would have turned 35.',
   ],
   callout1: { value: '89%', label: 'Median district cohort retention, 2004 to 2024' },
@@ -105,15 +111,20 @@ const en: Section1Content = {
   ],
 
   sub3: 'Districts that grew, districts that did not',
-  caption3: 'Total population change 2004 to 2025 by district. src: ŠÚ SR om7102rr.',
+  caption3: 'Total population change 2004 to 2025 by district. src: ŠÚ SR om7011rr.',
   bridge3: [
     'The indexed divergence since 2004 makes visible what district-level figures confirm in detail. Bratislava kraj is an economy on a different trajectory from the other seven. The distance that has opened between Bratislava and the rest is not merely a wage story; it is a population story, a tax-base story, and eventually a services story. Districts losing residents lose young residents first, which compounds over decades in ways that the current snapshot only partially captures.',
   ],
 
   sub4: 'Not a story of decline everywhere',
   caption4: 'Population indexed to 2004 = 100, by NUTS2 oblast. src: ŠÚ SR om7011rr.',
+  // TODO(copy, needs Simon): two sentences were cut from this paragraph rather
+  // than rewritten, so what remains is all previously approved wording. The cut
+  // material described a fourth scroll step that no longer exists and read a
+  // net international balance off intl_net, which is total net migration and
+  // must never be presented as international. The §2 handoff is preserved.
   bridge4: [
-    'The internal story has a threshold. Not all the departures from eastern and central districts are internal. The final scroll step maps net international migration by okres: which districts export people across Slovak borders, and which attract arrivals from abroad. Bratislava absorbs immigrants from other countries while eastern and central districts show consistent negative net international balances. The destinations for those outflows are the subject of the next section.',
+    'The internal story has a threshold. Not all the departures from eastern and central districts are internal. The destinations for those outflows are the subject of the next section.',
   ],
 
   closing: [
@@ -132,26 +143,26 @@ const en: Section1Content = {
       description:
         'Take every 15-19 year old living in a district in 2004. Twenty years later, how many 35-39 year olds does that same district have? Senec has 234% (it attracted people). Snina kept only 76% - one in four left and never came back. The median district loses 11% of each generation.',
     },
+    // TODO(copy, needs Simon): the final clause of this description was cut, not
+    // rewritten. It claimed only Bratislava and its suburban ring were growing.
+    // In 2024, 22 of 79 districts gained residents and 15 of those are outside
+    // Bratislava kraj, including ten in the east: Kosice-okolie is the second
+    // largest gainer in the country. A replacement clause needs approval.
     {
       title: 'Who is growing, who is shrinking',
       description:
-        'Annual population change in 2024. Blue districts gain residents; terracotta districts lose them. Only Bratislava and its immediate suburban ring are meaningfully growing.',
-    },
-    {
-      title: 'Where they go',
-      description:
-        'The internal story has a threshold. Bratislava absorbs arrivals from abroad; eastern and central districts show consistent negative net international balances. Where those outflows go is the subject of the next section.',
+        'Annual population change in 2024. Blue districts gain residents; terracotta districts lose them.',
     },
   ],
 
   sources: {
     map: {
       title: 'The internal migration map',
-      source: 'ŠÚ SR DataCube: om7102rr (population), om7007rr (cohort), om7011rr (change), migration balances. Boundaries: ŠÚ SR okresy (79 districts), simplified for web.',
+      source: 'ŠÚ SR DataCube: om7011rr (population, total change), om7007rr (age structure, behind cohort retention). Boundaries: ŠÚ SR okresy (79 districts), simplified for web.',
       derivation:
-        'Each scroll step recolours the same 79-district choropleth from a different 2024 metric. Cohort retention is the ratio of 35-39 year olds in 2024 to 15-19 year olds in 2004 for the same district. Diverging scales centre on 0 (change, net migration) or 100 (cohort retention).',
+        'Three scroll steps recolour the same 79-district choropleth from a different 2024 metric: resident population, cohort retention, and total population change over the year. Cohort retention is the ratio of 35-39 year olds in 2024 to 15-19 year olds in 2004 for the same district. Its diverging scale centres on 100, total change on 0.',
       caveat:
-        'Bratislava (SK_CAP) is excluded from the choropleth statistics to prevent its outlier values compressing the colour scale for the rest of the country.',
+        'All 79 districts are shown, including Bratislava’s five. Bratislava III and Senec are the strongest gainers on every step, so they stretch the upper end of each colour scale and compress the contrast among the losing districts. The map carries no international-migration step: the registered outflow series cannot be read at district level, because below the national level it counts moves out of the district including moves to other Slovak districts.',
     },
     cohort: {
       title: 'Cohort retention by district',
@@ -159,23 +170,23 @@ const en: Section1Content = {
       derivation:
         'For each of 79 districts: (population aged 35-39 in 2024) / (population aged 15-19 in 2004), expressed as a percent. Values above 100% mean the district gained more of that generation than it started with. Combines internal migration, international migration, and mortality; it is a net measure, not migration alone.',
       caveat:
-        'This is a synthetic cohort, not the same tracked individuals. It cannot separate people who moved from people who died, though at these ages mortality is small. Bratislava is omitted as an outlier.',
+        'This is a synthetic cohort, not the same tracked individuals. It cannot separate people who moved from people who died, though at these ages mortality is small. All 79 districts are shown, Bratislava’s five included: four of the five highest values in the country are Bratislava districts or Senec, so the top of the range is a commuter-belt effect rather than a national pattern.',
     },
     wage: {
       title: 'Average monthly wage by region',
       source: 'ŠÚ SR DataCube np3112qr, indicator E_PRIEM_NOM_MZDA (average nominal monthly earnings, EUR), annual aggregate.',
       derivation:
-        'Average gross nominal monthly wage for 2024, by kraj (NUTS3, 8 regions). The national average line (1,524 EUR) is the SU SR national series (pr0204qs) for the same year.',
+        'Average gross nominal monthly wage for 2024, by kraj (NUTS3, 8 regions). The national average line is the ŠÚ SR national series (pr0204qs), full-year cumulative period, for the same year. Both figures are read from the same file as the bars rather than written into the chart.',
       caveat:
         'Gross nominal wages, not adjusted for regional cost of living. Bratislava’s premium is somewhat smaller in real terms, but housing costs there are also the highest in the country.',
     },
     ranked: {
       title: 'Population change by district, 2004 to 2025',
-      source: 'ŠÚ SR DataCube om7102rr (population by district).',
+      source: 'ŠÚ SR DataCube om7011rr (population by district).',
       derivation:
         'Percent change in total resident population between 2004 and 2025 for each of 79 districts: 100 * (pop_2025 - pop_2004) / pop_2004. Districts sorted by change.',
       caveat:
-        'Resident population by registered address. Because emigrants often do not deregister, out-migration is understated: real decline in the eastern districts is likely steeper than shown. Bratislava is omitted as an outlier.',
+        'Resident population by registered address. Because emigrants often do not deregister, out-migration is understated: real decline in the eastern districts is likely steeper than shown. All 79 districts are shown, Bratislava’s five included.',
     },
     region: {
       title: 'Population trend by oblast, indexed',

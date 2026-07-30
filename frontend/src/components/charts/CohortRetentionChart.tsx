@@ -276,8 +276,9 @@ export function CohortRetentionChart({ animated = true }: { animated?: boolean }
         ORDER BY value DESC
       `)) as { geo_name: string; geo_code: string; retention_pct: number }[];
 
-      const filtered = rows.filter(r => r.geo_code !== 'SK_CAP');
-      setData(filtered.map(r => ({ geo_name: r.geo_name, retention_pct: r.retention_pct })));
+      // geo_level = 'okres' already excludes the SK_CAP aggregate, which now
+      // carries geo_level = 'okres_aggregate'. No row-level filter needed.
+      setData(rows.map(r => ({ geo_name: r.geo_name, retention_pct: r.retention_pct })));
     }
     load();
   }, []);

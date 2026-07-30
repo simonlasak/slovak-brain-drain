@@ -1,3 +1,14 @@
+<!--
+SUPERSEDED, NOT A RENDER SOURCE. src/content/internal.ts is what /internal
+renders; nothing imports this file. It is kept only as the drafting history of
+that prose.
+
+Do not copy text out of it. It still contains claims that the July 2026 audit
+retired, including the "approaches 300,000" figure below, which traces to an
+illustrative example in docs/07-editorial-content.md rather than to any dataset,
+and a fourth scrollytelling map step that no longer exists.
+-->
+
 Slovakia has not been emptying evenly. While the headline
 number of Slovaks living abroad approaches 300,000, the
 population that remained has been redistributing itself
