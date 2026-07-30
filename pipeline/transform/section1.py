@@ -42,11 +42,16 @@ OUT_PATH = REPO_ROOT / "data" / "processed" / "section1_internal.parquet"
 # read at:
 #
 #   geo_level='nation'  the only unit with no "other district" to move to, so
-#                       these ARE international. Verified: national migr_out
-#                       matches Eurostat migr_emi1ctz for SK exactly, to the
-#                       person, for every year 2013-2024.
+#                       these ARE international.
 #   any sub-national    moves across THAT unit's boundary, internal moves
-#                       included. The okres sum runs 8-12x the national figure.
+#                       included. The okres sum runs 11-29x the national figure,
+#                       which is the evidence for the distinction: an
+#                       international series cannot exceed its own national total.
+#
+# The national figure also matches Eurostat migr_emi1ctz for SK to the person,
+# but that is a transcription check and nothing more: Eurostat does not collect
+# migration data, member states file it, so that series IS this one. It confirms
+# our parse, not the level.
 #
 # So the names now say what the indicator is (migration across the unit's
 # boundary) and the geo_level says which boundary. No cube we hold separates

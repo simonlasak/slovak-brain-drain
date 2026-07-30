@@ -5,6 +5,8 @@ import Base from '../layouts/Base.astro';
 // 13 SUSR cubes are fetched but only 4 feed a rendered metric.
 import figures from '../data/headline_figures.json';
 
+const departuresFull = figures.registered_departures_2004_2025.value;
+const cohortMedian = figures.cohort_retention_median.value;
 const susrCubes = figures.susr_cubes_used.value;
 const csuTables = figures.csu_tables_used.value;
 const oecdSets = figures.oecd_datasets_used.value;
@@ -22,7 +24,9 @@ const fmt = (n: number) => n.toLocaleString('en');
     <h2>Data sources</h2>
     <p class="note">Counts are of sources that feed a figure rendered on this
     site, read from the output files themselves. More data is fetched than is
-    used, and unused sources are not counted here.</p>
+    used, and unused sources are not counted here. For ŠÚ SR specifically: 13 cube
+    directories exist, 12 hold data, and {susrCubes} are attributed by the
+    published figures.</p>
     <table>
       <thead>
         <tr><th>Source</th><th>Coverage</th><th>Confidence</th></tr>
@@ -44,9 +48,32 @@ const fmt = (n: number) => n.toLocaleString('en');
     period record {fmt(mirrorImplied)} arrivals from Slovakia. Those countries do
     not include the United Kingdom, Ireland, Spain, Switzerland or France, so the
     gap is a floor rather than an estimate.</p>
+    <p>Both figures stop at 2024 so that they share a window. A destination
+    population counted on 1 January 2025 can only reflect arrivals through the
+    end of 2024, so the comparison cannot extend further. ŠÚ SR's own series runs
+    one year longer: across 2004-2025 it records {fmt(departuresFull)} departures
+    in total. That is the fuller Slovak figure, but no destination-side number
+    exists to set beside it yet.</p>
     <p>The full derivation, including seven specifications and the sensitivity
     check that removes Czechia, is in <code>docs/06-sources-page.md</code> and
     reproducible with <code>pipeline/analysis/mirror_comparison.py</code>.</p>
+
+    <h2>How cohort retention is derived</h2>
+    <p>For each of the 79 districts, cohort retention is the number of 35-to-39
+    year olds living there in 2024 as a percentage of the number of 15-to-19 year
+    olds living there in 2004. The median district scores {cohortMedian}%.</p>
+    <p>ŠÚ SR publishes two population counts per year for each age band, one
+    mid-year and one at 31 December, and they are different numbers. Both the
+    numerator and the denominator here average the two. The choice is not neutral
+    and we report its size: on the mid-year figures alone the median is 88.8%, on
+    the year-end figures alone 88.5%, so the indicator choice moves the result by
+    roughly 0.2 to 0.3 percentage points. Figures on this site are given to one
+    decimal place, which is finer than that spread. Read the decimal as a
+    consistent convention rather than as a claim of accuracy to a tenth of a
+    percent: the district ranking is robust, the last digit is not.</p>
+    <p>This is a synthetic cohort, not the same people tracked over twenty years.
+    It cannot separate those who moved away from those who died, though at these
+    ages mortality is small relative to migration.</p>
 
     <h2>Known discrepancies</h2>
     <ul>

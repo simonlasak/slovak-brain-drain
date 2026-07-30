@@ -143,10 +143,18 @@ Date: 2026-05-23
 
 All 10 data sources acquired: 442 files, 738 MB total.
 
+> **Cube count reconciled, July 2026.** This table read "11 cubes", which was a
+> miscount. There are 13 directories under `data/raw/susr_datacube/`, of which 12
+> hold data (`om7009rr` returned none), and 4 are attributed by any figure the
+> site publishes. The methodology page states 4, because a fetched-but-unused
+> cube is not provenance for anything a reader sees. The reconciliation is
+> asserted in `pipeline/analysis/headline_figures.py` so the three cannot diverge
+> again.
+
 | Source | Files | Size | Coverage |
 |--------|-------|------|----------|
-| ŠÚ SR DataCube | 243 | 12.6 MB | 11 cubes, 2004–2025 |
-| Eurostat | 8 | 44.3 MB | 8 bulk TSV datasets |
+| ŠÚ SR DataCube | 243 | 12.6 MB | 12 cubes with data, 4 attributed by published figures, 2004–2025 |
+| Eurostat | 9 | 54.1 MB | 9 bulk TSV datasets (migr_acq added July 2026 for the mirror comparison) |
 | Census 2021 | 10 | 529 MB | 9 indicators, 2,927 obec |
 | Census 2011 | 148 | 4.3 MB | Education at 78 okres |
 | OECD | 5 | 19.8 MB | Migration flows + DIOC |

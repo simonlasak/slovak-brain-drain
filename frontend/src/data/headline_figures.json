@@ -3,7 +3,7 @@
   "registered_departures_2004_2025": {
     "value": 64855,
     "unit": "count",
-    "note": "People Slovak authorities recorded leaving, 2004-2025. SUSR om7011rr IN010079 at national level, where it matches Eurostat migr_emi1ctz exactly. A floor, not a count: deregistration is unenforced.",
+    "note": "People Slovak authorities recorded leaving, 2004-2025. SUSR om7011rr IN010079 at national level. A floor, not a count: deregistration is unenforced, so this counts only those who filed. Not comparable to the mirror figures, which stop at 2024.",
     "sql": "SELECT sum(value) AS value FROM s1 WHERE metric = 'migr_out' AND geo_level = 'nation' AND year BETWEEN 2004 AND 2025 AND age_bracket = 'all' AND sex = 'all' AND education = 'all'"
   },
   "cohort_retention_median": {
@@ -51,7 +51,7 @@
   "susr_cubes_used": {
     "value": 4,
     "unit": "count",
-    "note": "SUSR DataCube cubes feeding a rendered metric. 13 cubes are fetched; this counts the ones the parquets attribute.",
+    "note": "SUSR DataCube cubes feeding a rendered metric. 13 directories exist, 12 hold data (om7009rr returned none), and these are the ones the output parquets attribute.",
     "sql": "SELECT count(DISTINCT source) FROM s1 WHERE source LIKE 'susr_%'"
   },
   "csu_tables_used": {

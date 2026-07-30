@@ -317,6 +317,29 @@ and onward moves, both of which reduce the implied figure.
 Not a count of Slovaks abroad. Not a net migration figure. It measures one thing:
 the gap between two registers, on the citizen definition.
 
+#### Why the destination side is genuinely independent, and Eurostat's SK series is not
+
+This distinction is easy to get wrong, and the project got it wrong once already.
+
+**Eurostat is not a second observer of Slovak emigration.** It does not collect
+migration data; member states file it. `migr_emi1ctz` for `geo=SK` is ŠÚ SR's own
+IN010079, redistributed. Our national series matches it to the person for every
+year 2004-2024, and that match proves only that we parsed the cube the way ŠÚ SR
+filed it. It inherits the identical deregistration undercount, so it cannot
+corroborate the level. Treating it as agreement between two sources would be
+counting one source twice.
+
+**The destination side is different in kind.** `migr_pop1ctz` for `geo=DE` is
+Germany reporting Slovak citizens on German territory, from a German register,
+under German registration incentives. Thirty-one reporting countries publish a
+Slovak-citizen count. None of them is ŠÚ SR, which is precisely what makes the
+comparison informative: the numerator and the denominator come from
+administrations with opposite incentives to record a departure.
+
+Note that Slovakia itself appears among those 31, reporting its own resident
+Slovak citizens. It is excluded from every panel, and `compute()` raises if it is
+passed in, because including it would count people who never left.
+
 #### Load-bearing caveats
 
 - Destination stock counts Slovak **citizens**, not Slovak-born. A Slovak-born

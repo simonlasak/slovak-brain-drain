@@ -206,7 +206,12 @@ def check_population_reconciles() -> CheckResult:
 
 
 def check_metric_definitions() -> CheckResult:
-    """Tie each named metric to an INDEPENDENT quantity, not to its own siblings.
+    """Tie each named metric to something other than its own siblings.
+
+    Three of the four assertions below are internal cross-checks against a
+    DIFFERENT indicator of the same publisher, and one is a transcription check.
+    None is an independent measurement of the level: for that, see the mirror
+    comparison, where the destination side is reported by other states.
 
     WHY NOT THE OBVIOUS IDENTITY. natural_increase + migr_net = total_change is
     tautological: SUSR derives all three inside the same cube, so the identity
@@ -224,9 +229,15 @@ def check_metric_definitions() -> CheckResult:
        the old check_migration_accounting carried a permanent residual.
     2. migr_net == migr_in - migr_out. Ties the net series to its own gross
        components rather than to the total.
-    3. National migr_out == Eurostat migr_emi1ctz for SK. A genuinely external
-       source. This is what confirms that at geo_level='nation' the migration
-       family really is INTERNATIONAL.
+    3. National migr_out == Eurostat migr_emi1ctz for SK. This is a PROVENANCE
+       check, not an accuracy check, and it is the weakest of the four. Eurostat
+       does not collect migration data; member states report it, so this series
+       IS SUSR's own, redistributed. An exact match therefore proves only that
+       our parse of the cube matches what SUSR filed with Eurostat - it inherits
+       the same deregistration undercount and cannot corroborate the level.
+       Useful as a transcription check on our own reading; not evidence about
+       reality. The claim that the national level is international rests on
+       assertion 4 (the sub-national divergence), not on this one.
     4. Sub-national migration must NOT tile to the national figure. If a future
        transform made it tile, the series would have silently become something
        else. The okres sum currently runs 8-12x the national figure because
@@ -296,9 +307,10 @@ def check_metric_definitions() -> CheckResult:
             )
         else:
             details.append(
-                f"national migr_out matches Eurostat migr_emi1ctz exactly for all "
-                f"{len(shared)} shared years ({min(shared)}-{max(shared)}): confirms "
-                "the national level is international migration"
+                f"national migr_out matches Eurostat migr_emi1ctz for all "
+                f"{len(shared)} shared years ({min(shared)}-{max(shared)}). This is "
+                "a transcription check only: Eurostat redistributes SUSR's own "
+                "filing, so it cannot corroborate the level"
             )
 
     # 4. Sub-national migration must NOT tile to the national total.
@@ -327,7 +339,7 @@ def check_metric_definitions() -> CheckResult:
             )
 
     return CheckResult(
-        name="Metric definitions (each metric tied to an independent quantity)",
+        name="Metric definitions (each metric tied to a different indicator)",
         severity=worst,
         summary=("PASS: all four definition checks hold" if worst == "green"
                  else "FAIL: a metric does not measure what its name says"),

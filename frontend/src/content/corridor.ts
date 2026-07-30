@@ -132,7 +132,23 @@ const en: Section2Content = {
   sub5: 'Aging in place',
   bridge5: [
     'The mean age of EU27 citizens in Czechia rose from 39.9 in 2015 to 40.9 in 2024, advancing at almost exactly one year per calendar year. This is the signature of a population aging in place rather than being refreshed by new arrivals: the same cohort that crossed the border in their twenties is now in their forties, with Czech careers and Czech mortgages.',
-    'One anomaly warrants annotation. In 2021, the registered Slovak population in Czechia fell by 8 percent (from 124,544 to 114,630) before recovering to 117,265 the following year. This coincides with the first full year of COVID-19 restrictions and likely reflects temporary return migration. The recovery in 2022-2025 confirms this reading. The dip is marked on every time-series chart in this section; it should be read as a one-year disruption, not a trend reversal.',
+    // CHANGED FROM APPROVED COPY, awaiting Simon's confirmation. The previous
+    // version attributed the 2021 dip to COVID-era return migration. Three
+    // checks refute that:
+    //   1. The Czech LABOUR register rose 2.8% in the same year (+6,286), and
+    //      Slovaks cannot leave Czechia while taking more Czech jobs.
+    //   2. SUSR recorded no arrivals spike; 2021 arrivals were LOWER than 2020.
+    //   3. The drop hit the whole EU27 population in Czechia (-21,689, -8.9%),
+    //      of which Slovaks were 45.7% while being 51.1% of the stock. It was
+    //      not Slovak-specific.
+    // Both countries censused in spring 2021 and both revised their registers
+    // downward: Slovakia's own residual is -10,511 in the same year. So the
+    // cause is a census re-basing, not behaviour. What cannot be separated is
+    // how much of the -9,914 is correction of people who had already left
+    // quietly over previous years versus any genuine 2021 movement, because a
+    // re-basing collapses years of accumulated drift into a single step. The
+    // paragraph now says that rather than naming a cause.
+    'One anomaly warrants annotation. In 2021 the registered Slovak population in Czechia fell 8 percent, from 124,544 to 114,630, before resuming its climb to 125,280 by 2025. The fall is a statistical correction rather than a departure: Czechia held its census in March 2021, and a residence register that has been accumulating people who left without deregistering is revised downward when a census finally counts them. Slovakia censused the same spring and corrected its own population downward by a similar order. Two signs confirm that nobody actually went home: the Czech labour register rose that year rather than falling, and Slovak authorities recorded fewer arrivals in 2021 than in 2020. What the correction cannot tell us is which years the missing people actually left in, because a re-basing compresses a decade of quiet drift into one step. The dip is marked on every time-series chart in this section and should be read as the register catching up with reality, not as a change in behaviour.',
   ],
 
   sub6: 'A story about gravity',
@@ -162,7 +178,9 @@ const en: Section2Content = {
       derivation:
         'Each scroll step advances one year and recolours the 14 Czech regions by the number of Slovak citizens holding a registered address there. The percentage shown against a region is its growth since the first year in the series, not an annual rate.',
       caveat:
-        'Registered residence only. Slovaks working in Czechia while keeping Slovak residence do not appear here, which is why the labour figure is roughly twice as large. The 2021 drop is a COVID-era artefact rather than a genuine departure wave.',
+        // CHANGED FROM APPROVED COPY, awaiting Simon's confirmation: "a COVID-era
+        // artefact" replaced. Same evidence as the §2 bridge5 paragraph.
+        'Registered residence only. Slovaks working in Czechia while keeping Slovak residence do not appear here, which is why the labour figure is roughly twice as large. The 2021 drop is a census re-basing of the Czech register, not a departure wave: it hit the whole EU27 population in Czechia, and the Czech labour register rose the same year. It cannot be read as movement in 2021, and it cannot be attributed to the years the departures actually happened.',
     },
     stock: {
       title: 'Slovaks in Czechia by pathway',

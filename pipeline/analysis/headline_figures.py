@@ -49,8 +49,9 @@ FIGURES: dict[str, dict] = {
         "unit": "count",
         "note": (
             "People Slovak authorities recorded leaving, 2004-2025. SUSR om7011rr "
-            "IN010079 at national level, where it matches Eurostat migr_emi1ctz "
-            "exactly. A floor, not a count: deregistration is unenforced."
+            "IN010079 at national level. A floor, not a count: deregistration is "
+            "unenforced, so this counts only those who filed. Not comparable to "
+            "the mirror figures, which stop at 2024."
         ),
     },
     "cohort_retention_median": {
@@ -167,10 +168,19 @@ def _mirror_figures() -> dict[str, dict]:
 def _source_counts(con: duckdb.DuckDBPyConnection) -> dict[str, dict]:
     """Count the sources the site actually USES, per parquet `source` column.
 
-    The methodology page previously stated counts of files sitting in data/raw/,
-    which overstates: 13 SUSR cubes were fetched but only 4 feed any rendered
-    metric. Counting what the parquets attribute is both smaller and honest,
-    and it cannot drift from the data because it is read out of it.
+    THE CUBE COUNT, reconciled once so it stops moving. Three numbers have been
+    quoted for the same thing and all three were describing something different:
+
+      13  directories under data/raw/susr_datacube/. One of them (om7009rr) is
+          EMPTY: the fetch was attempted and returned nothing.
+      12  cubes actually fetched with data in them. This is the figure the Gate 2
+          checkpoint meant; it recorded 11, which was a miscount.
+       4  cubes that feed a metric rendered on the site: om7011rr, om7007rr,
+          np3112qr, pr0204qs. This is what the methodology page states, because a
+          fetched-but-unused cube is not provenance for anything a reader sees.
+
+    Counting attributed sources rather than files on disk is what keeps this
+    stable: it is read out of the data, so it cannot drift from it.
     """
     def distinct_sources(view: str, prefix: str) -> int:
         rows = con.execute(
@@ -184,13 +194,35 @@ def _source_counts(con: duckdb.DuckDBPyConnection) -> dict[str, dict]:
         }
         return len(cubes)
 
+    # Enforce the reconciliation above rather than only documenting it, so the
+    # three numbers cannot silently diverge again.
+    cube_root = REPO_ROOT / "data" / "raw" / "susr_datacube"
+    if cube_root.exists():
+        dirs = [d for d in cube_root.iterdir() if d.is_dir()]
+        with_data = [d for d in dirs if any(
+            f.name.endswith(".json") and "manifest" not in f.name for f in d.iterdir()
+        )]
+        empty = sorted(d.name for d in dirs if d not in with_data)
+        log.info(
+            "headline.cube_reconciliation dirs=%d with_data=%d empty=%s attributed=%d",
+            len(dirs), len(with_data), empty, distinct_sources("s1", "susr_"),
+        )
+        if len(with_data) < distinct_sources("s1", "susr_"):
+            raise ValueError(
+                f"headline_figures: section1 attributes "
+                f"{distinct_sources('s1', 'susr_')} SUSR cubes but only "
+                f"{len(with_data)} cube directories hold data. A source string "
+                "does not correspond to a fetched cube."
+            )
+
     return {
         "susr_cubes_used": {
             "value": distinct_sources("s1", "susr_"),
             "unit": "count",
             "note": (
-                "SUSR DataCube cubes feeding a rendered metric. 13 cubes are "
-                "fetched; this counts the ones the parquets attribute."
+                "SUSR DataCube cubes feeding a rendered metric. 13 directories "
+                "exist, 12 hold data (om7009rr returned none), and these are the "
+                "ones the output parquets attribute."
             ),
             "sql": "SELECT count(DISTINCT source) FROM s1 WHERE source LIKE 'susr_%'",
         },
