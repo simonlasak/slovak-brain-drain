@@ -132,23 +132,22 @@ const en: Section2Content = {
   sub5: 'Aging in place',
   bridge5: [
     'The mean age of EU27 citizens in Czechia rose from 39.9 in 2015 to 40.9 in 2024, advancing at almost exactly one year per calendar year. This is the signature of a population aging in place rather than being refreshed by new arrivals: the same cohort that crossed the border in their twenties is now in their forties, with Czech careers and Czech mortgages.',
-    // CHANGED FROM APPROVED COPY, awaiting Simon's confirmation. The previous
-    // version attributed the 2021 dip to COVID-era return migration. Three
-    // checks refute that:
-    //   1. The Czech LABOUR register rose 2.8% in the same year (+6,286), and
-    //      Slovaks cannot leave Czechia while taking more Czech jobs.
-    //   2. SUSR recorded no arrivals spike; 2021 arrivals were LOWER than 2020.
-    //   3. The drop hit the whole EU27 population in Czechia (-21,689, -8.9%),
-    //      of which Slovaks were 45.7% while being 51.1% of the stock. It was
-    //      not Slovak-specific.
-    // Both countries censused in spring 2021 and both revised their registers
-    // downward: Slovakia's own residual is -10,511 in the same year. So the
-    // cause is a census re-basing, not behaviour. What cannot be separated is
-    // how much of the -9,914 is correction of people who had already left
-    // quietly over previous years versus any genuine 2021 movement, because a
-    // re-basing collapses years of accumulated drift into a single step. The
-    // paragraph now says that rather than naming a cause.
-    'One anomaly warrants annotation. In 2021 the registered Slovak population in Czechia fell 8 percent, from 124,544 to 114,630, before resuming its climb to 125,280 by 2025. The fall is a statistical correction rather than a departure: Czechia held its census in March 2021, and a residence register that has been accumulating people who left without deregistering is revised downward when a census finally counts them. Slovakia censused the same spring and corrected its own population downward by a similar order. Two signs confirm that nobody actually went home: the Czech labour register rose that year rather than falling, and Slovak authorities recorded fewer arrivals in 2021 than in 2020. What the correction cannot tell us is which years the missing people actually left in, because a re-basing compresses a decade of quiet drift into one step. The dip is marked on every time-series chart in this section and should be read as the register catching up with reality, not as a change in behaviour.',
+    // APPROVED 2026-07-30 with five edits, all applied:
+    //  1. "confirm nobody went home" -> "confirm this was not a return wave".
+    //     The evidence rules out a wave, not individual returns.
+    //  2. Dropped the comparison of Slovakia's -10,511 against Czechia's -9,914.
+    //     One is a whole-population census residual, the other the Slovak line in
+    //     a foreign register; the closeness is coincidence and the juxtaposition
+    //     implied one event measured twice.
+    //  3. Moved the EU27 evidence up from the About panel: it is the strongest
+    //     check and was buried.
+    //  4. "marked on every time-series chart" was FALSE. Verified: of the four
+    //     charts in this section, only StockTrendChart carried a 2021 marker, and
+    //     its label read "COVID return signal", the reading this paragraph
+    //     refutes. Claim narrowed to the one chart and the label corrected.
+    //  5. "roughly twice as large" compared labour 2023 against residence 2025.
+    //     On matched 2020 data it is 1.80x. Now pinned to 2020 and stated.
+    'One anomaly warrants annotation. In 2021 the registered Slovak population in Czechia fell 8 percent, from 124,544 to 114,630, before resuming its climb to 125,280 by 2025. The fall is a statistical correction rather than a departure. Czechia held its census in March 2021, and a residence register that has been quietly accumulating people who left without deregistering is revised downward when a census finally counts who is actually there. Slovakia censused the same spring and revised its own register down too. The clearest evidence that this was administrative comes from who else it hit: the correction fell across the whole EU27 population registered in Czechia, which dropped by 21,689 that year. Slovaks absorbed 45.7 percent of that fall while making up 51.1 percent of the stock, so if anything they were slightly under-represented in it. Two further signs confirm this was not a return wave: the Czech labour register rose that year rather than falling, and Slovak authorities recorded fewer arrivals in 2021 than in 2020. What the correction cannot tell us is which years the missing people actually left in, because a re-basing compresses a decade of quiet drift into a single step. The dip is marked on the stock trend chart above and should be read as the register catching up with reality, not as a change in behaviour.',
   ],
 
   sub6: 'A story about gravity',
@@ -178,9 +177,11 @@ const en: Section2Content = {
       derivation:
         'Each scroll step advances one year and recolours the 14 Czech regions by the number of Slovak citizens holding a registered address there. The percentage shown against a region is its growth since the first year in the series, not an annual rate.',
       caveat:
-        // CHANGED FROM APPROVED COPY, awaiting Simon's confirmation: "a COVID-era
-        // artefact" replaced. Same evidence as the §2 bridge5 paragraph.
-        'Registered residence only. Slovaks working in Czechia while keeping Slovak residence do not appear here, which is why the labour figure is roughly twice as large. The 2021 drop is a census re-basing of the Czech register, not a departure wave: it hit the whole EU27 population in Czechia, and the Czech labour register rose the same year. It cannot be read as movement in 2021, and it cannot be attributed to the years the departures actually happened.',
+        // APPROVED 2026-07-30 with edits. The EU27 evidence moved into the main
+        // bridge5 paragraph rather than sitting here. The labour/residence ratio
+        // is pinned to a single year: it was comparing labour 2023 against
+        // residence 2025, the same window mismatch as the hero.
+        'Registered residence only. Slovaks working in Czechia while keeping Slovak residence do not appear here, which is why the labour count runs higher: in 2020, the last year before the census correction, the labour register held 224,547 against 124,544 registered residents, a ratio of 1.80 to 1. The 2021 drop is a census re-basing of the Czech register, not a departure wave. It cannot be read as movement in 2021, and it cannot be attributed to the years the departures actually happened. Note that the ratio appears to jump to about 2.0 from 2021 onward only because the re-basing deflated the denominator.',
     },
     stock: {
       title: 'Slovaks in Czechia by pathway',

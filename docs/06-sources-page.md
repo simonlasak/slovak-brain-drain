@@ -192,6 +192,15 @@ comparison" below.**
 
 Takes about two minutes: it parses two 10 MB Eurostat bulk TSVs row by row.
 
+> **This is the only evidence the site offers for the size of the registration
+> gap.** A second line was sought and rejected: Slovakia's census residuals
+> (-42,827 in 2011, -10,511 in 2021, total 53,338) look like a Slovak-only lower
+> bound on unrecorded emigration and share no source with this comparison, but
+> they are not decomposable into emigration versus enumeration error, and the two
+> rounds behave inconsistently. Evaluated July 2026 and dropped rather than
+> softened; the reasoning is in "Census residuals" below so the decision is on
+> the record. If a decomposition is ever published, revisit it.
+
 #### The question
 
 Slovakia records emigration through municipal deregistration, which carries no

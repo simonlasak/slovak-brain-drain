@@ -98,6 +98,41 @@ is why the figure below is given as an estimate and not a measurement.
 `unverified` for the mortality term specifically; the naturalisation term is
 `verified`.
 
+### Which way the mortality proxy is likely to be wrong
+
+The proxy is the EU27-in-Czechia age distribution, mean age 40.9 in 2020. The
+question that matters is not whether it is exact but which direction it errs, and
+here the direction is knowable even though the magnitude is not.
+
+**A mortality term that is too small makes persistence look too low.** Deaths are
+added back to the numerator, because someone who died in Czechia left the register
+without leaving the country. So if the true Slovak cohort is older than the proxy,
+we are under-adding, and the real persistence is higher than 84.4%.
+
+Three reasons to think the Slovak cohort is at least as old as the proxy, not
+younger:
+
+- Slovak arrivals have been flat at 6,000 to 7,000 a year since 2012 while the
+  stock grew, which is the aging-in-place pattern §2 documents. A population that
+  grows without proportionate fresh arrivals ages faster than one that does not.
+- The Slovak presence in Czechia is the oldest of the EU27 cohorts there in
+  historical terms: it predates EU accession entirely, since free movement between
+  the two countries survived the 1993 split. Later-arriving EU27 nationalities
+  have no comparable pre-2004 stock to have aged.
+- §2's own measurement: EU27 mean age in Czechia rose from 39.9 to 40.9 across
+  2015-2024, almost exactly one year per calendar year, meaning the distribution
+  is barely refreshed at the young end.
+
+Quantifying it: shifting the whole distribution one five-year band older raises
+the crude rate from 5.34 to 8.21 per 1,000 and takes 2016-2020 persistence from
+84.4% to **89.7%**.
+
+**So 84.4% is conservative, and the error runs in the direction of understating
+retention.** One caveat on how much comfort to take from that: Slovaks are roughly
+51% of the EU27 stock in Czechia, so the proxy is already half Slovak by
+construction. The true profile cannot diverge from it by more than the other half
+diverges, which bounds the error well below the illustrative five-year shift above.
+
 **The two windows are not comparable, and the reason is the 2021 census.** The
 post-2022 window sits on a stock that Czechia re-based downward in 2021, removing
 about 26,000 Slovak registrations at a stroke. A window beginning after a

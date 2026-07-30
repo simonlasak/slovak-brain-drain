@@ -49,7 +49,12 @@ function Chart({ data, width, height, animated, labels }: { data: StockRow[]; wi
   const xScale = scaleLinear({ domain: [years[0], years[years.length - 1]], range: [0, innerW] });
   const yScale = scaleLinear({ domain: [0, maxVal * 1.08], range: [innerH, 0] });
 
-  const covid2021X = xScale(2021);
+  // The 2021 marker. Labelled "COVID return signal" until July 2026, which was
+  // the reading the §2 prose used to carry and which the data refutes: the Czech
+  // labour register ROSE that year, SUSR recorded fewer arrivals than in 2020,
+  // and the fall hit the whole EU27 population in Czechia. It is a census
+  // re-basing of the Czech register.
+  const rebasing2021X = xScale(2021);
 
   return (
     <svg width={width} height={height} role="img" aria-label="Stock trend line chart of Slovaks in Czechia">
@@ -64,20 +69,20 @@ function Chart({ data, width, height, animated, labels }: { data: StockRow[]; wi
       `}</style>
       <Group left={margin.left} top={margin.top}>
         <Line
-          from={{ x: covid2021X, y: 0 }}
-          to={{ x: covid2021X, y: innerH }}
+          from={{ x: rebasing2021X, y: 0 }}
+          to={{ x: rebasing2021X, y: innerH }}
           stroke="var(--border-subtle)"
           strokeWidth={1}
           strokeDasharray="4,3"
         />
         <text
-          x={covid2021X + 4}
+          x={rebasing2021X + 4}
           y={12}
           fontSize={10}
           fontFamily="var(--font-sans)"
           fill="var(--text-tertiary)"
         >
-          COVID return signal
+          2021 census re-basing
         </text>
 
         {PATHWAY_ORDER.map((pathway, idx) => {
