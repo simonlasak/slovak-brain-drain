@@ -58,12 +58,37 @@ PROXY_NOTE = (
 )
 
 
+# CIZ002T002 breaks Slovaks in CZ down by residence type, and the breakdown
+# includes its own total. DRPOVOLPOBYT001 = "0" is "Celkem" (all types); "20" is
+# permanent, "30" transitional, and 30B/31/32 are further splits. Summing the
+# column double-counts exactly: for 2025, Celkem is 125,280 and permanent plus
+# transitional is also 125,280.
+#
+# The transform previously ignored this dimension entirely, so all six members
+# landed on one key. Nothing downstream could tell them apart: three different
+# `sex='all'` values shared a single row identity, and whichever a query reached
+# first would have won. Take the published total and record which member it is.
+CZ_RESIDENCE_TOTAL = "0"
+
+
 def transform_stock() -> pl.DataFrame:
-    """CIZ002T002 - Slovaks in CZ by residence type, sex, annual."""
+    """CIZ002T002 - Slovaks in CZ, all residence types, by sex, annual."""
     fpath = RAW_CSU / "CIZ002T002.csv"
     df = pl.read_csv(fpath, encoding="utf-8", infer_schema_length=10000, schema_overrides={"DRPOVOLPOBYT001": pl.Utf8, "Pohlciz": pl.Utf8, "STOBCAN5.STOBCAN1": pl.Utf8, "STOBCAN5.STOBCAN2": pl.Utf8})
 
     df_sk = df.filter(pl.col("STOBCAN5.STOBCAN2") == "703")
+    if "DRPOVOLPOBYT001" not in df_sk.columns:
+        raise ValueError(
+            "section2: CIZ002T002 has no DRPOVOLPOBYT001 column. The residence-type "
+            "dimension must be selected explicitly; without it the rows collapse."
+        )
+    df_sk = df_sk.filter(pl.col("DRPOVOLPOBYT001") == CZ_RESIDENCE_TOTAL)
+    if len(df_sk) == 0:
+        raise ValueError(
+            f"section2: CIZ002T002 has no rows with DRPOVOLPOBYT001="
+            f"{CZ_RESIDENCE_TOTAL!r} (the 'Celkem' all-residence-types total). "
+            "The code for that member changed."
+        )
 
     rows = []
     for row in df_sk.iter_rows(named=True):

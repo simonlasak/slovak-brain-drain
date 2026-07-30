@@ -57,7 +57,11 @@ class Section1Metric(str, Enum):
     deaths = "deaths"
     internal_in = "internal_in"
     internal_out = "internal_out"
-    internal_net = "internal_net"
+    # No internal-migration net metric: om7011rr publishes only TOTAL net
+    # migration (IN010080 -> intl_net), so internal and international cannot be
+    # separated from it. `internal_net` previously existed here and was fed by
+    # IN010076, which is natural increase.
+    natural_increase = "natural_increase"
     intl_in = "intl_in"
     intl_out = "intl_out"
     intl_net = "intl_net"

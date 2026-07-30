@@ -94,6 +94,13 @@ const en: Section1Content = {
     'Slovakia has not been emptying evenly. The population that remained has been redistributing itself with almost equal force. The same two decades that sent workers to Bratislava, Prague, and Vienna also rearranged the people who stayed behind, pulling them toward a single dominant node and draining the rest.',
     'The clearest measure of that pull is what happened to Slovakia’s teenagers. Take every 15-to-19-year-old living in a district in 2004. Count how many 35-to-39-year-olds that same district holds in 2024. Across all 79 districts, the median answer is 89 percent: the typical Slovak district retains nine tenths of its young cohort by the time they reach their late thirties. But that median conceals a range that tells the whole story. Senec, in Bratislava’s commuter belt, registered 234 percent, meaning it more than doubled its teenage cohort as young adults moved in. Snina, in the Vihorlat uplands of northeastern Slovakia, kept 76 percent, meaning roughly one in four of the teenagers who grew up there had left and not been replaced by the time they would have turned 35.',
   ],
+  // TODO(copy, needs Simon): the chart's reference line now prints the median it
+  // actually computes from the plotted dots, 88.6%, because a hardcoded "89" was
+  // the same defect class as the wage chart's hardcoded reference line. The prose
+  // above and this callout say 89, which is 88.6 rounded and defensible, but the
+  // page will now show both figures. Decide one convention: either round the
+  // chart label to a whole number too, or move the prose and callout to 88.6.
+  // Left as approved (89) rather than changed unilaterally.
   callout1: { value: '89%', label: 'Median district cohort retention, 2004 to 2024' },
 
   sub1: 'Where the teenagers went',
@@ -143,11 +150,34 @@ const en: Section1Content = {
       description:
         'Take every 15-19 year old living in a district in 2004. Twenty years later, how many 35-39 year olds does that same district have? Senec has 234% (it attracted people). Snina kept only 76% - one in four left and never came back. The median district loses 11% of each generation.',
     },
-    // TODO(copy, needs Simon): the final clause of this description was cut, not
-    // rewritten. It claimed only Bratislava and its suburban ring were growing.
-    // In 2024, 22 of 79 districts gained residents and 15 of those are outside
-    // Bratislava kraj, including ten in the east: Kosice-okolie is the second
-    // largest gainer in the country. A replacement clause needs approval.
+    // TODO(copy, needs Simon): the cut clause claimed only Bratislava and its
+    // immediate suburban ring were meaningfully growing. Checked over the full
+    // 2004-2025 period (the earlier check used the single year 2024, which was
+    // the wrong period for a claim about two decades): 26 of 79 districts
+    // gained population, so "only Bratislava" is wrong on the count.
+    //
+    // But the mechanism the clause reached for is right and generalises. Ranking
+    // the 26 gainers by adjacency to a kraj capital, computed from shared
+    // boundaries in sk_okresy.geojson: 10 are a regional-centre core, 11 ring a
+    // regional centre, only 5 are neither. Kosice-okolie rings Kosice exactly as
+    // Senec rings Bratislava, and both are their region's largest gainer.
+    //
+    // Of the 5 remaining, 4 (Kezmarok, Namestovo, Stara Lubovna, Tvrdosin) grew
+    // on natural increase while LOSING migrants on net over the same period:
+    // Stara Lubovna, for instance, is +7,083 natural against -4,291 net
+    // migration. They are not counter-examples to the concentration thesis, they
+    // are places with enough births to outrun their own outflow. Only Dunajska
+    // Streda grew on migration while being neither core nor ring (+18,389 net
+    // migration against -2,463 natural).
+    //
+    // So the correction sharpens the concentration thesis rather than weakening
+    // it: concentration is around regional centres generally, not Bratislava
+    // uniquely, and the handful of exceptions are a fertility story rather than
+    // a counter-example. A replacement clause should say that. Suggested
+    // direction, needs approval and needs the chart's period settled first,
+    // since this step renders a single year while the finding is period-wide:
+    // "Growth clusters around the regional centres and their commuter belts.
+    // Almost everywhere else loses."
     {
       title: 'Who is growing, who is shrinking',
       description:
@@ -156,6 +186,11 @@ const en: Section1Content = {
   ],
 
   sources: {
+    // TODO(copy, needs Simon): this panel's caveat previously said Bratislava
+    // (SK_CAP) was "excluded from the choropleth statistics". It never was. The
+    // map has always coloured all 79 okresy including Bratislava's five; SK_CAP
+    // is a separate aggregate row that the okres-level query never picked up.
+    // See the note on the cohort panel below.
     map: {
       title: 'The internal migration map',
       source: 'ŠÚ SR DataCube: om7011rr (population, total change), om7007rr (age structure, behind cohort retention). Boundaries: ŠÚ SR okresy (79 districts), simplified for web.',
@@ -164,6 +199,15 @@ const en: Section1Content = {
       caveat:
         'All 79 districts are shown, including Bratislava’s five. Bratislava III and Senec are the strongest gainers on every step, so they stretch the upper end of each colour scale and compress the contrast among the losing districts. The map carries no international-migration step: the registered outflow series cannot be read at district level, because below the national level it counts moves out of the district including moves to other Slovak districts.',
     },
+    // TODO(copy, needs Simon): this caveat previously read "Bratislava is
+    // omitted as an outlier", which was never true. The SK_CAP filter these two
+    // charts carried removed the Bratislava I-V multi-district AGGREGATE row,
+    // not Bratislava's five okresy, which have their own codes (SK0101-SK0105)
+    // and always rendered. Verified against the pre-2.1 parquet: it held 80
+    // cohort_retention rows, and dropping SK_CAP left 79 with all five
+    // Bratislava districts present. So 2.1 did not break this caveat; it was
+    // false when the chart was approved, and these charts have been misdescribed
+    // to the reader since they shipped rather than newly changed under them.
     cohort: {
       title: 'Cohort retention by district',
       source: 'ŠÚ SR DataCube om7007rr (population by age and district).',
@@ -180,6 +224,9 @@ const en: Section1Content = {
       caveat:
         'Gross nominal wages, not adjusted for regional cost of living. Bratislava’s premium is somewhat smaller in real terms, but housing costs there are also the highest in the country.',
     },
+    // TODO(copy, needs Simon): same false "Bratislava is omitted" caveat as the
+    // cohort panel above, same cause, same conclusion: misdescribed since it
+    // shipped, not changed by 2.1.
     ranked: {
       title: 'Population change by district, 2004 to 2025',
       source: 'ŠÚ SR DataCube om7011rr (population by district).',

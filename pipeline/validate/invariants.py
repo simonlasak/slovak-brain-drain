@@ -131,6 +131,136 @@ def check_migration_accounting() -> CheckResult:
     )
 
 
+def check_component_identity() -> CheckResult:
+    """total_change must equal natural_increase + intl_net exactly, everywhere.
+
+    SUSR publishes the components and the total as separate indicators of the
+    same cube, so this identity is a property of the source, not an estimate. It
+    is the check that names each indicator correctly: IN010076 was mapped to
+    `internal_net`, implying net internal migration, when it is natural increase.
+    A metric named after what we wanted rather than what the indicator is cannot
+    be caught downstream, but it cannot survive this identity.
+
+    Note this is exact, unlike check_migration_accounting, which compares against
+    the `births` series (IN010054, all births) where the natural-increase
+    indicator uses live births (IN010106). That difference is why the looser
+    check carries a permanent residual.
+    """
+    df = pl.read_parquet(PROCESSED / "section1_internal.parquet")
+
+    wide = (df
+        .filter(pl.col("metric").is_in(["natural_increase", "intl_net", "total_change"]))
+        .pivot(on="metric", index=["year", "geo_level", "geo_code"], values="value")
+    )
+    needed = {"natural_increase", "intl_net", "total_change"}
+    missing_cols = needed - set(wide.columns)
+    if missing_cols:
+        return CheckResult(
+            name="Component identity (natural increase + net migration = total change)",
+            severity="red",
+            summary=f"FAIL: metrics absent from section1: {sorted(missing_cols)}",
+            details=[
+                "Cannot verify the identity because a component is missing. If an "
+                "indicator was renamed, the rename dropped a quantity the identity "
+                "depends on."
+            ],
+        )
+
+    checked = wide.drop_nulls(subset=list(needed)).with_columns(
+        (pl.col("natural_increase") + pl.col("intl_net") - pl.col("total_change")).abs().alias("resid")
+    )
+    bad = checked.filter(pl.col("resid") > 0.5)
+
+    if len(bad) == 0:
+        return CheckResult(
+            name="Component identity (natural increase + net migration = total change)",
+            severity="green",
+            summary=f"PASS: identity exact for all {len(checked):,} year x geo observations",
+            details=[
+                "natural_increase + intl_net = total_change to the unit, at every "
+                "geo level. Confirms IN010076 is natural increase, not migration.",
+            ],
+        )
+
+    details = [
+        f"{r['geo_code']} {r['year']}: natural={r['natural_increase']:,.0f} "
+        f"net_mig={r['intl_net']:,.0f} total={r['total_change']:,.0f} "
+        f"residual={r['resid']:,.0f}"
+        for r in bad.head(8).iter_rows(named=True)
+    ]
+    return CheckResult(
+        name="Component identity (natural increase + net migration = total change)",
+        severity="red",
+        summary=f"FAIL: identity broken for {len(bad):,} of {len(checked):,} observations",
+        details=details + [
+            "An indicator is mapped to the wrong metric name, or two indicators "
+            "were collapsed onto one name.",
+        ],
+    )
+
+
+def check_no_ambiguous_keys() -> CheckResult:
+    """No parquet may hold two rows with the same key and different values.
+
+    A duplicate key means a dimension of the source cube was dropped rather than
+    selected from: the rows that differ only in the dropped dimension all land on
+    one key. Whichever a chart happens to pick then wins silently, and summing
+    them double-counts. This is the shape behind the SK_CAP aggregate, the
+    quarter collapse in the wage cube, and the residence-type collapse in
+    CIZ002T002.
+    """
+    specs = {
+        "section1_internal.parquet": [
+            "year", "geo_level", "geo_code", "age_bracket", "sex", "education",
+            "metric", "source",
+        ],
+        "section2_corridor.parquet": [
+            "year", "flow_direction", "pathway", "sk_geo_code", "cz_geo_code",
+            "age_bracket", "sex", "education", "field_or_sector", "metric",
+            "source", "employment_status",
+        ],
+        "section3_diaspora.parquet": [
+            "year", "slovak_def", "destination_iso3", "sex", "age_bracket",
+            "education", "metric", "source", "measure_code",
+        ],
+    }
+
+    details = []
+    worst = "green"
+    for fname, key in specs.items():
+        path = PROCESSED / fname
+        if not path.exists():
+            continue
+        df = pl.read_parquet(path)
+        key = [c for c in key if c in df.columns]
+        dup = (df
+            .group_by(key)
+            .agg(pl.len().alias("n"), pl.col("value").n_unique().alias("nv"))
+            .filter(pl.col("n") > 1)
+        )
+        if len(dup) == 0:
+            details.append(f"{fname}: {len(df):,} rows, all keys unique")
+            continue
+        worst = "red"
+        conflicting = dup.filter(pl.col("nv") > 1)
+        extra = int(dup.select((pl.col("n") - 1).sum()).item())
+        details.append(
+            f"{fname}: {len(dup):,} duplicated keys covering {extra:,} redundant "
+            f"rows, of which {len(conflicting):,} hold CONFLICTING values"
+        )
+        for r in conflicting.head(4).iter_rows(named=True):
+            shown = {k: r[k] for k in key if k in ("year", "metric", "source", "sex")}
+            details.append(f"    {shown} -> {r['n']} rows, {r['nv']} distinct values")
+
+    return CheckResult(
+        name="No ambiguous keys (a dropped dimension collapses rows)",
+        severity=worst,
+        summary=("PASS: every row uniquely keyed" if worst == "green"
+                 else "FAIL: a source dimension was dropped rather than selected from"),
+        details=details,
+    )
+
+
 def check_cz_corridor_crosscheck() -> CheckResult:
     """Slovaks in CZ per CSU vs SK emigration data."""
     df2 = pl.read_parquet(PROCESSED / "section2_corridor.parquet")
@@ -401,6 +531,8 @@ def run() -> list[CheckResult]:
     results = [
         check_population_consistency(),
         check_geo_levels_tile(),
+        check_no_ambiguous_keys(),
+        check_component_identity(),
         check_migration_accounting(),
         check_cz_corridor_crosscheck(),
         check_un_desa_vs_oecd(),

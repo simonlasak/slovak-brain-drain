@@ -22,8 +22,20 @@ interface TooltipData {
   retention_pct: number;
 }
 
-const NATIONAL_MEDIAN = 89;
 const DOT_RADIUS = 5;
+// Half-width of the band around the median that is drawn in gold as "typical".
+// Applied to the computed median rather than to a hardcoded centre.
+const TYPICAL_BAND = 1;
+
+// Median of the values actually plotted, so the reference line and its label
+// cannot drift from the dots. This was a hardcoded 89 printed as "National
+// median 89%" while the dots came from the parquet, the same defect as the wage
+// chart's reference line.
+function medianOf(values: number[]): number {
+  const s = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(s.length / 2);
+  return s.length % 2 ? s[mid] : (s[mid - 1] + s[mid]) / 2;
+}
 const LABELLED_RIGHT = new Set([
   'District of Senec',
   'District of Pezinok',
@@ -36,9 +48,9 @@ const LABELLED_LEFT_ORDER = [
 const LABELLED_LEFT = new Set(LABELLED_LEFT_ORDER);
 const LABELLED = new Set([...LABELLED_RIGHT, ...LABELLED_LEFT]);
 
-function colorFor(value: number): string {
-  if (value >= 88 && value <= 90) return 'var(--accent-tertiary)';
-  if (value > NATIONAL_MEDIAN) return 'var(--accent-secondary)';
+function colorFor(value: number, median: number): string {
+  if (Math.abs(value - median) <= TYPICAL_BAND) return 'var(--accent-tertiary)';
+  if (value > median) return 'var(--accent-secondary)';
   return 'var(--accent-primary)';
 }
 
@@ -84,6 +96,7 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
   const safeW = Math.max(innerW, 1);
   const safeH = Math.max(innerH, 1);
 
+  const median = medianOf(data.map(d => d.retention_pct));
   const minVal = Math.min(...data.map(d => d.retention_pct));
   const maxVal = Math.max(...data.map(d => d.retention_pct));
   const xMin = Math.floor(Math.min(minVal, 70) / 10) * 10;
@@ -99,7 +112,7 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
 
   if (innerW <= 0 || innerH <= 0) return null;
 
-  const refX = xScale(NATIONAL_MEDIAN);
+  const refX = xScale(median);
 
   return (
     <svg width={width} height={height} role="img" aria-label="Horizontal dot plot of cohort retention by district">
@@ -121,7 +134,7 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
           fontWeight={500}
           fill="var(--text-secondary)"
         >
-          National median 89%
+          National median {median.toFixed(1)}%
         </text>
 
         {placed.map((d, i) => {
@@ -137,7 +150,7 @@ function Chart({ data, width, height, animated }: { data: Row[]; width: number; 
                 cx={animated ? d.cx : cxStart}
                 cy={d.cy}
                 r={isHovered ? DOT_RADIUS + 2 : DOT_RADIUS}
-                fill={colorFor(d.retention_pct)}
+                fill={colorFor(d.retention_pct, median)}
                 stroke={isLabelled ? 'var(--text-primary)' : 'none'}
                 strokeWidth={isLabelled ? 1 : 0}
                 opacity={animated ? (isHovered ? 1 : 0.9) : 0}

@@ -26,11 +26,22 @@ REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 RAW_SUSR = REPO_ROOT / "data" / "raw" / "susr_datacube"
 OUT_PATH = REPO_ROOT / "data" / "processed" / "section1_internal.parquet"
 
+# The second element of each tuple is the cube's OWN label for the indicator.
+# Keep them verbatim: the metric name must be checkable against what SUSR calls
+# the quantity, because a metric named after what we wanted rather than what the
+# indicator is cannot be caught by any downstream check.
+#
+# IN010076 was previously named `internal_net`, implying net INTERNAL migration.
+# It is natural increase, births minus deaths, and has nothing to do with
+# migration. The identity total_change = IN010076 + IN010080 closes exactly at
+# every geo level and year, which confirms the reading. The cube carries NO
+# internal-migration indicator at all: it publishes only total net migration
+# (IN010080), so internal and international cannot be separated from this cube.
 INDICATOR_MAP_OM7011 = {
     "IN010051": ("population", "Permanently living population on 1 January"),
     "IN010054": ("births", "Birth"),
     "IN010061": ("deaths", "Mortality"),
-    "IN010076": ("internal_net", "Natural increase"),
+    "IN010076": ("natural_increase", "Natural increase"),
     "IN010078": ("intl_in", "Immigrants (in-migrants) on permanent residence"),
     "IN010079": ("intl_out", "Emigrants (out-migrants) from permanent residence"),
     "IN010080": ("intl_net", "Net migration"),
