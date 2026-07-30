@@ -304,6 +304,76 @@ The lowest row, 1.84x, is therefore the most conservative reading available and
 not the best estimate. Even it says destination registers imply nearly twice the
 registered figure.
 
+#### The 2021 census re-basing sits inside this window, and it depresses the result
+
+Every specification above spans 2021, and 2021 is not an ordinary year in this
+panel. Both Slovakia and Czechia held censuses in spring 2021, and several other
+reporting countries re-based population registers in the same round. The panel's
+reported stock of Slovak citizens fell by **18,271** between 1 January 2020 and 1
+January 2021, in a series that rose by roughly 8,700 in each adjacent year.
+
+The fall is almost entirely Czech: Czechia alone accounts for **-25,952** of it,
+partly offset by ordinary growth elsewhere. Read naively as a year of migration,
+calendar 2020 contributes **-17,050** implied departures. A negative year is not
+behaviour; it is a register being corrected.
+
+This matters for the direction of the error, because the re-basing removes people
+from the *end-of-period* stock who arrived *during* the period. It therefore
+subtracts real arrivals from the numerator:
+
+| | Implied | Registered | Ratio |
+|---|---|---|---|
+| Headline, spanning the re-basing | 222,321 | 59,935 | **3.71x** |
+| Splicing out the affected transition | 239,371 | 57,507 | **4.16x** |
+
+The spliced version sums two clean segments (1 Jan 2004 to 1 Jan 2020, and 1 Jan
+2021 to 1 Jan 2025), dropping the single transition that straddles the census.
+
+**Including 2021 costs 0.45 on the ratio, so the published 3.71x is conservative
+on this axis too.** The headline deliberately keeps the re-basing in, because
+splicing requires a judgement about which transition to drop, and a reader can
+check an unspliced figure against the raw series. But the direction of the bias
+should be stated rather than left implicit: correcting for it moves the estimate
+up, not down.
+
+This is the same event described in §2's Czech-corridor prose, where the Slovak
+residence line falls 8% in 2021 while the Czech labour register rises. It is one
+administrative event with consequences in three places: Slovakia's own population
+series, Czechia's foreigner register, and this comparison.
+
+#### Census residuals as a second line of evidence: tested and REJECTED
+
+Slovakia's register exceeded its census count by 42,827 in 2011 and by 10,511 in
+2021, a total of 53,338. Since a register accumulates people who left without
+deregistering, and a census is the moment that gets corrected, this looked like it
+could be a Slovak-only lower bound on the deregistration gap, sharing no source
+with the mirror comparison. It cannot serve that purpose, for three reasons.
+
+**It is not decomposable.** A census residual is `register count - census count`
+and jointly absorbs at least five things: emigrants who never deregistered
+(the quantity wanted), census undercount, late or missing vital registration,
+duplicate and stale addresses, and any change in the definition of usual
+residence between rounds. Nothing we hold splits them, and ŠÚ SR publishes no
+decomposition.
+
+**The two residuals behave inconsistently.** Measured against registered
+departures in each preceding intercensal period, the 2011 residual is 3.4x the
+registered flow and the 2021 residual is 0.4x. That is a factor of eight apart. If
+both were chiefly unrecorded emigration they should bear a similar relation to the
+recorded flow; they do not, which suggests the dominant component differs between
+the two rounds.
+
+**The 2021 census is not an independent observer of the register.** It was
+conducted principally from administrative registers with online self-enumeration,
+so its residual partly reflects register reconciliation rather than a fresh count
+of people on the ground.
+
+For the record, the magnitude is not absurd: 53,338 against the mirror's implied
+gap of 162,386 over a comparable span. But agreement in order of magnitude between
+one measured quantity and one undecomposable residual is not corroboration, and
+presenting it as a second line of evidence would overstate what it is. **Dropped
+rather than softened.** The hero rests on the mirror comparison alone.
+
 #### Why every figure here is a floor
 
 The panel omits the UK, Ireland, Spain, Switzerland and France, while the ŠÚ SR

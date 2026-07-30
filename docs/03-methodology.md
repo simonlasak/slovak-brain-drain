@@ -71,6 +71,50 @@ Bratislava captures most economic dynamism in Slovakia. This will dominate natio
 
 This is especially important because Bratislava is a **net importer** of educated Slovaks from elsewhere in Slovakia (internal brain gain) at the same time as it's a **net exporter** to abroad. Both flows happen simultaneously.
 
+## Adjusted persistence in the Czech corridor
+
+How many Slovak arrivals in Czechia are still there some years later? The raw
+calculation divides the change in registered Slovak residents by OECD-recorded
+arrivals, and it understates, because two exits from the *count* are not exits
+from the *country*: naturalisation and death.
+
+Adjusting for both. Czech naturalisations of Slovak citizens are held
+(Eurostat `migr_acq`, `geo=CZ`, `citizen=SK`). Mortality has no Slovak-specific
+age profile in ČSÚ open data, so the **assumption** is stated rather than hidden:
+the EU27-in-Czechia age distribution is used as the profile, the same proxy §2
+already discloses, with broad-band age-specific death rates. That yields a crude
+rate of **5.34 per 1,000 per year** on the resident stock. The population is young
+(46% aged 25 to 44) so the term is modest, but it is not negligible: halving it
+takes 2016-2020 persistence from 84.4% to 79.6%, and raising it by half takes it
+to 89.2%. So the mortality assumption carries roughly ±5 percentage points, which
+is why the figure below is given as an estimate and not a measurement.
+
+| Window | Arrivals | Raw change | Raw | Naturalisations | Deaths | Adjusted |
+|---|---|---|---|---|---|---|
+| 2016-2020 | 25,500 | +17,293 | 67.8% | +1,793 | +2,442 | **84.4%** |
+| 2022-2023 | 6,407 | +1,917 | 29.9% | +741 | +627 | **51.3%** |
+| 2022-2024 | 12,919 | +4,206 | 32.6% | +1,666 | +1,263 | **55.2%** |
+
+`unverified` for the mortality term specifically; the naturalisation term is
+`verified`.
+
+**The two windows are not comparable, and the reason is the 2021 census.** The
+post-2022 window sits on a stock that Czechia re-based downward in 2021, removing
+about 26,000 Slovak registrations at a stroke. A window beginning after a
+downward re-basing starts from an artificially low base, so its stock *change*
+measures partly the register refilling with people who were already present rather
+than new arrivals persisting. The pre-census window has no such contamination.
+
+The honest reading is therefore that **84.4% is a defensible pre-census estimate
+and the post-census figures are not a measured decline in persistence.** The drop
+from 84% to 55% should not be presented as behavioural. Two effects are entangled
+in it and this data cannot separate them: any genuine change in persistence, and
+the arithmetic consequence of re-basing the denominator's stock.
+
+Per the standing constraint in the handover, no §2 copy asserts a persistence
+rate. This entry exists so the number is documented rather than recomputed
+casually later.
+
 ## Czech corridor as special case
 
 For Section 2 specifically, do NOT treat Slovak→Czech as standard international migration. The two countries:
