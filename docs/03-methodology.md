@@ -101,13 +101,16 @@ Source-attribute his quotes carefully — The Athletic article by Arpon Basu (Oc
 4. **Acknowledge undercounting** with a persistent banner in Section 1.
    The "~300k" figure previously given here has no source: it traces to the same
    illustrative example in `07-editorial-content.md` as the landing hero, not to
-   any dataset. The undercount is now **derived**: destination registers imply at
-   least 2.64x the Slovak registered figure over 2013-2024, and that is a floor.
-   `verified` See `06-sources-page.md` section 4a for the full derivation, the
-   five specifications (range 1.84x to 2.64x) and the caveats. Note the
-   excluding-Czechia specification falls below 2x, so "at least twice" is not
-   true on every specification. Reproduce with
+   any dataset. The undercount is now **derived**: over the full accession window
+   2004-2024, destination registers imply 222,321 departures against 59,935
+   registered, a ratio of 3.71x, and that is a floor. `verified` See
+   `06-sources-page.md` section 4a for the derivation, the seven specifications
+   (range 1.84x to 3.71x) and the caveats. Reproduce with
    `pipeline/analysis/mirror_comparison.py`.
+
+   Do not state the multiplier in reader-facing copy. State both figures and let
+   the reader do the arithmetic: a single ratio invites treating one
+   specification as the answer when the result is a range with a floor.
 5. **Compare definitions** in Section 3 — show side-by-side counts for "Slovak-born vs citizen vs identified" so users see the methodological gap
 6. **Don't aggregate everything to a single Brain Drain Index** — the existing Fund for Peace HFBDI is one input but shouldn't be the headline number
 

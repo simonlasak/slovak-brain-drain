@@ -2,15 +2,32 @@
 import Base from '../layouts/Base.astro';
 import DiamondTransition from '../components/DiamondTransition';
 import HeroCounter from '../components/HeroCounter';
+// Derived by pipeline/analysis/headline_figures.py. Every number rendered as a
+// statistic on this page comes from here, so none of them can be typed in.
+import figures from '../data/headline_figures.json';
+
+const departures = figures.registered_departures_2004_2025.value;
+const czResidents = figures.slovaks_in_cz_residents_2025.value;
+const destinations = figures.diaspora_destinations_2020.value;
+const mirrorImplied = figures.mirror_implied_departures_2004_2024.value;
+const mirrorPanel = figures.mirror_panel_countries.value;
+const fmt = (n: number) => n.toLocaleString('en');
 ---
 
 <Base title="Slovak Brain Drain" lang="en">
   <!-- Zone 1: Hero -->
   <div class="hero">
-    <HeroCounter client:load />
-    <p style="font-family: var(--font-sans); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-secondary); margin-top: 1.5rem; max-width: 400px;">people who left Slovakia since EU accession, 2004-2025</p>
-    <p style="font-family: var(--font-sans); font-size: 14px; color: var(--text-tertiary); margin-top: 2rem; max-width: 480px; line-height: 1.6;">One in every 18 Slovaks. Among EU member states, only Lithuania, Latvia, Romania, and Bulgaria have lost a larger share of their population to emigration since 2004.</p>
-    <p style="font-family: var(--font-sans); font-size: 14px; color: var(--text-tertiary); margin-top: 1.5rem; max-width: 480px; line-height: 1.6;">Among today's Slovak university students, the pattern is sharpening. Roughly 18% study abroad, the highest rate in the EU after Luxembourg, and only about 40% return home. The rest will be added to this number.</p>
+    <HeroCounter
+      client:load
+      metric="migr_out"
+      geoLevel="nation"
+      yearFrom={2004}
+      yearTo={2025}
+      fallback={departures}
+    />
+    <p style="font-family: var(--font-sans); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-secondary); margin-top: 1.5rem; max-width: 400px;">people Slovak authorities recorded leaving the country between 2004 and 2025</p>
+    <p style="font-family: var(--font-sans); font-size: 14px; color: var(--text-tertiary); margin-top: 2rem; max-width: 480px; line-height: 1.6;">It is a fraction of the real figure. Deregistering on departure carries no penalty and no benefit, so most people who leave never do it.</p>
+    <p style="font-family: var(--font-sans); font-size: 14px; color: var(--text-tertiary); margin-top: 1.5rem; max-width: 480px; line-height: 1.6;">The {mirrorPanel} destination countries that have counted Slovak citizens since 2004 record {fmt(mirrorImplied)} arrivals from Slovakia over the same period, and they omit the United Kingdom entirely. <a href="/methodology" style="color: var(--accent-primary);">How that is derived</a>.</p>
     <div style="position: absolute; bottom: 32px; left: 50%; transform: translateX(-50%);">
       <DiamondTransition client:load />
     </div>
@@ -22,17 +39,17 @@ import HeroCounter from '../components/HeroCounter';
     <a href="/internal" class="section-card">
       <span class="eyebrow">&sect;1 &middot; INTERNAL</span>
       <h2>Internal Slovakia</h2>
-      <p>Population change, migration flows, and regional divergence across 79 districts, 2004-2025.</p>
+      <p>Population change, migration, and regional divergence across all 79 districts, 2004-2025.</p>
     </a>
     <a href="/corridor" class="section-card">
       <span class="eyebrow">&sect;2 &middot; CORRIDOR</span>
       <h2>The Czech Corridor</h2>
-      <p>240,000 Slovaks in Czechia. The student pipeline, the labour pipeline, and the stay rate.</p>
+      <p>{fmt(czResidents)} Slovaks resident in Czechia. The student pipeline, the labour pipeline, and the stay rate.</p>
     </a>
     <a href="/diaspora" class="section-card">
       <span class="eyebrow">&sect;3 &middot; DIASPORA</span>
       <h2>Global Diaspora</h2>
-      <p>Slovak-born populations in 87 countries. Where the brain drain actually goes.</p>
+      <p>Slovak-born populations in {destinations} countries. Where the brain drain actually goes.</p>
     </a>
     <a href="/people" class="section-card">
       <span class="eyebrow">&sect;4 &middot; PEOPLE</span>

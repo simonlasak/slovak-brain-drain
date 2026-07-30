@@ -1,5 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
+// Derived by pipeline/analysis/headline_figures.py from the parquets themselves.
+// The counts below previously counted files in data/raw/, which overstated them:
+// 13 SUSR cubes are fetched but only 4 feed a rendered metric.
+import figures from '../data/headline_figures.json';
+
+const susrCubes = figures.susr_cubes_used.value;
+const csuTables = figures.csu_tables_used.value;
+const oecdSets = figures.oecd_datasets_used.value;
+const mirrorImplied = figures.mirror_implied_departures_2004_2024.value;
+const mirrorRegistered = figures.mirror_registered_departures_2004_2024.value;
+const mirrorPanel = figures.mirror_panel_countries.value;
+const fmt = (n: number) => n.toLocaleString('en');
 ---
 
 <Base title="Methodology - Slovak Brain Drain" lang="en">
@@ -8,30 +20,46 @@ import Base from '../layouts/Base.astro';
 
   <section class="methodology-content">
     <h2>Data sources</h2>
+    <p class="note">Counts are of sources that feed a figure rendered on this
+    site, read from the output files themselves. More data is fetched than is
+    used, and unused sources are not counted here.</p>
     <table>
       <thead>
         <tr><th>Source</th><th>Coverage</th><th>Confidence</th></tr>
       </thead>
       <tbody>
-        <tr><td>SU SR DataCube</td><td>11 cubes, 2004-2025</td><td>Very high</td></tr>
-        <tr><td>Eurostat</td><td>8 datasets</td><td>High</td></tr>
-        <tr><td>Census 2021</td><td>9 indicators, 2,927 obec</td><td>Very high</td></tr>
-        <tr><td>Census 2011</td><td>Education at okres level</td><td>High</td></tr>
-        <tr><td>OECD</td><td>5 migration datasets</td><td>Medium-high</td></tr>
-        <tr><td>CSU (Czech)</td><td>4 tables, 2004-2025</td><td>High</td></tr>
-        <tr><td>UN DESA</td><td>Bilateral stock, 1990-2020</td><td>Medium</td></tr>
+        <tr><td>ŠÚ SR DataCube</td><td>{susrCubes} cubes, 2004-2025</td><td>Very high</td></tr>
+        <tr><td>Eurostat</td><td>Citizenship stock, naturalisations, student mobility</td><td>High</td></tr>
+        <tr><td>ČSÚ (Czech)</td><td>{csuTables} tables, 2004-2025</td><td>High</td></tr>
+        <tr><td>OECD</td><td>{oecdSets} migration extracts</td><td>Medium-high</td></tr>
+        <tr><td>UN DESA</td><td>Bilateral stock, 2020 revision</td><td>Medium, all reference years modelled</td></tr>
       </tbody>
     </table>
 
+    <h2>The registration gap</h2>
+    <p>Slovak emigration is recorded through municipal deregistration, which
+    carries no penalty for skipping it. Over 2004-2024 Slovak authorities
+    recorded {fmt(mirrorRegistered)} departures, while the {mirrorPanel}
+    destination countries that have counted Slovak citizens throughout that
+    period record {fmt(mirrorImplied)} arrivals from Slovakia. Those countries do
+    not include the United Kingdom, Ireland, Spain, Switzerland or France, so the
+    gap is a floor rather than an estimate.</p>
+    <p>The full derivation, including seven specifications and the sensitivity
+    check that removes Czechia, is in <code>docs/06-sources-page.md</code> and
+    reproducible with <code>pipeline/analysis/mirror_comparison.py</code>.</p>
+
     <h2>Known discrepancies</h2>
     <ul>
-      <li>CSU reports ~12% more Slovaks in CZ than OECD/DESA (different counting methods: residence permits vs census-based "born in Slovakia")</li>
-      <li>2011 Census correction creates a discontinuity in population time series</li>
-      <li>OECD uses ISO3 country codes, UN DESA uses numeric codes</li>
+      <li>ČSÚ reports about 12% more Slovaks in CZ than OECD/DESA. Different counting: residence registration against census-based "born in Slovakia".</li>
+      <li>The 2011 and 2021 censuses each re-anchor the population series without restating the flow components, so population change and recorded flows cannot reconcile across those two years. The residuals are the census corrections themselves, -42,827 and -10,511.</li>
+      <li>ŠÚ SR migration figures mean different things at different geographic levels. Only the national level is international migration; below it, the same series counts moves across that district's own boundary, internal moves included.</li>
+      <li>OECD uses ISO3 country codes, UN DESA uses UN M49 numeric codes.</li>
     </ul>
 
     <h2>Validation report</h2>
-    <p>5 cross-source checks run. 0 red flags, 4 yellow flags (documented discrepancies). Full report available in the repository.</p>
+    <p>Eight cross-source checks run on every pipeline build. The report is
+    written to <code>pipeline/validate/report.html</code> in the repository, with
+    each check's severity and the observations behind it.</p>
   </section>
 </Base>
 
@@ -43,4 +71,6 @@ import Base from '../layouts/Base.astro';
   th { font-weight: 600; background: #f8f9fa; }
   ul { padding-left: 1.25rem; }
   li { margin-bottom: 0.5rem; font-size: 0.95rem; }
+  .note { font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+  code { font-family: var(--font-mono); font-size: 0.85em; }
 </style>

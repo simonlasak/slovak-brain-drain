@@ -92,16 +92,17 @@ const en: Section1Content = {
     // to substitute yet, so the sentence now opens on the redistribution claim,
     // which the rest of this section actually evidences.
     'Slovakia has not been emptying evenly. The population that remained has been redistributing itself with almost equal force. The same two decades that sent workers to Bratislava, Prague, and Vienna also rearranged the people who stayed behind, pulling them toward a single dominant node and draining the rest.',
-    'The clearest measure of that pull is what happened to Slovakia’s teenagers. Take every 15-to-19-year-old living in a district in 2004. Count how many 35-to-39-year-olds that same district holds in 2024. Across all 79 districts, the median answer is 89 percent: the typical Slovak district retains nine tenths of its young cohort by the time they reach their late thirties. But that median conceals a range that tells the whole story. Senec, in Bratislava’s commuter belt, registered 234 percent, meaning it more than doubled its teenage cohort as young adults moved in. Snina, in the Vihorlat uplands of northeastern Slovakia, kept 76 percent, meaning roughly one in four of the teenagers who grew up there had left and not been replaced by the time they would have turned 35.',
+    // CHANGED FROM APPROVED COPY, awaiting Simon's confirmation. Three figures
+    // moved to one decimal so the prose matches the charts, which compute them:
+    // 89 -> 88.6, 234 -> 233.4, 76 -> 75.4. Wording otherwise untouched.
+    'The clearest measure of that pull is what happened to Slovakia’s teenagers. Take every 15-to-19-year-old living in a district in 2004. Count how many 35-to-39-year-olds that same district holds in 2024. Across all 79 districts, the median answer is 88.6 percent: the typical Slovak district retains nine tenths of its young cohort by the time they reach their late thirties. But that median conceals a range that tells the whole story. Senec, in Bratislava’s commuter belt, registered 233.4 percent, meaning it more than doubled its teenage cohort as young adults moved in. Snina, in the Vihorlat uplands of northeastern Slovakia, kept 75.4 percent, meaning roughly one in four of the teenagers who grew up there had left and not been replaced by the time they would have turned 35.',
   ],
-  // TODO(copy, needs Simon): the chart's reference line now prints the median it
-  // actually computes from the plotted dots, 88.6%, because a hardcoded "89" was
-  // the same defect class as the wage chart's hardcoded reference line. The prose
-  // above and this callout say 89, which is 88.6 rounded and defensible, but the
-  // page will now show both figures. Decide one convention: either round the
-  // chart label to a whole number too, or move the prose and callout to 88.6.
-  // Left as approved (89) rather than changed unilaterally.
-  callout1: { value: '89%', label: 'Median district cohort retention, 2004 to 2024' },
+  // CHANGED FROM APPROVED COPY, awaiting Simon's confirmation. Was '89%'.
+  // Convention now: one decimal for derived statistics, integers for counts. The
+  // chart's reference line computes the median from the plotted dots and prints
+  // 88.6%, so prose and chart agree rather than showing two figures for the same
+  // quantity. See also the intro paragraph, changed the same way.
+  callout1: { value: '88.6%', label: 'Median district cohort retention, 2004 to 2024' },
 
   sub1: 'Where the teenagers went',
   caption1:
@@ -148,7 +149,9 @@ const en: Section1Content = {
     {
       title: 'Where did the teenagers go?',
       description:
-        'Take every 15-19 year old living in a district in 2004. Twenty years later, how many 35-39 year olds does that same district have? Senec has 234% (it attracted people). Snina kept only 76% - one in four left and never came back. The median district loses 11% of each generation.',
+        // CHANGED FROM APPROVED COPY, awaiting Simon's confirmation: 234 -> 233.4,
+        // 76 -> 75.4, "loses 11%" -> 11.4, same one-decimal convention.
+        'Take every 15-19 year old living in a district in 2004. Twenty years later, how many 35-39 year olds does that same district have? Senec has 233.4% (it attracted people). Snina kept only 75.4% - one in four left and never came back. The median district loses 11.4% of each generation.',
     },
     // TODO(copy, needs Simon): the cut clause claimed only Bratislava and its
     // immediate suburban ring were meaningfully growing. Checked over the full

@@ -242,19 +242,67 @@ measured over different periods.
 | **ŠÚ SR registered departures, 2013-2024** | **43,471** |
 | **Ratio** | **2.64x** |
 
-#### Five specifications
+#### The accession-window panel, 2004 to 2025
+
+The site's landing page counts registered departures over 2004-2025, so the
+comparison is also run over that window. The widest panel whose members report
+Slovak citizens at **both** endpoints is 11 countries: **AT CZ DE FI HU IT LV NL
+NO SE SI**. Four of the 15 above drop out for having no 2004 observation (BE, IS,
+LT, RO), but all three largest destinations survive.
+
+Requiring both endpoints rather than every intervening year is the correct
+condition here, because the quantity is a stock **difference**: only the
+endpoints enter it. Germany is missing 2011 and Austria 2010-2011, neither of
+which touches an endpoint.
+
+| Quantity | Value |
+|---|---|
+| Slovak citizens reported by the panel, 1 Jan 2004 | 70,056 |
+| Slovak citizens reported by the panel, 1 Jan 2025 | 262,301 |
+| Rise in reported stock | 192,245 |
+| Plus Slovaks naturalising in the panel, 2004-2024 | 30,076 |
+| **Implied departures** | **222,321** |
+| **ŠÚ SR registered departures, 2004-2024** | **59,935** |
+| **Ratio** | **3.71x** |
+
+**On the 59,935 against the hero's 64,855.** Both are correct and they reconcile
+exactly: 59,935 + 4,920 (2025 alone) = 64,855. The mirror comparison must stop
+its flow window at 2024 because a stock dated 1 January 2025 only reflects
+arrivals through 2024. The hero states the full 2004-2025 registered total; the
+mirror states the part of it that the destination endpoints can speak to.
+
+#### Seven specifications
 
 Each varies one judgement a reader could reasonably have made differently.
 
 | Specification | Ratio | Implied | Registered |
 |---|---|---|---|
-| Headline (15 countries, 2013-2024) | **2.64x** | 114,890 | 43,471 |
-| No naturalisation adjustment | 2.20x | 95,468 | 43,471 |
-| Excluding Czechia | **1.84x** | 79,827 | 43,471 |
-| Shorter window, 2015-2022 | 2.28x | 63,952 | 28,110 |
+| Accession window, 11 countries, 2004-2024 | **3.71x** | 222,321 | 59,935 |
+| Accession window, excluding Czechia | 2.15x | 128,866 | 59,935 |
+| Headline, 15 countries, 2013-2024 | **2.64x** | 114,890 | 43,471 |
 | Top five destinations only | 2.30x | 100,180 | 43,471 |
+| Shorter window, stock 2015-2023 | 2.28x | 63,952 | 28,110 |
+| No naturalisation adjustment | 2.20x | 95,468 | 43,471 |
+| 2013 window, excluding Czechia | **1.84x** | 79,827 | 43,471 |
 
-**Range: 1.84x to 2.64x.**
+**Range: 1.84x to 3.71x.**
+
+#### Reading the Czechia-excluded rows
+
+Czechia is by far the largest single destination: about 43% of the panel's stock
+rise on the 2004 window. Removing it takes the ratio to 2.15x on the accession
+window and 1.84x on the 2013 window.
+
+**These are sensitivity checks on the largest destination, not rival estimates.**
+Nobody argues Slovaks in Czechia should be excluded from a count of Slovaks who
+left Slovakia; they are there, and Czech registration counts them. The rows exist
+to answer a narrower question: is the finding an artefact of one country's
+reporting? It is not. The gap persists at roughly 2x with the largest destination
+removed entirely, which is the point of running the check.
+
+The lowest row, 1.84x, is therefore the most conservative reading available and
+not the best estimate. Even it says destination registers imply nearly twice the
+registered figure.
 
 #### Why every figure here is a floor
 
@@ -286,13 +334,17 @@ came from three mismatched windows: a stock change measured 2013-2025, a
 naturalisation sum over 2014-2023, and a ŠÚ SR denominator over 2014-2025
 (45,621 is exactly ŠÚ SR 2014-2025). Aligning all three to the window the stock
 endpoints actually imply gives 2.64x. The handover's "robust 2.1x to 3.9x across
-five specifications" is likewise not reproduced; the range here is 1.84x to 2.64x.
+five specifications" is not reproduced either, though the range here, 1.84x to
+3.71x across seven specifications, is close to it in width.
 
-**The 1.84x specification matters for copy.** Dropping Czechia alone takes the
-ratio below 2x, so a claim that the true figure is "at least twice as high"
-holds on the headline and on three of five specifications but **not** on all
-five. Any hero copy asserting "at least twice" should either keep Czechia in
-scope explicitly or soften to a range.
+**On copy that asserts a multiplier.** Only one of the seven specifications falls
+below 2x, and it is the one that deletes the largest destination from a 2013-only
+window. On the accession window that matches the landing hero, the same exclusion
+still gives 2.15x. A claim of "at least twice as high" is therefore defensible,
+but the site does not make it: the hero states the two figures and leaves the
+arithmetic to the reader, and this page carries the range. That is the safer
+construction, because a multiplier invites the reader to treat one specification
+as the answer when the honest result is a range with a floor.
 
 **Cases to document** (at minimum):
 
