@@ -75,6 +75,10 @@ sources:
       migr_pop3ctb:    "Population by country of birth, sex, age"
       migr_imm1ctz:    "Immigration by citizenship"
       migr_emi1ctz:    "Emigration by citizenship"
+      # Needed by the mirror comparison: a Slovak who naturalises in the
+      # destination leaves the Slovak-citizen stock without leaving the country,
+      # so implied departures must add naturalisations back in.
+      migr_acq:        "Acquisition of citizenship by former citizenship"
       educ_uoe_mobs02: "Tertiary students from abroad by country of origin"
       educ_uoe_mobg01: "Mobile graduates by origin and destination"
       lfst_r_lfu3rt:   "Regional unemployment"

@@ -34,7 +34,11 @@ For Section 3 (diaspora), stock-based metric is primary (because flow data has t
 - Gross outflow of educated Slovaks
 - Net = gross outflow minus inflow of educated foreigners to SK (or, for Section 1, to that region)
 
-The inflow comparator is needed because Slovakia has been gaining ~21k immigrants per year (mostly Ukrainian, Hungarian, Czech labour) which partially offsets the educated outflow. `verified` (pipeline mean `intl_in` 2004-2025 = 23,562; note Ukrainians under temporary protection are EXCLUDED from this series per Eurostat ESMS, so it is not a total immigration figure).
+The inflow comparator is needed because Slovakia gains immigrants each year (mostly Ukrainian, Hungarian, Czech labour) which partially offsets the educated outflow. The registered figure is **6,287 per year** on average, 2004-2025. `verified` (mean of `intl_in` at `geo_level='nation'`; total 138,321 over 22 years).
+
+The "~21k per year" previously stated here, and its "23,562" verification, were both wrong. 23,561.5 is exactly the annual total of `intl_in` summed over the four NUTS2 **oblasti**, and at sub-national levels this series counts moves INTO the unit including moves from other Slovak districts, so it is internal plus international migration rather than immigration. Every geographic level gives a different plausible answer from the same metric (kraj: 29,279; okres: 55,838; urban/rural: 53,563), which is why the level must be stated: only `geo_level='nation'` measures immigration to Slovakia. The earlier check reproduced the document's own filter rather than testing it.
+
+Note also that Ukrainians under temporary protection are EXCLUDED from this series per Eurostat ESMS, so it is not a total immigration figure.
 
 **WARNING on netting:** do not present `intl_net` anywhere. `intl_in` and `intl_out` are collected through different institutions (municipal registration offices for nationals, Foreign Police for foreigners) with different enforcement, so the inflow register is near-complete and the outflow register is a severe undercount. Their difference is an artefact of that asymmetry, not a migration balance. Registered outflow is a lower bound and should be shown as a rate, not netted.
 
@@ -94,11 +98,16 @@ Source-attribute his quotes carefully — The Athletic article by Arpon Basu (Oc
 1. **Always show date of last update** on every chart
 2. **Distinguish actual vs interpolated** points visually (solid dot vs hollow ring)
 3. **Show data source as clickable link** below every chart
-4. **Acknowledge undercounting** with a persistent banner in Section 1. `unverified`
+4. **Acknowledge undercounting** with a persistent banner in Section 1.
    The "~300k" figure previously given here has no source: it traces to the same
    illustrative example in `07-editorial-content.md` as the landing hero, not to
-   any dataset. State the undercount only once it is derived. A feasible route
-   exists via Eurostat `migr_pop1ctz` mirror comparison (see `06-sources-page.md`).
+   any dataset. The undercount is now **derived**: destination registers imply at
+   least 2.64x the Slovak registered figure over 2013-2024, and that is a floor.
+   `verified` See `06-sources-page.md` section 4a for the full derivation, the
+   five specifications (range 1.84x to 2.64x) and the caveats. Note the
+   excluding-Czechia specification falls below 2x, so "at least twice" is not
+   true on every specification. Reproduce with
+   `pipeline/analysis/mirror_comparison.py`.
 5. **Compare definitions** in Section 3 — show side-by-side counts for "Slovak-born vs citizen vs identified" so users see the methodological gap
 6. **Don't aggregate everything to a single Brain Drain Index** — the existing Fund for Peace HFBDI is one input but shouldn't be the headline number
 

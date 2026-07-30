@@ -179,8 +179,120 @@ like-for-like comparison and should not be substituted.
 
 A defensible mirror comparison does exist on the **citizen** definition, using
 Eurostat `migr_pop1ctz` (destination-reported Slovak citizens) against ŠÚ SR
-cumulative registered outflow. Feasibility confirmed July 2026: 25 reporting
-countries for 2020 totalling 297,234, Germany included. Not yet implemented.
+cumulative registered outflow. **It is now implemented: see "The mirror
+comparison" below.**
+
+---
+
+### 4a. The mirror comparison (implemented, reproducible)
+
+**Code:** `pipeline/analysis/mirror_comparison.py`
+**Run:** `PYTHONPATH=. .venv/bin/python -m pipeline.analysis.mirror_comparison`
+**Output:** `data/processed/mirror_comparison.json` (every figure below, per country)
+
+Takes about two minutes: it parses two 10 MB Eurostat bulk TSVs row by row.
+
+#### The question
+
+Slovakia records emigration through municipal deregistration, which carries no
+penalty for skipping and no benefit for doing. Destination countries have the
+opposite incentive structure: residence registration gates healthcare, tax status
+and employment. Comparing the two registers bounds how much Slovak registration
+misses.
+
+#### The formula
+
+```
+implied departures = rise in destination-reported Slovak citizens
+                   + Slovaks naturalising in those countries
+```
+
+The naturalisation term is not optional. A Slovak who takes German citizenship
+leaves the German count of Slovak citizens without leaving Germany, so omitting
+it understates arrivals by exactly the number who naturalised.
+
+#### The panel
+
+15 countries, every one reporting Slovak citizens for the whole window with no
+gaps: **AT BE CZ DE FI HU IS IT LT LV NL NO RO SE SI**.
+
+Deliberately excluded, with reasons: **GB** (no post-Brexit Eurostat citizenship
+data, and the single biggest omission), **IE** (series too sparse for clean
+endpoints), **ES** (reports country of birth more completely than citizenship),
+**CH** (non-EU reporting, gaps in the Slovak breakdown), **FR** (Slovak
+breakdown not published for the full window).
+
+#### Period alignment, which is where the earlier attempt went wrong
+
+`migr_pop1ctz` stock is dated **1 January**. A stock at 1 Jan 2013 reflects
+arrivals through 2012, so the change from 1 Jan 2013 to 1 Jan 2025 was produced
+by the **calendar years 2013 to 2024**. Naturalisation flows and ŠÚ SR departure
+flows must use that same 2013-2024 window, or the comparison divides quantities
+measured over different periods.
+
+#### Result `verified`
+
+| Quantity | Value |
+|---|---|
+| Slovak citizens reported by the panel, 1 Jan 2013 | 175,880 |
+| Slovak citizens reported by the panel, 1 Jan 2025 | 271,348 |
+| Rise in reported stock | 95,468 |
+| Plus Slovaks naturalising in the panel, 2013-2024 | 19,422 |
+| **Implied departures** | **114,890** |
+| **ŠÚ SR registered departures, 2013-2024** | **43,471** |
+| **Ratio** | **2.64x** |
+
+#### Five specifications
+
+Each varies one judgement a reader could reasonably have made differently.
+
+| Specification | Ratio | Implied | Registered |
+|---|---|---|---|
+| Headline (15 countries, 2013-2024) | **2.64x** | 114,890 | 43,471 |
+| No naturalisation adjustment | 2.20x | 95,468 | 43,471 |
+| Excluding Czechia | **1.84x** | 79,827 | 43,471 |
+| Shorter window, 2015-2022 | 2.28x | 63,952 | 28,110 |
+| Top five destinations only | 2.30x | 100,180 | 43,471 |
+
+**Range: 1.84x to 2.64x.**
+
+#### Why every figure here is a floor
+
+The panel omits the UK, Ireland, Spain, Switzerland and France, while the ŠÚ SR
+denominator counts departures to **all** destinations. Missing destinations in
+the numerator with none missing from the denominator biases the ratio **down**.
+Two further effects push the same way: a rise in reported stock nets out deaths
+and onward moves, both of which reduce the implied figure.
+
+#### What it is not
+
+Not a count of Slovaks abroad. Not a net migration figure. It measures one thing:
+the gap between two registers, on the citizen definition.
+
+#### Load-bearing caveats
+
+- Destination stock counts Slovak **citizens**, not Slovak-born. A Slovak-born
+  person who never held Slovak citizenship is absent; a dual national is present.
+- Destination registration is more complete than Slovak deregistration but is not
+  a census. Its own undercount is unknown and unquantified here.
+- `intl_out` is used at the **national level only**. Below that it counts moves
+  out of the district including moves to other Slovak districts.
+
+#### Supersedes, and corrects, the earlier figures
+
+This replaces the dead "23-38%" template above. It also **does not reproduce**
+the 111,256 / 45,621 / 2.4x figures recorded in the July 2026 handover. Those
+came from three mismatched windows: a stock change measured 2013-2025, a
+naturalisation sum over 2014-2023, and a ŠÚ SR denominator over 2014-2025
+(45,621 is exactly ŠÚ SR 2014-2025). Aligning all three to the window the stock
+endpoints actually imply gives 2.64x. The handover's "robust 2.1x to 3.9x across
+five specifications" is likewise not reproduced; the range here is 1.84x to 2.64x.
+
+**The 1.84x specification matters for copy.** Dropping Czechia alone takes the
+ratio below 2x, so a claim that the true figure is "at least twice as high"
+holds on the headline and on three of five specifications but **not** on all
+five. Any hero copy asserting "at least twice" should either keep Czechia in
+scope explicitly or soften to a range.
 
 **Cases to document** (at minimum):
 
