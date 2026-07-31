@@ -70,15 +70,40 @@ So naturalisation accounts for most of the French gap, a little under half of th
 Italian one, and a third of the Hungarian one. It does not explain Ireland, which
 stays unexplained and must not be presented as a mechanism.
 
-**On Hungary specifically, and stated factually.** Hungary's 2010 amendment to its
-citizenship act introduced a simplified procedure for applicants with Hungarian
-ancestry or language, available without residence in Hungary. Slovakia has a
+**Accumulation window, stated once.** Every naturalisation figure above is a
+cumulative sum from the first year the dataset holds (2002) through **end-2019**,
+set against a stock dated 1 January 2020. Any figure quoted from `migr_acq` in
+prose must state this window.
+
+**RESOLVED: Hungary's simplified procedure is NOT the operative mechanism.** This
+was an open fork and the answer changes what the prose may claim.
+
+Regulation 862/2007 defines `migr_acq` over the **usually resident population** of
+the reporting state. Hungary's 2010 simplified procedure grants citizenship to
+applicants with Hungarian ancestry or language *without* a residence requirement,
+so those grants fall outside the statistical population. The scale test confirms
+they are excluded: the programme granted on the order of 1.1 million citizenships
+across 2011-2020, while Hungary's entire reported `migr_acq` total peaks at 20,554
+in 2011 and runs at 1,700 to 3,000 a year recently. Two orders of magnitude apart.
+
+**Consequences.** The 3,441 figure does **not** overstate. But it counts Slovak
+citizens who were usual residents of Hungary when they naturalised, which is
+ordinary naturalisation, the same mechanism as France. Prose must not present it
+as capturing cross-border grants to ethnic Hungarians in southern Slovakia,
+because by definition it cannot.
+
+The series does step at the procedure's introduction, from 97 in 2010 to 414 in
+2011, settling to roughly double the pre-2011 mean. That is consistent with the
+procedure easing ordinary naturalisation for Slovaks *already resident* in
+Hungary, and with a transitional cohort regularising. It is not evidence of
+non-resident grants entering the count.
+
+**Stated factually, because this is a live political dispute.** Hungary's 2010
+amendment introduced the simplified procedure described above. Slovakia has a
 substantial Hungarian-speaking minority, concentrated in the south. Slovakia
-responded in 2010 with an amendment providing for loss of Slovak citizenship on
-voluntary acquisition of another. Both measures were, and remain, politically
-contested in both countries. This project takes no position on either; it records
-that two legal changes in the same year alter what the citizen definition counts,
-which is why the Hungarian gap cannot be read as migration.
+amended its own citizenship act in 2010 to provide for loss of Slovak citizenship
+on voluntary acquisition of another. Both measures were, and remain, politically
+contested in both countries. This project takes no position on either.
 
 **The 2010 Slovak law does not produce a detectable break in the series.** If
 voluntary acquisition of another citizenship systematically removed people from
