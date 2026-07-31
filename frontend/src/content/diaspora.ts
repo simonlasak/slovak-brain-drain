@@ -81,14 +81,32 @@ const en: Section3Content = {
   translationNotice: '',
 
   eyebrow: '§3 · Global Diaspora',
-  h1: 'The wider scattering',
+  h1: 'Three questions, three answers',
 
+  // APPROVED 2026-07-31 (draft 3). Replaces prose built on growth ratios, which
+  // the July 2026 audit retired: every UN DESA reference year is interpolated or
+  // extrapolated, so a ratio divides two modelled quantities. Per
+  // 01-research-architecture.md:84 the section's subject is how the picture
+  // changes with the definition of "Slovak", not the size of the total.
+  //
+  // Figures and vintages, all verified:
+  //   615,823 +/- 8,391  Slovak ancestry, B04006, 2023 ACS 5-year
+  //   19,700             Slovakia-born, PUMS POBP=149, 2023 ACS 5-year. Weighted
+  //                      microdata: no published margin, replicate weights
+  //                      deliberately not fetched.
+  //   17,993             Czechoslovakia-born, PUMS POBP=105, same vintage
+  //   242,907            Czechoslovakian ancestry, B04006, same vintage
+  //   51 / 25 / 1        countries per definition, ALL on the 2020 basis
+  // Factor of thirty-one is 615,823 / 19,700, same vintage both sides.
   intro: [
-    'Slovakia’s emigration has a shape that neither the internal map nor the Czech corridor can show. In 2020, the United Nations counted 419,651 people living outside Slovakia who had been born inside it, spread across 51 countries. That is close to eight percent of the country’s present population living somewhere else, and it is the number that makes the phrase "brain drain" more than rhetorical.',
-    'What matters is not the total but its rearrangement. In 1990, the same measure found 132,977 Slovak-born people abroad, and the great majority of them were in three places: Czechoslovakia’s other half, Austria, and the postwar emigrant communities of Canada and the United States. Thirty years later the diaspora has more than tripled, and the countries that absorbed the growth are almost entirely different ones. The 1990 map is a record of where Slovaks had historically gone. The 2020 map is a record of where the European Union let them go.',
-    'This section maps that redistribution. The map above is a single snapshot rather than an animation, because the underlying source is only comprehensive every five years; the honest way to show it is one well-covered year rather than a smooth curve stitched from uneven data.',
+    'Ask how many Slovaks live abroad and the answer depends on a question most people never think to ask: what makes someone Slovak?',
+    'There are three defensible answers, and they are not three estimates of one number. They are three different quantities. Place of birth counts people born inside Slovakia who now live outside it, which is a living first-generation population. Citizenship counts people holding a Slovak passport, which includes their children born abroad and excludes anyone who has given the passport up. Ancestry counts people who say they are of Slovak descent, reaching back through however many generations the respondent chooses to remember. The first is a migration statistic. The third is a heritage statistic. Confusing them produces claims that are wrong by an order of magnitude in either direction.',
+    'The United States shows how far apart they sit. In the 2023 American Community Survey, 615,823 people reported Slovak ancestry, give or take a sampling margin of 8,391. In the same survey, the microdata records 19,700 residents born in Slovakia, a figure that carries no published margin of its own. Both numbers are correct. They differ by a factor of thirty-one because they are measuring different things: the larger figure is largely the descendants of people who left Austria-Hungary before 1914, most of whom have never held Slovak citizenship and many of whom have never been to Slovakia.',
+    'Neither figure is a clean count of its own quantity either. The same survey carries a separate line for \u201cCzechoslovakia\u201d, the state that dissolved at the end of 1992, and it cannot be divided: 17,993 residents born there, and 242,907 people who recorded their ancestry as Czechoslovakian. No rule allocates those people between two successor countries. Both Slovak figures are therefore floors, but for different reasons. The birthplace codes are mutually exclusive, one per person, so the 17,993 sit entirely outside the 19,700 and an unknown share of them belong with it. The ancestry question accepts two responses per person, so part of the 242,907 is already inside the 615,823 and the rest is not, with no way to tell which.',
+    'Coverage runs out before the comparison does. For 2020, Slovak-born populations can be counted in fifty-one countries and Slovak citizens in twenty-five. Ancestry is counted in one, because the United States is the only country whose ancestry data this project holds, though Canada and Australia ask the question too. No single country supports all three at once: the United States appears in neither of the other two sources. This section therefore takes the definitions one at a time, and says which one it is counting every time a number appears.',
   ],
-  callout1: { value: '419,651', label: 'Slovak-born people living abroad, 2020, across 51 countries' },
+  // The contrast IS the callout: one country, one survey, two definitions.
+  callout1: { value: '31x', label: 'Ratio of Slovak-ancestry to Slovak-born residents in the United States, 2023 ACS' },
 
   sub1: 'Where the diaspora is',
   caption1: 'Slovak-born residents by country of destination, 2020. Top 12 of 51 countries with data. src: UN DESA bilateral migrant stock, 2020 revision.',

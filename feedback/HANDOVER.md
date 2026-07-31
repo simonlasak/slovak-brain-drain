@@ -149,10 +149,17 @@ The section's subject becomes: the diaspora cannot be counted cleanly. Evidence:
 - Italy at 10,611 against its own national count of 1,095, a factor of 9.7.
 - The United States at **zero**, against 10,345 Slovaks naturalising there.
 - All seven reference years interpolated or extrapolated, not counted.
-- **The triangulation, which is the strongest card:** UN DESA `born` at 419,651
-  and Eurostat `citizen` at 297,234 converge once each source's known coverage
-  gaps are accounted for. Two independent sources on two different definitions
-  agreeing in magnitude is stronger than either alone.
+- **RETIRED 2026-07-31. This was recorded here as "the strongest card" and it is
+  not one.** The claim was that UN DESA `born` at 419,651 and Eurostat `citizen`
+  at 297,234 converge, and that two independent sources agreeing on two different
+  definitions beats either alone. They are not independent: UN DESA and Eurostat
+  both compile from the same national statistical offices, so agreement between
+  them is one national register reported twice. This fails on exactly the grounds
+  that retired the Eurostat `migr_emi1ctz` check, which turned out to be ŠÚ SR's
+  own filing redistributed. The comparison is still worth showing as a
+  definitional contrast; it is not corroboration of either level. Note also that
+  the two totals were never comparable as published: 51 destinations against 25,
+  which is why §3 uses the 25-country matched panel.
 
 Absolute levels survive with a modelled-estimate caveat. **No growth ratios.**
 Prose first per `07-editorial-content.md`, charts only after approval.

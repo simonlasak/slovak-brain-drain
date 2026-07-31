@@ -52,18 +52,23 @@ Naturalisation is the testable one: a Slovak who acquires the local citizenship
 leaves the destination's count of Slovak citizens without leaving the country, so
 `born > citizen` should be partly explained by cumulative naturalisations.
 
-| Destination | Born | Citizen | Gap | Naturalisations | Share of gap |
+Both sides must cover the same period. The stock gap is dated 1 January 2020, so
+the naturalisations that produced it are those accumulated **through end-2019**.
+Using every year the dataset holds (to 2024) inflates every share: Hungary would
+read 48% instead of 33%, which is the hero window mismatch in another guise.
+
+| Destination | Born | Citizen | Gap | Naturalisations to end-2019 | Share of gap |
 |---|---|---|---|---|---|
-| Hungary | 20,980 | 10,581 | 10,399 | 4,949 | **48%** |
-| France | 5,560 | 3,999 | 1,561 | 1,448 | **93%** |
-| Italy | 10,611 | 7,976 | 2,635 | 1,353 | **51%** |
-| Ireland | 13,573 | 9,388 | 4,185 | 548 | 13% |
+| France | 5,560 | 3,999 | 1,561 | 1,248 | **80%** |
+| Italy | 10,611 | 7,976 | 2,635 | 1,130 | **43%** |
+| Hungary | 20,980 | 10,581 | 10,399 | 3,441 | **33%** |
+| Ireland | 13,573 | 9,388 | 4,185 | 309 | 7% |
 
-`verified`, Eurostat `migr_acq`, `agedef=COMPLET`, all years held.
+`verified`, Eurostat `migr_acq`, `agedef=COMPLET`, cumulative 2002-2019.
 
-So naturalisation accounts for roughly half the Hungarian and Italian gaps and
-nearly all of the French one. It does not account for Ireland, which stays
-unexplained and should not be presented as a mechanism.
+So naturalisation accounts for most of the French gap, a little under half of the
+Italian one, and a third of the Hungarian one. It does not explain Ireland, which
+stays unexplained and must not be presented as a mechanism.
 
 **On Hungary specifically, and stated factually.** Hungary's 2010 amendment to its
 citizenship act introduced a simplified procedure for applicants with Hungarian
@@ -84,6 +89,21 @@ destinations (Hungary -33pp, Slovenia -52pp, Norway -33pp comparing 2005-2010
 against 2012-2020 CAGR), but the slowdown is near-universal and is better read as
 post-accession maturation than as a legal shock: Germany's rate *rose*.
 
+**The 2010 provision was relaxed in 2022.** `unverified` A February 2022 amendment
+permits a Slovak citizen to retain Slovak citizenship on naturalising elsewhere
+where they have lived in that country for at least five years. The 2010 rule also
+never applied to citizenship acquired at birth or through marriage. Source: the
+GLOBALCIT-style secondary literature and press summaries; the consolidated
+statutory text on Slov-Lex could not be retrieved, and **the commencement date is
+not confirmed**, so this is marked unverified and the prose does not date it
+precisely.
+
+Two consequences. First, prose must not describe the 2010 loss provision as if it
+still operated unqualified, because for most of the period since 2022 it has not.
+Second, it makes the tested null below more robust rather than less: a provision
+that was already carve-out-ridden and then relaxed is even less able to explain a
+structural gap.
+
 **Consequence for the mirror comparison: none.** The 2.5 mirror adds
 naturalisations back precisely because they are an exit from the count and not
 from the country, so a legal change that accelerates naturalisation is already
@@ -94,8 +114,11 @@ which is the `no_naturalisation_adjustment` specification, reported separately.
 finding.** UN DESA reports 1,671 Slovak-born in the Netherlands against 6,856
 Slovak citizens reported by the Netherlands itself. Citizens cannot exceed
 Slovak-born fourfold in a country with no Slovak-descent population and no
-dual-citizenship route. OECD independently puts Slovak-born in the Netherlands at
-8,207 to 9,522 over 2022-2024, so UN DESA's *born* figure is the error. Median
+dual-citizenship route. OECD puts Slovak-born in the Netherlands at 7,418 in 2021,
+its nearest available year to the 2020 snapshot, so UN DESA's *born* figure is the
+error. Note OECD is not an independent observer here: it compiles from the same
+Dutch register. What it provides is a second compiler's reading of one register,
+which is enough to locate a transcription-scale error but is not corroboration. Median
 absolute divergence is 0.11 for stocks above 10,000 and 0.31 below 3,000, so the
 small-stock tail is error-dominated throughout. Caveat layer, not prose.
 

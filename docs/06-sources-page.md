@@ -26,7 +26,14 @@ Two short paragraphs:
 
 1. What data exists and what doesn't — the honest top-line: Slovak emigration is systematically undercounted by Slovak official sources because most movers don't deregister; this site triangulates across multiple sources and flags where that triangulation produces discrepancies.
 
-2. How to interpret the confidence ratings — four levels: High (multiple independent sources agree), Medium (single reliable source, spot-checked), Low (one source, no cross-check, flagged), Estimated (derived from neighbouring data points by interpolation, formula shown).
+2. How to interpret the confidence ratings — four levels: High (multiple sources agree AND they do not share an upstream compiler), Medium (single reliable source, spot-checked), Low (one source, no cross-check, flagged), Estimated (derived from neighbouring data points by interpolation, formula shown).
+
+> **Independence is not the same as being two datasets.** UN DESA, Eurostat and
+> OECD all compile from the same national statistical offices. Two of them
+> agreeing about Slovaks in Germany is one German register reported twice, not
+> corroboration. The same applies to Eurostat `migr_emi1ctz` against ŠÚ SR: that
+> series IS ŠÚ SR's own filing. Before calling anything "High", name the
+> collecting authority on each side and check they differ.
 
 ---
 
@@ -144,7 +151,14 @@ Flagged in UI:   Hollow data markers; "est." suffix on axis labels
 
 ### 4. Cross-source validation log
 
-Where two independent sources measure the same thing and we compare them. This is the honest accounting of the discrepancies that section 2.3.6 of `03-methodology.md` flags.
+Where two sources measure the same thing and we compare them. This is the honest
+accounting of the discrepancies that section 2.3.6 of `03-methodology.md` flags.
+
+Note that most pairs here are NOT independent: they share the national statistical
+office that collected the data. A comparison between them tests our handling and
+each compiler's adjustments, not the underlying measurement. The one genuinely
+independent axis in this project is Slovak self-reporting against
+destination-state reporting, which is what the mirror comparison in 4a uses.
 
 **Format per entry:**
 
