@@ -189,6 +189,50 @@ On identified: Canada and Australia also ask census ancestry or ethnic-origin
 questions, so Slovak self-identification counts exist for them. They are not held
 here. The claim is about this project's coverage, not about what is collectible.
 
+## The talent claim: where the site asserts it and what supports it
+
+§3's conclusion states that nothing in the diaspora data measures brain drain. That
+is true of the diaspora data, and it sits against a project whose English name
+asserts the opposite. Audited July 2026; no changes made pending a decision.
+
+**Where a talent claim appears in rendered output:**
+
+| Location | Text | Status |
+|---|---|---|
+| `README.md` | "An interactive case study of Slovak brain drain" | Framing, not a data claim |
+| Every page `<title>` | "... - Slovak Brain Drain" | Framing |
+| `index.astro` §3 card | "Where the brain drain actually goes" | **Asserts the diaspora data locates talent. It does not.** |
+| §3 closing (existing) | Already states the source cannot verify the claim | Consistent |
+| §4 `section_caveats` | "Slovak talent that stayed... built successful companies at home" | Editorial synthesis of named individuals, not a population claim |
+| §4 person records | Per-person `impact` fields | Individually sourced biography, defensible |
+
+**What education data the site actually holds.** One slice, and it is not about
+leavers' qualifications:
+
+| File | `education` values |
+|---|---|
+| `section1_internal` | `all` only |
+| `section2_corridor` | `all`, `isced_5-8` |
+| `section3_diaspora` | `all` only |
+
+The single `isced_5-8` population is `students_enrolled` from Eurostat
+`educ_uoe_mobs02`, 2013-2024: Slovaks **currently studying** at tertiary level
+abroad, split ED6/ED7/ED8. That supports a claim about a student pipeline, which
+§2 makes. It does not support any claim about the qualifications of the people
+counted in §1's migration series or §3's stocks, because those series carry no
+education dimension at all.
+
+**The honest position.** The site can show scale, geography, and a student
+pipeline. It cannot show that the people leaving are more qualified than those
+staying, because no held source attaches education to a migration flow or stock.
+The one place this crosses from framing into a data claim is the §3 landing card.
+
+**Also found in the same audit:** the landing page hero says the destination
+countries "record 222,321 arrivals from Slovakia". They do not record arrivals.
+That figure is *derived*: the rise in destination-reported Slovak-citizen stocks
+plus naturalisations over 2004-2024. Same error the §3 closing draft made, in
+already-shipped copy.
+
 ## Dissolution date convention
 
 Czechoslovakia dissolved at midnight on 31 December 1992. Slovakia has existed as
