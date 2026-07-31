@@ -48,6 +48,30 @@
     "note": "SUSR registered departures over 2004-2024, the window the mirror comparison can speak to. The hero's 2004-2025 total is larger by the 2025 figure alone; the two reconcile exactly.",
     "sql": "derived: pipeline/analysis/mirror_comparison.py"
   },
+  "def_panel_countries": {
+    "value": 25,
+    "unit": "count",
+    "note": "Destinations reporting BOTH a Slovak-born and a Slovak-citizen stock for 2020.",
+    "sql": "WITH b AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='born' AND metric='stock' AND year=2020 AND sex='all' AND source='un_desa_bilateral_2020'), c AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='citizen' AND metric='stock' AND year=2020) SELECT count(*) n, sum(b.value) born, sum(c.value) citizen FROM b JOIN c USING(destination_iso3)"
+  },
+  "def_panel_born": {
+    "value": 305669,
+    "unit": "count",
+    "note": "Slovak-born on the matched panel. UN DESA's full total is 419,651 across 51 destinations, so the panel covers 72.8% of it.",
+    "sql": "WITH b AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='born' AND metric='stock' AND year=2020 AND sex='all' AND source='un_desa_bilateral_2020'), c AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='citizen' AND metric='stock' AND year=2020) SELECT count(*) n, sum(b.value) born, sum(c.value) citizen FROM b JOIN c USING(destination_iso3)"
+  },
+  "def_panel_citizen": {
+    "value": 297234,
+    "unit": "count",
+    "note": "Slovak citizens on the matched panel. Eurostat's full total is 297,234 across 25 destinations, so the panel covers 100.0% of it.",
+    "sql": "WITH b AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='born' AND metric='stock' AND year=2020 AND sex='all' AND source='un_desa_bilateral_2020'), c AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='citizen' AND metric='stock' AND year=2020) SELECT count(*) n, sum(b.value) born, sum(c.value) citizen FROM b JOIN c USING(destination_iso3)"
+  },
+  "diaspora_destinations_un_desa_2020": {
+    "value": 51,
+    "unit": "count",
+    "note": "UN DESA 2020 destinations with a Slovak-born stock. This is the figure to quote for the diaspora's geographic spread; the any-source count is 52, differing by the United States alone, which UN DESA omits entirely.",
+    "sql": "SELECT count(DISTINCT destination_iso3) FROM s3 WHERE slovak_def='born' AND metric='stock' AND year=2020 AND sex='all' AND source='un_desa_bilateral_2020'"
+  },
   "susr_cubes_used": {
     "value": 4,
     "unit": "count",

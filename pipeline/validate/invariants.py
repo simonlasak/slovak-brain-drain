@@ -409,6 +409,72 @@ def check_no_ambiguous_keys() -> CheckResult:
     )
 
 
+def check_subtotal_double_counting() -> CheckResult:
+    """Every parquet must let a total be summed without double-counting subtotals.
+
+    THE HOLE THIS CLOSES. check_no_ambiguous_keys verifies that no two rows share
+    a key, which is a property of the TRANSFORMS. It says nothing about whether an
+    ad-hoc query written later will sum a total together with its own parts. That
+    is how the USA naturalisation figure became 15,751: a query summed sex='all'
+    and sex='F' rows together, and the female subtotal was counted twice. Every
+    number in a prose draft comes from queries like that one.
+
+    This check reports, for each dimension that carries an 'all'/'total' member
+    alongside its parts, how badly an unfiltered SUM would overstate. It is
+    intentionally advisory rather than red: the file is CORRECT, holding both a
+    total and its components is normal, and the fix is to constrain the query. The
+    point is that the size of the trap is on the record rather than discovered by
+    shipping a wrong figure.
+
+    Enforcement of the actual rule lives elsewhere: any figure entering prose must
+    come from pipeline/analysis/headline_figures.py, which carries its SQL and is
+    asserted to return exactly one row.
+    """
+    specs = [
+        ("section1_internal.parquet", ["sex", "age_bracket", "education", "geo_level"]),
+        ("section2_corridor.parquet", ["sex", "age_bracket", "education",
+                                       "employment_status", "pathway"]),
+        ("section3_diaspora.parquet", ["sex", "age_bracket", "education"]),
+    ]
+    TOTAL_MEMBERS = {"all", "total", "_T", "T"}
+
+    details: list[str] = []
+    for fname, dims in specs:
+        path = PROCESSED / fname
+        if not path.exists():
+            continue
+        df = pl.read_parquet(path)
+        for dim in dims:
+            if dim not in df.columns:
+                continue
+            members = set(df[dim].unique().to_list())
+            totals = members & TOTAL_MEMBERS
+            parts = members - TOTAL_MEMBERS - {None}
+            if not totals or not parts:
+                continue
+            total_sum = df.filter(pl.col(dim).is_in(list(totals)))["value"].sum()
+            part_sum = df.filter(pl.col(dim).is_in(list(parts)))["value"].sum()
+            if not total_sum:
+                continue
+            overstate = (total_sum + part_sum) / total_sum
+            details.append(
+                f"{fname} dim '{dim}': totals={sorted(totals)} parts={sorted(parts)}. "
+                f"An unfiltered SUM overstates by {overstate:.2f}x "
+                f"({total_sum:,.0f} -> {total_sum + part_sum:,.0f}). Constrain "
+                f"{dim} in every query."
+            )
+
+    if not details:
+        details.append("No dimension carries a total alongside its parts.")
+
+    return CheckResult(
+        name="Subtotal double-counting exposure (advisory)",
+        severity="yellow" if len(details) > 1 or "overstates" in details[0] else "green",
+        summary=f"{len(details)} dimension(s) where an unconstrained SUM double-counts",
+        details=details,
+    )
+
+
 def check_cz_corridor_crosscheck() -> CheckResult:
     """Slovaks in CZ per CSU vs SK emigration data."""
     df2 = pl.read_parquet(PROCESSED / "section2_corridor.parquet")
@@ -681,6 +747,7 @@ def run() -> list[CheckResult]:
         check_geo_levels_tile(),
         check_no_ambiguous_keys(),
         check_metric_definitions(),
+        check_subtotal_double_counting(),
         check_population_reconciles(),
         check_cz_corridor_crosscheck(),
         check_un_desa_vs_oecd(),

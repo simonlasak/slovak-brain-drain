@@ -165,6 +165,63 @@ def _mirror_figures() -> dict[str, dict]:
     }
 
 
+# The matched-panel comparison of the born and citizen definitions. Comparing the
+# published totals (419,651 across 51 destinations against 297,234 across 25) is
+# the same window-mismatch error as the hero: different coverage on each side. The
+# comparison must run on the intersection, with coverage stated.
+MATCHED_PANEL_SQL = """
+WITH b AS (
+  SELECT destination_iso3, value FROM s3
+  WHERE slovak_def='born' AND metric='stock' AND year=2020 AND sex='all'
+    AND source='un_desa_bilateral_2020'),
+c AS (
+  SELECT destination_iso3, value FROM s3
+  WHERE slovak_def='citizen' AND metric='stock' AND year=2020)
+SELECT count(*) n, sum(b.value) born, sum(c.value) citizen
+FROM b JOIN c USING(destination_iso3)
+"""
+
+
+def _definition_panel(con: duckdb.DuckDBPyConnection) -> dict[str, dict]:
+    """Born vs citizen on the matched country panel, with coverage on each side."""
+    n, born, citizen = con.execute(MATCHED_PANEL_SQL).fetchone()
+    born_all = con.execute("""SELECT count(DISTINCT destination_iso3), sum(value) FROM s3
+      WHERE slovak_def='born' AND metric='stock' AND year=2020 AND sex='all'
+        AND source='un_desa_bilateral_2020'""").fetchone()
+    cit_all = con.execute("""SELECT count(DISTINCT destination_iso3), sum(value) FROM s3
+      WHERE slovak_def='citizen' AND metric='stock' AND year=2020""").fetchone()
+    return {
+        "def_panel_countries": {
+            "value": int(n), "unit": "count",
+            "note": "Destinations reporting BOTH a Slovak-born and a Slovak-citizen stock for 2020.",
+            "sql": " ".join(MATCHED_PANEL_SQL.split()),
+        },
+        "def_panel_born": {
+            "value": int(round(born)), "unit": "count",
+            "note": f"Slovak-born on the matched panel. UN DESA's full total is "
+                    f"{int(round(born_all[1])):,} across {born_all[0]} destinations, so the "
+                    f"panel covers {100*born/born_all[1]:.1f}% of it.",
+            "sql": " ".join(MATCHED_PANEL_SQL.split()),
+        },
+        "def_panel_citizen": {
+            "value": int(round(citizen)), "unit": "count",
+            "note": f"Slovak citizens on the matched panel. Eurostat's full total is "
+                    f"{int(round(cit_all[1])):,} across {cit_all[0]} destinations, so the "
+                    f"panel covers {100*citizen/cit_all[1]:.1f}% of it.",
+            "sql": " ".join(MATCHED_PANEL_SQL.split()),
+        },
+        "diaspora_destinations_un_desa_2020": {
+            "value": int(born_all[0]), "unit": "count",
+            "note": "UN DESA 2020 destinations with a Slovak-born stock. This is the "
+                    "figure to quote for the diaspora's geographic spread; the "
+                    "any-source count is 52, differing by the United States alone, "
+                    "which UN DESA omits entirely.",
+            "sql": "SELECT count(DISTINCT destination_iso3) FROM s3 WHERE slovak_def='born' "
+                   "AND metric='stock' AND year=2020 AND sex='all' AND source='un_desa_bilateral_2020'",
+        },
+    }
+
+
 def _source_counts(con: duckdb.DuckDBPyConnection) -> dict[str, dict]:
     """Count the sources the site actually USES, per parquet `source` column.
 
@@ -271,6 +328,10 @@ def run() -> dict:
         log.info("headline.%s = %s", name, value)
 
     for name, entry in _mirror_figures().items():
+        out[name] = entry
+        log.info("headline.%s = %s", name, entry["value"])
+
+    for name, entry in _definition_panel(con).items():
         out[name] = entry
         log.info("headline.%s = %s", name, entry["value"])
 

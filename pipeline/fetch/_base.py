@@ -76,6 +76,31 @@ def make_client(
     )
 
 
+# Query-string parameter names whose VALUES are credentials. Any URL that
+# reaches a log line or a manifest is scrubbed of these first.
+#
+# This lives in the base layer rather than in the individual fetcher because
+# fetch_and_save both logs the URL and writes it into a committed manifest. A
+# fetcher that redacts only its own copy still leaks through those two paths, and
+# manifests ARE committed while .env is not.
+SECRET_QUERY_PARAMS = ("key", "api_key", "apikey", "token", "access_token")
+
+
+def redact_url(url: str) -> str:
+    """Replace the value of any credential-bearing query parameter."""
+    if "?" not in url:
+        return url
+    base, _, query = url.partition("?")
+    parts = []
+    for pair in query.split("&"):
+        name, sep, _value = pair.partition("=")
+        if sep and name.lower() in SECRET_QUERY_PARAMS:
+            parts.append(f"{name}=<redacted>")
+        else:
+            parts.append(pair)
+    return f"{base}?{'&'.join(parts)}"
+
+
 def write_manifest(
     *,
     source: str,
@@ -91,7 +116,8 @@ def write_manifest(
     manifest = {
         "source": source,
         "filename": filename,
-        "url": url,
+        # Redacted: manifests are committed to the repo.
+        "url": redact_url(url),
         "fetched_at": fetched_at,
         "bytes": bytes_written,
         "sha256": sha256,
@@ -129,13 +155,13 @@ def fetch_and_save(
     raw_path.parent.mkdir(parents=True, exist_ok=True)
     filename = raw_path.name
 
-    log.info("fetch.%s.start url=%s", source, url)
+    log.info("fetch.%s.start url=%s", source, redact_url(url))
 
     try:
         response = client.get(url)
     except (httpx.ConnectError, httpx.ReadError, ssl.SSLError) as exc:
         raise FetchError(
-            f"Connection failed for {source} ({url}): {exc!r}. "
+            f"Connection failed for {source} ({redact_url(url)}): {exc!r}. "
             f"Possible proxy/SSL issue — do not retry silently."
         ) from exc
 
@@ -149,7 +175,7 @@ def fetch_and_save(
         return FetchResult(
             source=source,
             filename=filename,
-            url=url,
+            url=redact_url(url),
             fetched_at=datetime.now(tz=timezone.utc).isoformat(),
             bytes_written=len(body),
             sha256=sha,
@@ -180,7 +206,8 @@ def fetch_and_save(
     return FetchResult(
         source=source,
         filename=filename,
-        url=url,
+        # Redacted: callers print this, and FetchResult is not a secret carrier.
+        url=redact_url(url),
         fetched_at=fetched_at,
         bytes_written=len(body),
         sha256=sha,

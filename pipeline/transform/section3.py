@@ -99,6 +99,8 @@ def transform_oecd_popf() -> pl.DataFrame:
             "metric": "stock",
             "value": float(value),
             "is_interpolated": OBS_STATUS_INTERPOLATED.get(obs_status),
+            # Derived per-observation from the file's own OBS_STATUS column.
+            "flag_basis": "observation",
             "source": "oecd_mig_popf",
             "measure_code": measure or None,
             "obs_status": obs_status or None,
@@ -210,6 +212,8 @@ def transform_oecd_flows() -> pl.DataFrame:
             "metric": metric,
             "value": value,
             "is_interpolated": OBS_STATUS_INTERPOLATED.get(obs_status),
+            # Derived per-observation from the file's own OBS_STATUS column.
+            "flag_basis": "observation",
             "source": f"oecd_mig_flows_{measure}",
             "measure_code": measure,
             "obs_status": obs_status or None,
@@ -383,6 +387,9 @@ def transform_un_desa() -> pl.DataFrame:
                 # the right value and downstream display logic depends on it, but
                 # it is provenance-by-assertion, not evidence.
                 "is_interpolated": True,
+                # NOT per-observation. See the comment above: this restates the
+                # methodology report, so the flag is a source-level assertion.
+                "flag_basis": "source_document",
                 "source": "un_desa_bilateral_2020",
                 "measure_code": None,
                 "obs_status": None,
@@ -399,6 +406,142 @@ def transform_un_desa() -> pl.DataFrame:
     return pl.DataFrame(rows)
 
 
+# Eurostat migr_pop1ctz: destination-reported stock of Slovak CITIZENS. This is
+# the second of the three definitions 01-research-architecture.md:84 asks §3 to
+# compare, and it was previously absent from this parquet: slovak_def='citizen'
+# existed only for FLOWS (inflow/outflow/naturalisations), so a definitional
+# comparison of STOCKS could not be built from one table.
+#
+# Slovakia reports its own resident Slovak citizens in this dataset. That row is
+# excluded: it counts people who never left.
+EUROSTAT_SLOVAK_CITIZEN = "SK"
+RAW_EUROSTAT = REPO_ROOT / "data" / "raw" / "eurostat"
+
+# Eurostat uses 2-letter geo codes; this column is destination_iso3. Emitting
+# Eurostat codes raw would put two code systems in one column, which is exactly
+# the defect the M49_TO_ISO3 comment above records (57 real countries split
+# across 87 keys). Unmapped codes are logged and dropped, never passed through.
+#
+# EL is Greece and UK is the United Kingdom in Eurostat's coding; both differ
+# from ISO 3166-1. XK is Kosovo, which has no ISO3 assignment.
+EUROSTAT_GEO_TO_ISO3 = {
+    "AT": "AUT", "BE": "BEL", "BG": "BGR", "CH": "CHE", "CY": "CYP",
+    "CZ": "CZE", "DE": "DEU", "DK": "DNK", "EE": "EST", "EL": "GRC",
+    "ES": "ESP", "FI": "FIN", "FR": "FRA", "HR": "HRV", "HU": "HUN",
+    "IE": "IRL", "IS": "ISL", "IT": "ITA", "LI": "LIE", "LT": "LTU",
+    "LU": "LUX", "LV": "LVA", "ME": "MNE", "MK": "MKD", "MT": "MLT",
+    "NL": "NLD", "NO": "NOR", "PL": "POL", "PT": "PRT", "RO": "ROU",
+    "RS": "SRB", "SE": "SWE", "SI": "SVN", "TR": "TUR", "UK": "GBR",
+    "AL": "ALB", "BA": "BIH", "BY": "BLR", "MD": "MDA", "UA": "UKR",
+    "AM": "ARM", "AZ": "AZE", "GE": "GEO", "RU": "RUS",
+}
+
+
+def transform_eurostat_citizen_stock() -> pl.DataFrame:
+    """Eurostat migr_pop1ctz — Slovak citizens resident in each reporting country.
+
+    Parsed here rather than imported from pipeline.analysis.mirror_comparison so
+    the transform layer has no dependency on the analysis layer, but the filter
+    is deliberately identical: citizen=SK, age=TOTAL, sex=T, unit=NR.
+    """
+    import gzip
+
+    path = RAW_EUROSTAT / "migr_pop1ctz.tsv.gz"
+    if not path.exists():
+        log.warning("transform.section3.citizen_stock: migr_pop1ctz absent, skipping")
+        return pl.DataFrame()
+
+    rows = []
+    seen: set[tuple[str, int]] = set()
+    unmapped_geo: set[str] = set()
+    with gzip.open(path, "rt", encoding="utf-8") as fh:
+        header = fh.readline().rstrip("\n").split("\t")
+        dim_names = header[0].split("\\")[0].split(",")
+        years = [int(h.strip()) for h in header[1:] if h.strip()]
+
+        for line in fh:
+            if not line.strip():
+                continue
+            cells = line.rstrip("\n").split("\t")
+            dims = cells[0].split(",")
+            if len(dims) != len(dim_names):
+                continue
+            d = dict(zip(dim_names, dims))
+            if not (d.get("citizen") == EUROSTAT_SLOVAK_CITIZEN
+                    and d.get("age") == "TOTAL"
+                    and d.get("sex") == "T"
+                    and d.get("unit") == "NR"):
+                continue
+            geo_raw = d.get("geo", "")
+            if not geo_raw or geo_raw == EUROSTAT_SLOVAK_CITIZEN:
+                continue
+            geo = EUROSTAT_GEO_TO_ISO3.get(geo_raw)
+            if geo is None:
+                unmapped_geo.add(geo_raw)
+                continue
+
+            for year, raw in zip(years, cells[1:]):
+                token = raw.strip()
+                if not token or token.startswith(":"):
+                    continue
+                # Eurostat appends observation flags to the number ("4 b", "12 p").
+                # Strip before casting or every flagged value becomes null.
+                number = token.split(" ")[0].replace(",", "")
+                try:
+                    value = float(number)
+                except ValueError:
+                    continue
+                if value <= 0:
+                    continue
+                key = (geo, year)
+                if key in seen:
+                    raise ValueError(
+                        f"section3: migr_pop1ctz yields two rows for {geo} {year} "
+                        "after filtering to Slovak citizens, all ages, both sexes, "
+                        "persons. A dimension is unconstrained."
+                    )
+                seen.add(key)
+
+                # Eurostat flags: 'p' provisional, 'e' estimated, 'b' break in
+                # series, 'd' definition differs. Only 'e' asserts the value is
+                # not a direct observation.
+                flags = token.split(" ")[1] if " " in token else ""
+                rows.append({
+                    "year": year,
+                    "slovak_def": "citizen",
+                    "destination_iso3": geo,
+                    "sex": "all",
+                    "age_bracket": "all",
+                    "education": "all",
+                    "metric": "stock",
+                    "value": value,
+                    "is_interpolated": True if "e" in flags else False,
+                    # Per-observation, from the file's own flag characters.
+                    "flag_basis": "observation",
+                    "source": "eurostat_migr_pop1ctz",
+                    "measure_code": None,
+                    "obs_status": flags or None,
+                    # Eurostat reports by citizenship by construction, which is
+                    # the definitional counterpart to UN DESA's type-B/C split.
+                    "data_type": "C",
+                    "data_type_note": "Reported by current citizenship (Eurostat migr_pop1ctz)",
+                })
+
+    if not rows:
+        raise ValueError(
+            "section3: migr_pop1ctz parsed but yielded no Slovak-citizen rows. "
+            "The citizenship code or a dimension name changed."
+        )
+    if unmapped_geo:
+        log.warning(
+            "transform.section3.citizen_stock_unmapped_geo %s (dropped, not "
+            "passed through: mixing code systems in destination_iso3 is what "
+            "split 57 countries across 87 keys)", sorted(unmapped_geo))
+    log.info("transform.section3.citizen_stock countries=%d",
+             len({r["destination_iso3"] for r in rows}))
+    return pl.DataFrame(rows)
+
+
 def run() -> pl.DataFrame:
     log.info("transform.section3.start")
 
@@ -411,7 +554,10 @@ def run() -> pl.DataFrame:
     df_desa = transform_un_desa()
     log.info("transform.section3.un_desa rows=%d", len(df_desa))
 
-    frames = [f for f in [df_popf, df_flows, df_desa] if len(f) > 0]
+    df_citizen = transform_eurostat_citizen_stock()
+    log.info("transform.section3.citizen_stock rows=%d", len(df_citizen))
+
+    frames = [f for f in [df_popf, df_flows, df_desa, df_citizen] if len(f) > 0]
     df = pl.concat(frames, how="vertical_relaxed")
 
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
