@@ -66,6 +66,18 @@
     "note": "Slovak citizens on the matched panel. Eurostat's full total is 297,234 across 25 destinations, so the panel covers 100.0% of it.",
     "sql": "WITH b AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='born' AND metric='stock' AND year=2020 AND sex='all' AND source='un_desa_bilateral_2020'), c AS ( SELECT destination_iso3, value FROM s3 WHERE slovak_def='citizen' AND metric='stock' AND year=2020) SELECT count(*) n, sum(b.value) born, sum(c.value) citizen FROM b JOIN c USING(destination_iso3)"
   },
+  "def_panel_born_ex_czechia": {
+    "value": 191896,
+    "unit": "count",
+    "note": "Matched-panel Slovak-born excluding Czechia. Czechia is 37% of the panel's born total AND is the one large destination UN DESA measures by citizenship (data_type C), so it carries the aggregate agreement.",
+    "sql": "matched panel minus CZE, see def_panel_born"
+  },
+  "def_panel_citizen_ex_czechia": {
+    "value": 175942,
+    "unit": "count",
+    "note": "Matched-panel Slovak citizens excluding Czechia. Against def_panel_born_ex_czechia the two definitions differ by 8%, against 3% with Czechia included.",
+    "sql": "matched panel minus CZE, see def_panel_citizen"
+  },
   "diaspora_destinations_un_desa_2020": {
     "value": 51,
     "unit": "count",

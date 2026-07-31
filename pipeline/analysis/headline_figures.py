@@ -210,6 +210,34 @@ def _definition_panel(con: duckdb.DuckDBPyConnection) -> dict[str, dict]:
                     f"panel covers {100*citizen/cit_all[1]:.1f}% of it.",
             "sql": " ".join(MATCHED_PANEL_SQL.split()),
         },
+        "def_panel_born_ex_czechia": {
+            "value": int(round(con.execute("""
+                WITH b AS (SELECT destination_iso3, value v FROM s3 WHERE slovak_def='born'
+                            AND metric='stock' AND year=2020 AND sex='all'
+                            AND source='un_desa_bilateral_2020' AND destination_iso3 <> 'CZE'),
+                     c AS (SELECT destination_iso3 FROM s3 WHERE slovak_def='citizen'
+                            AND metric='stock' AND year=2020)
+                SELECT sum(b.v) FROM b JOIN c USING(destination_iso3)""").fetchone()[0])),
+            "unit": "count",
+            "note": "Matched-panel Slovak-born excluding Czechia. Czechia is 37% of the "
+                    "panel's born total AND is the one large destination UN DESA measures "
+                    "by citizenship (data_type C), so it carries the aggregate agreement.",
+            "sql": "matched panel minus CZE, see def_panel_born",
+        },
+        "def_panel_citizen_ex_czechia": {
+            "value": int(round(con.execute("""
+                WITH b AS (SELECT destination_iso3 FROM s3 WHERE slovak_def='born'
+                            AND metric='stock' AND year=2020 AND sex='all'
+                            AND source='un_desa_bilateral_2020' AND destination_iso3 <> 'CZE'),
+                     c AS (SELECT destination_iso3, value v FROM s3 WHERE slovak_def='citizen'
+                            AND metric='stock' AND year=2020)
+                SELECT sum(c.v) FROM b JOIN c USING(destination_iso3)""").fetchone()[0])),
+            "unit": "count",
+            "note": "Matched-panel Slovak citizens excluding Czechia. Against "
+                    "def_panel_born_ex_czechia the two definitions differ by 8%, against "
+                    "3% with Czechia included.",
+            "sql": "matched panel minus CZE, see def_panel_citizen",
+        },
         "diaspora_destinations_un_desa_2020": {
             "value": int(born_all[0]), "unit": "count",
             "note": "UN DESA 2020 destinations with a Slovak-born stock. This is the "
