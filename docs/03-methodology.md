@@ -99,6 +99,57 @@ dual-citizenship route. OECD independently puts Slovak-born in the Netherlands a
 absolute divergence is 0.11 for stocks above 10,000 and 0.31 below 3,000, so the
 small-stock tail is error-dominated throughout. Caveat layer, not prose.
 
+## The unallocatable Czechoslovakia category
+
+Both relevant US tables carry a Czechoslovakia line alongside the Slovak one, and
+neither can be split.
+
+| Table, 2023 ACS 5-year | Named Slovak | Czechoslovakia line | Ambiguous share |
+|---|---|---|---|
+| Birthplace, PUMS `POBP` | 19,700 (`149`) | 17,993 (`105`) | 26.6% of the three codes |
+| Ancestry, B04006 | 615,823 | 242,907 | 28.3% of the two lines |
+
+**These are not plausible ranges and must never be written as one.** Adding the
+whole Czechoslovakia figure to the Slovak one assumes every Czechoslovakia-born
+resident and every self-declared Czechoslovakian is Slovak, which cannot be true:
+the Czech population of both categories is certainly larger, since PUMS records
+29,926 Czech-Republic-born against 19,700 Slovakia-born. The arithmetic ceiling is
+therefore not a candidate value.
+
+The honest statement is that the category is **unallocatable**: the named figure
+is a floor, an unknown share of the ambiguous figure belongs above it, and no
+knowable rule divides it. **Do not present a midpoint, a split by any assumed
+ratio, or a range implying the upper end is possible.** A midpoint would be an
+invented number with a false precision worse than either bound.
+
+## A tested null: Slovakia's 2010 citizenship law
+
+**Hypothesis, and it was a reasonable one.** Slovakia's 2010 amendment provides for
+loss of Slovak citizenship on voluntary acquisition of another. If that operated
+at scale, it would systematically deflate the citizen definition after July 2010
+for every destination, would explain the Hungarian born-versus-citizen gap as a
+legislative artefact rather than migration, and would bias the 2.5 mirror
+comparison, which is built on destination-reported Slovak-citizen stocks.
+
+**The series refutes it. Recorded so nobody reopens it.**
+
+- Hungary's Slovak-citizen stock falls exactly once after the law, by 592 in 2012,
+  then grows every year to 17,124 by 2025. A citizenship-stripping provision
+  operating at scale cannot coexist with a stock that nearly triples after it.
+- Growth rates do slow comparing 2005-2010 against 2012-2020, but almost
+  everywhere at once (Slovenia -52pp, Hungary -33pp, Norway -33pp, Italy -12pp,
+  Finland -13pp) while **Germany's rate rose by 3pp**. A near-universal slowdown
+  with an exception is post-accession maturation, not a legal shock traceable to
+  one country's statute.
+- Cumulative Hungarian naturalisations of Slovak citizens are 4,949, which is 48%
+  of the 10,399 Hungarian gap. Substantial, but not enough to carry it, and it is
+  a naturalisation effect rather than evidence of automatic loss.
+
+**Consequence: none for the mirror.** It adds naturalisations back precisely
+because they are an exit from the count and not from the country, so even a large
+naturalisation effect is neutralised there by construction. It would matter only
+to the `no_naturalisation_adjustment` specification, which is reported separately.
+
 ## US figures: vintage discipline
 
 Four US figures circulate in this project and they are not all the same year.
