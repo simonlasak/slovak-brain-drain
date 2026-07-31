@@ -42,6 +42,89 @@ Note also that Ukrainians under temporary protection are EXCLUDED from this seri
 
 **WARNING on netting:** do not present `intl_net` anywhere. `intl_in` and `intl_out` are collected through different institutions (municipal registration offices for nationals, Foreign Police for foreigners) with different enforcement, so the inflow register is near-complete and the outflow register is a severe undercount. Their difference is an artefact of that asymmetry, not a migration balance. Registered outflow is a lower bound and should be shown as a rate, not netted.
 
+## The born-versus-citizen divergences: what a mechanism explains
+
+On the 25-country matched panel the two definitions agree within 3% in aggregate
+while diverging sharply per country. The aggregate agreement is coincidence. What
+matters is which divergences have a nameable cause.
+
+Naturalisation is the testable one: a Slovak who acquires the local citizenship
+leaves the destination's count of Slovak citizens without leaving the country, so
+`born > citizen` should be partly explained by cumulative naturalisations.
+
+| Destination | Born | Citizen | Gap | Naturalisations | Share of gap |
+|---|---|---|---|---|---|
+| Hungary | 20,980 | 10,581 | 10,399 | 4,949 | **48%** |
+| France | 5,560 | 3,999 | 1,561 | 1,448 | **93%** |
+| Italy | 10,611 | 7,976 | 2,635 | 1,353 | **51%** |
+| Ireland | 13,573 | 9,388 | 4,185 | 548 | 13% |
+
+`verified`, Eurostat `migr_acq`, `agedef=COMPLET`, all years held.
+
+So naturalisation accounts for roughly half the Hungarian and Italian gaps and
+nearly all of the French one. It does not account for Ireland, which stays
+unexplained and should not be presented as a mechanism.
+
+**On Hungary specifically, and stated factually.** Hungary's 2010 amendment to its
+citizenship act introduced a simplified procedure for applicants with Hungarian
+ancestry or language, available without residence in Hungary. Slovakia has a
+substantial Hungarian-speaking minority, concentrated in the south. Slovakia
+responded in 2010 with an amendment providing for loss of Slovak citizenship on
+voluntary acquisition of another. Both measures were, and remain, politically
+contested in both countries. This project takes no position on either; it records
+that two legal changes in the same year alter what the citizen definition counts,
+which is why the Hungarian gap cannot be read as migration.
+
+**The 2010 Slovak law does not produce a detectable break in the series.** If
+voluntary acquisition of another citizenship systematically removed people from
+the Slovak-citizen definition after July 2010, the destination-reported stocks
+should fall or stall. They do not. Hungary's series falls once, by 592 in 2012,
+then grows every year to 17,124 by 2025. Growth rates do slow after 2011 in most
+destinations (Hungary -33pp, Slovenia -52pp, Norway -33pp comparing 2005-2010
+against 2012-2020 CAGR), but the slowdown is near-universal and is better read as
+post-accession maturation than as a legal shock: Germany's rate *rose*.
+
+**Consequence for the mirror comparison: none.** The 2.5 mirror adds
+naturalisations back precisely because they are an exit from the count and not
+from the country, so a legal change that accelerates naturalisation is already
+neutralised there. It would matter only if the mirror used stock change alone,
+which is the `no_naturalisation_adjustment` specification, reported separately.
+
+**Netherlands and Belgium are the opposite case and are NOT a definitional
+finding.** UN DESA reports 1,671 Slovak-born in the Netherlands against 6,856
+Slovak citizens reported by the Netherlands itself. Citizens cannot exceed
+Slovak-born fourfold in a country with no Slovak-descent population and no
+dual-citizenship route. OECD independently puts Slovak-born in the Netherlands at
+8,207 to 9,522 over 2022-2024, so UN DESA's *born* figure is the error. Median
+absolute divergence is 0.11 for stocks above 10,000 and 0.31 below 3,000, so the
+small-stock tail is error-dominated throughout. Caveat layer, not prose.
+
+## US figures: vintage discipline
+
+Four US figures circulate in this project and they are not all the same year.
+Stating them together without the vintages repeats the hero window mismatch.
+
+| Figure | Value | Vintage |
+|---|---|---|
+| PUMS `POBP=149` Slovakia | 19,700 | 2023 ACS 5-year |
+| PUMS `POBP=105` Czechoslovakia | 17,993 | 2023 ACS 5-year |
+| Published B05006 "Czechoslovakia" | 65,036 ±2,808 | 2023 ACS 5-year |
+| B04006 Slovak ancestry | 615,823 ±8,391 | 2023 ACS 5-year |
+| OECD Slovak-born in US | 18,243 | **2020** |
+| OECD Slovak-born in US | 20,876 | 2023 (matched) |
+
+Use the 2023 OECD figure when setting it beside a PUMS or ACS number. On matched
+2023 data PUMS gives 19,700 against OECD's 20,876, a 6% difference.
+
+`unverified` on OECD's derivation: 19,700 against 20,876 is *consistent with*
+OECD deriving its US figure from ACS microdata rather than the published table,
+but OECD's metadata has not been read and proximity is not provenance. Do not
+write "derived from"; write "consistent with".
+
+The PUMS codes sum to 67,619 against the published 65,036. The difference of 2,583
+is inside B05006's ±2,808 margin, so the two are consistent. Prose that shows both
+must say so, because otherwise a reader sees two different totals for one concept.
+
 ## Which flags are evidence and which restate a document
 
 `is_interpolated` and `is_proxy` look like data. Two of their populations are not,

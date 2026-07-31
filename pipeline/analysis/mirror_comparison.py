@@ -98,6 +98,44 @@ FLOW_YEAR_START = YEAR_START
 FLOW_YEAR_END = YEAR_END - 1
 
 
+# Dimensions that must be constrained in any query against a Eurostat bulk TSV.
+# Each carries several members that are NOT alternatives to sum: leaving one
+# unconstrained duplicates every observation once per member.
+#
+# `agedef` is the trap that actually fired. migr_acq carries both REACH and
+# COMPLET age definitions for the same observation, so an ad-hoc query filtering
+# citizen/age/sex/unit but not agedef returned every Hungarian naturalisation
+# twice and reported 9,898 where the figure is 4,949. The loaders below constrain
+# it; this list exists so an analysis query written later can be checked against
+# it rather than rediscovering the same duplication.
+EUROSTAT_MUST_CONSTRAIN = {
+    "migr_pop1ctz": ("citizen", "age", "sex", "unit"),
+    "migr_acq": ("citizen", "age", "sex", "unit", "agedef"),
+    "migr_emi1ctz": ("citizen", "age", "sex", "unit", "agedef"),
+    "migr_imm1ctz": ("citizen", "age", "sex", "unit", "agedef"),
+}
+
+
+def assert_fully_constrained(df: pl.DataFrame, dataset: str,
+                             key: tuple[str, ...] = ("geo", "year")) -> None:
+    """Raise if `df` holds more than one row per `key`.
+
+    Call this after filtering a Eurostat frame. A duplicate on (geo, year) means
+    a dimension was left unconstrained, and every sum over the frame is then
+    inflated by an exact integer multiple, which is the hardest kind of error to
+    spot by eye because the shape of the series looks right.
+    """
+    dup = df.group_by(list(key)).len().filter(pl.col("len") > 1)
+    if len(dup):
+        expected = EUROSTAT_MUST_CONSTRAIN.get(dataset, ())
+        raise ValueError(
+            f"{dataset}: {len(dup)} duplicated {key} keys after filtering. A "
+            f"dimension is unconstrained. This dataset requires all of "
+            f"{expected}. Summing this frame would overcount by an exact "
+            "multiple."
+        )
+
+
 def _parse_eurostat_tsv(path: Path) -> pl.DataFrame:
     """Read a Eurostat bulk TSV into long form.
 
@@ -150,13 +188,7 @@ def load_slovak_citizen_stock() -> pl.DataFrame:
         & (pl.col("unit") == "NR")
     ).select("geo", "year", "value")
     # One observation per country-year, or the endpoints are ambiguous.
-    dup = out.group_by(["geo", "year"]).len().filter(pl.col("len") > 1)
-    if len(dup):
-        raise ValueError(
-            f"mirror: migr_pop1ctz has {len(dup)} duplicated geo-year keys after "
-            "filtering to Slovak citizens, both sexes, all ages, persons. A "
-            "dimension is unconstrained."
-        )
+    assert_fully_constrained(out, "migr_pop1ctz")
     return out
 
 
@@ -171,12 +203,7 @@ def load_slovak_naturalisations() -> pl.DataFrame:
         & (pl.col("unit") == "NR")
         & (pl.col("agedef") == "COMPLET")
     ).select("geo", "year", "value")
-    dup = out.group_by(["geo", "year"]).len().filter(pl.col("len") > 1)
-    if len(dup):
-        raise ValueError(
-            f"mirror: migr_acq has {len(dup)} duplicated geo-year keys after "
-            "filtering. A dimension is unconstrained."
-        )
+    assert_fully_constrained(out, "migr_acq")
     return out
 
 
