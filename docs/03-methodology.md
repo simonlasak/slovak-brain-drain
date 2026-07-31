@@ -99,6 +99,34 @@ dual-citizenship route. OECD independently puts Slovak-born in the Netherlands a
 absolute divergence is 0.11 for stocks above 10,000 and 0.31 below 3,000, so the
 small-stock tail is error-dominated throughout. Caveat layer, not prose.
 
+## Country counts per definition: pin the basis, not the number
+
+Four different citizen counts have circulated (31, 30, 25, and 25 again) and they
+are all correct. They are one series counted four ways.
+
+| Count | Basis |
+|---|---|
+| 31 | Reporting countries in Eurostat `migr_pop1ctz` with any Slovak-citizen observation in **any year**, including Slovakia's own self-report |
+| 30 | Same, **excluding Slovakia**, which reports its own resident Slovak citizens and must never be counted as a destination |
+| 25 | Countries reporting in the single year **2020** |
+
+**Rule: state the basis, and use one basis per sentence.** A sentence comparing
+definitions must put both on the same footing or it repeats the hero window
+mismatch in a different column.
+
+The section's default basis is the **2020 snapshot**, because the map and the
+matched panel are both 2020:
+
+| Definition | Countries, 2020 | Source |
+|---|---|---|
+| Born | **51** | UN DESA bilateral, 2020 revision |
+| Citizen | **25** | Eurostat `migr_pop1ctz` |
+| Identified | **1** | US ACS B04006 (the only ancestry count this project holds) |
+
+On identified: Canada and Australia also ask census ancestry or ethnic-origin
+questions, so Slovak self-identification counts exist for them. They are not held
+here. The claim is about this project's coverage, not about what is collectible.
+
 ## Dissolution date convention
 
 Czechoslovakia dissolved at midnight on 31 December 1992. Slovakia has existed as
