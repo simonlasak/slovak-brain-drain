@@ -70,10 +70,24 @@ So naturalisation accounts for most of the French gap, a little under half of th
 Italian one, and a third of the Hungarian one. It does not explain Ireland, which
 stays unexplained and must not be presented as a mechanism.
 
-**Accumulation window, stated once.** Every naturalisation figure above is a
-cumulative sum from the first year the dataset holds (2002) through **end-2019**,
-set against a stock dated 1 January 2020. Any figure quoted from `migr_acq` in
-prose must state this window.
+**Accumulation window, and it differs by country.** Every naturalisation figure
+above is cumulative through **end-2019**, set against a stock dated 1 January
+2020. The start year is NOT the same across countries and is not the dataset's
+own start:
+
+| | First Slovak-citizen observation |
+|---|---|
+| `migr_acq` dataset overall | 1998 |
+| Hungary | 2002 |
+| Italy | 2003 |
+| France | 2004 |
+| Ireland | 2005 |
+
+So each share is accumulated over a slightly different window, and none of them
+reaches back to 1998. Prose must attribute the start year to the country's series
+rather than to the dataset. The effect is small, since annual volumes in the early
+2000s are in the tens, but the shares are not strictly comparable across the four
+and must not be ranked as though they were.
 
 **RESOLVED: Hungary's simplified procedure is NOT the operative mechanism.** This
 was an open fork and the answer changes what the prose may claim.
@@ -303,6 +317,28 @@ states this in its methodology report, and name the report.
 `data_type` in §3 is different and **is** citable: it is read from column 4 of the
 bilateral matrix, "Type of data of destination", where `B` is place of birth and
 `C` is foreign citizenship.
+
+**How the 47 / 3 / 1 split folds the flags, stated deliberately.** The column holds
+compound values, because `R` is a separate flag meaning "includes refugees, asylum
+seekers or Venezuelans displaced abroad" and can accompany any type letter:
+
+| Raw value | Destinations | Sum | Folded to |
+|---|---|---|---|
+| `B` | 37 | 301,145 | birth-derived |
+| `B R` | 10 | 1,544 | birth-derived |
+| `C` | 1 | 113,773 | citizen-derived |
+| `C R` | 2 | 24 | citizen-derived |
+| `I R` | 1 | 3,165 | imputed |
+
+The fold is on the **leading letter**, which is the definitional one. `R` is
+orthogonal to it: a `B R` row is still a place-of-birth count. This is the same
+fold as Bosnia's `I R` row, which is counted as imputed rather than as
+birth-derived, and it is the fold that produced the earlier "forty-eight" error
+when `I R` was mistakenly grouped with `B`.
+
+For Slovak stocks the `R` flag is immaterial in size: all thirteen R-flagged rows
+total 4,733 people, 1.13% of the 419,651. The `I R` row (Bosnia, 3,165) is most of
+that, so the refugee flag proper covers about 1,568 people.
 
 ## Interpolation strategy
 
