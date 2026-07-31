@@ -165,7 +165,19 @@ def fetch_and_save(
             f"Possible proxy/SSL issue — do not retry silently."
         ) from exc
 
-    response.raise_for_status()
+    # httpx builds HTTPStatusError's message from the full request URL, so a 403
+    # from a bad API key would put the key into the traceback and into any log
+    # that captures it. Re-raise with the URL redacted. This is the path that
+    # actually fires on an auth failure, so it matters more than the success path.
+    try:
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        raise FetchError(
+            f"HTTP {exc.response.status_code} for {source} "
+            f"({redact_url(url)}). Response began: "
+            f"{redact_url(exc.response.text[:200])!r}"
+        ) from None
+
     body = response.content
     sha = hashlib.sha256(body).hexdigest()
 
@@ -189,7 +201,9 @@ def fetch_and_save(
     manifest_path = write_manifest(
         source=source,
         filename=filename,
-        url=url,
+        # write_manifest redacts too; passed redacted here so no raw URL crosses
+        # a function boundary at all.
+        url=redact_url(url),
         fetched_at=fetched_at,
         raw_path=raw_path,
         sha256=sha,

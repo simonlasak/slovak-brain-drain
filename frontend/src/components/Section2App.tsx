@@ -74,6 +74,13 @@ function Section2App() {
           ORDER BY year, pathway
         `) as StockRow[];
 
+        // The only SUM in this section, so it is the only query where an
+        // unconstrained dimension could double-count. age_bracket and education
+        // are pinned to 'all' explicitly: today every labour row carries 'all'
+        // for both, so the sum is correct either way, but it would silently
+        // double-count the moment CSU published an age or education breakdown.
+        // See check_subtotal_double_counting in pipeline/validate/invariants.py,
+        // which reports employment_status alone as a 4.95x trap on this file.
         const labour2024 = await query(`
           SELECT 2024 as year, 'labour' as pathway,
             SUM(value) as value
@@ -81,6 +88,8 @@ function Section2App() {
           WHERE pathway = 'labour'
             AND year = 2024
             AND sex = 'all'
+            AND age_bracket = 'all'
+            AND education = 'all'
             AND employment_status IN ('employed', 'self_employed')
         `) as StockRow[];
 
