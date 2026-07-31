@@ -99,6 +99,28 @@ dual-citizenship route. OECD independently puts Slovak-born in the Netherlands a
 absolute divergence is 0.11 for stocks above 10,000 and 0.31 below 3,000, so the
 small-stock tail is error-dominated throughout. Caveat layer, not prose.
 
+## Dissolution date convention
+
+Czechoslovakia dissolved at midnight on 31 December 1992. Slovakia has existed as
+an independent state since **1 January 1993**. Both dates are correct and they
+describe different events, which is how a single site ends up using both and
+looking inconsistent.
+
+**The convention, applied everywhere:**
+
+- **Use 1993** when the subject is Slovakia, independence, or a threshold applied
+  to people: "born before 1993", "post-1993 departures", "the 1993 split". This is
+  the dominant usage on the site already.
+- **Use 1992** only when the subject is Czechoslovakia's own existence and the
+  sentence needs an end date: "the federation existed from 1918 to 1992".
+- **Never write** "Czechoslovakia, which stopped existing in 1992" next to a
+  people-threshold in 1993 in the same passage. Pick the frame the sentence is
+  about.
+
+For the US Czechoslovakia birthplace code specifically, the correct frame is the
+state: the code names a country that ceased to exist at the end of 1992, and the
+people it counts were born before 1993.
+
 ## The unallocatable Czechoslovakia category
 
 Both relevant US tables carry a Czechoslovakia line alongside the Slovak one, and
@@ -108,6 +130,15 @@ neither can be split.
 |---|---|---|---|
 | Birthplace, PUMS `POBP` | 19,700 (`149`) | 17,993 (`105`) | 26.6% of the three codes |
 | Ancestry, B04006 | 615,823 | 242,907 | 28.3% of the two lines |
+
+**The two ancestry lines are NOT disjoint.** The ACS ancestry question accepts up
+to two write-in responses per person, so someone reporting both Slovak and
+Czechoslovakian ancestry appears in both lines. Across all 108 ancestry lines the
+values sum to 412,695,237 against a universe total of 332,387,540, a ratio of
+1.24, which is the multiple-response overlap made visible. So 242,907 is not
+"242,907 more people" on top of 615,823, and the two figures cannot be added even
+in principle. The birthplace codes in PUMS *are* mutually exclusive, one per
+person, so the two tables fail in different ways.
 
 **These are not plausible ranges and must never be written as one.** Adding the
 whole Czechoslovakia figure to the Slovak one assumes every Czechoslovakia-born
