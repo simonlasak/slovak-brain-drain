@@ -62,18 +62,23 @@ export interface Section3Content {
     /** Shown when the clicked country holds no Slovak diaspora record. */
     noData: string;
     legendTitle: string;
-    citizenBasisLabel: string;
+    /**
+     * The single ring convention: this figure is not a place-of-birth count.
+     * Covers both the citizenship-basis rows and the model-imputed one, which
+     * used to carry a solid and a dashed ring respectively.
+     */
+    offBasisLabel: string;
+    /** Readout notes, naming which of the two bases applies. */
     citizenBasisNote: string;
-    /** The model-imputed row, kept distinct from the citizenship-basis ones. */
-    imputedLabel: string;
     imputedNote: string;
     originLabel: string;
-    insetTitle: string;
-    insetNote: string;
+    /** Heading and caption for the world locator beside the European frame. */
+    locatorTitle: string;
+    locatorNote: string;
     /** The United States: an absence in the source, not a zero. */
     absentTitle: string;
-    /** One entry per rendered line: SVG text does not wrap. */
-    absentNote: string[];
+    /** Plain HTML now, so it wraps and respects the reader's type size. */
+    absentNote: string;
     srcLine: string;
   };
 
@@ -198,37 +203,36 @@ const en: Section3Content = {
     // NOT "Slovak-born residents by country": four of the 51 figures are not
     // birth-derived, and one of those four is the largest number on the map.
     title: 'Slovaks counted abroad, 2020',
-    // THIRD FIX to this sentence. The previous two both said "place-of-birth data
-    // except where ringed", which folded Bosnia's model-imputed row in with the
-    // 47 birth-derived ones: the ring meant foreign citizens only, so Bosnia read
-    // as birth-derived. The three bases are now counted out explicitly and each
-    // has its own mark. 47 + 3 + 1 = 51.
+    // FOURTH FIX. The previous version described the map's own illegibility
+    // ("area proportional to the count" over a world frame nothing could be read
+    // on) and then split the non-birthplace rows across a solid and a dashed
+    // ring. Europe is now the frame, and 3 + 1 collapse into one ring, because
+    // the distinction between them is a sentence in the readout, not a dash
+    // pattern on an 11px circle. 47 + 4 = 51.
     subtitle:
-      'One disc per destination, area proportional to the count. Of the 51 figures, 47 are compiled from place-of-birth data, 3 from foreign-citizenship data (solid ring), and 1 is imputed from a regional model (dashed ring).',
+      'One disc per destination, area proportional to the count. 35 of the 51 destinations are inside this frame, holding 93.8 percent of the counted total; the remaining 16 are on the world locator. Of the 51 figures, 47 are compiled from place-of-birth data and 4 are not (ringed).',
     year: '2020',
     totalLabel: 'Total counted across 51 destinations',
     tooltipUnit: 'people',
     resetLabel: 'Clear selection',
     noData: 'No figure recorded for this country',
     legendTitle: 'Disc area = people counted',
-    citizenBasisLabel: 'Counted as foreign citizens, not by birthplace',
+    offBasisLabel: 'Not a place-of-birth count',
     citizenBasisNote:
       'The United Nations compiled this figure from foreign-citizenship data rather than place of birth, because that is what this country publishes. It is not directly comparable with the others.',
-    imputedLabel: 'Imputed from a regional model, not observed',
     imputedNote:
       'The United Nations produced this figure from a regional model rather than from any figure the destination published. It is the only one of the 51 on that basis.',
     originLabel: 'Slovakia',
-    insetTitle: 'Europe, same scale of measure',
-    insetNote:
-      'The same discs over the region holding 32 of the 51 destinations and 94 percent of the counted total. At world scale Czechia’s disc covers Austria, Slovakia and Hungary entirely.',
+    locatorTitle: 'The rest of the world',
+    // 419,651 - 393,444 = 26,207 across 16 destinations, of which Malta (305)
+    // and Liechtenstein (55) have no polygon at this resolution and so carry no
+    // disc. Canada at 15,511 is more than half of what is out here.
+    locatorNote:
+      'The 16 destinations outside the European frame hold 26,207 people between them, 6.2 percent of the total. Canada is 15,511 of that. Same disc scale as the main frame.',
     // The absence IS the argument, so it is annotated rather than left blank.
-    absentTitle: 'United States: no entry exists',
-    // Authored as explicit lines: this renders as SVG text, which does not wrap,
-    // and the mobile breakpoint scales it up. One array entry per rendered line.
-    absentNote: [
-      'Not zero. The US publishes no Slovakia',
-      'birthplace figure, so the UN table has no row.',
-    ],
+    absentTitle: 'United States (outlined): no entry exists.',
+    absentNote:
+      'Not zero. The US publishes no Slovakia birthplace figure, so the UN table has no row for it at all.',
     srcLine: 'src: UN DESA bilateral migrant stock, 2020 revision',
   },
 

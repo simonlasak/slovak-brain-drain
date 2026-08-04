@@ -15,11 +15,14 @@ import Section3App from '../components/Section3App';
   }
   body { overflow-x: hidden; }
 
-  /* ─── Interactive world map ──────────────────────────────────── */
-  /* Rebuilt 2026-08. The previous version shipped a blue-grey (#EDF3F5) ocean
-     against a terracotta spec, a dark tooltip duplicating the card, a card
-     floating over the ocean, Greenland clipped under the nav, and a hint
-     sitting in open water as the only affordance. */
+  /* ─── The diaspora figure ────────────────────────────────────── */
+  /* Inverted 2026-08: Europe is the primary frame and the world is a locator in
+     the side rail. The previous arrangement was a full-bleed world map with a
+     floating European inset, and it failed five ways: the map exceeded the
+     viewport so the readout below it was never on screen with it, the inset
+     occluded the land it floated over, the legend collided with data in every
+     corner it could be placed in, and four symbol conventions competed for the
+     reader. 93.8 percent of the data is inside the European frame. */
 
   .diaspora-figure {
     margin: 0 0 var(--space-16);
@@ -57,41 +60,72 @@ import Section3App from '../components/Section3App';
     margin: 0;
   }
 
-  /* The map is now an inline SVG with an aspect-ratio box rather than a WebGL
-     canvas with a pixel height. Nothing attaches a wheel listener, so the page
-     scrolls over it: the previous build's scrollZoom trapped the scroll. */
-  .diaspora-map-wrap {
+  /* The stage: map and readout side by side, in one grid, inside the content
+     column. Both are therefore on screen together at any viewport taller than
+     about 640px, which is the defect the stacked layout could not fix: the map
+     was 100vw wide and full-bleed, so it was always taller than the fold and the
+     readout was always below it.
+
+     No fixed height and no 100vh. The height is whatever the 760x546 viewBox
+     resolves to at the column width, which at 1080px content minus a 300px rail
+     is about 540px of map. */
+  .diaspora-stage {
     position: relative;
-    width: 100vw;
-    margin-left: calc(-50vw + 50%);
-    background: var(--accent-secondary-light);
-    border-top: 1px solid var(--border-subtle);
-    border-bottom: 1px solid var(--border-subtle);
+    max-width: var(--max-content);
+    margin: 0 auto;
+    padding: 0 var(--space-6);
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: var(--space-6);
+    align-items: start;
   }
-  .diaspora-svg {
+  .diaspora-primary { min-width: 0; }
+  .diaspora-eu-svg {
     display: block;
     width: 100%;
-    /* Matches the 1000x500 viewBox, so no letterboxing and no clipped pole. */
-    aspect-ratio: 2 / 1;
     height: auto;
+    /* The window's own natural aspect under LAEA, 760/546. Authored as the ratio
+       rather than a rounded decimal so it cannot drift from the viewBox. */
+    aspect-ratio: 760 / 546;
+    background: var(--accent-secondary-light);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+  }
+  .diaspora-disc { cursor: pointer; }
+  .diaspora-disc:focus-visible {
+    outline: 2px solid var(--accent-secondary);
+    outline-offset: 2px;
   }
 
-  /* ─── European inset ─────────────────────────────────────────── */
-  /* 93.5% of the counted total sits inside lon -11..32, lat 34..71, where at
-     world scale Czechia's 42px-radius disc covers Austria, Slovakia and Hungary.
-     This is what click-to-zoom was compensating for. */
-  .diaspora-inset {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
-    width: clamp(200px, 26vw, 320px);
-    padding: var(--space-3);
-    background: rgba(251, 247, 240, 0.96);
-    border: 1px solid var(--border-emphasis);
-    border-radius: var(--radius-sm);
-    box-shadow: var(--shadow-floating);
+  /* Slovakia, as a label rather than a glyph. paint-order draws the cream stroke
+     under the letterforms, so it stays legible over land and over the edge of
+     Czechia's disc without needing a plate behind it. */
+  .diaspora-origin-label {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--text-primary);
+    stroke: #FBF7F0;
+    stroke-width: 3.2px;
+    paint-order: stroke fill;
+    pointer-events: none;
   }
-  .diaspora-inset-title {
+
+  /* ─── Side rail: readout, legend, locator ────────────────────── */
+  .diaspora-rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    min-width: 0;
+  }
+
+  /* The readout is the first thing in the rail, beside the map rather than under
+     it, so a click has feedback at roughly the height of the thing clicked. */
+  .diaspora-readout {
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .diaspora-readout-eyebrow {
     font-family: var(--font-sans);
     font-size: 11px;
     font-weight: 500;
@@ -100,51 +134,36 @@ import Section3App from '../components/Section3App';
     color: var(--text-secondary);
     margin: 0 0 var(--space-2) 0;
   }
-  .diaspora-inset-svg {
-    display: block;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    height: auto;
-    border: 1px solid var(--border-subtle);
-    border-radius: 2px;
+  .diaspora-readout-value {
+    font-family: var(--font-serif);
+    font-size: 38px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--text-primary);
+    margin: 0;
   }
-  .diaspora-inset-note {
-    font-family: var(--font-sans);
-    font-size: 10.5px;
-    line-height: 1.45;
-    color: var(--text-tertiary);
-    margin: var(--space-2) 0 0 0;
-  }
-
-  /* United States annotation: an absence, drawn as SVG text inside the map.
-     Sizes are SVG USER UNITS against a 1000-wide viewBox, not CSS pixels, so
-     they scale with the frame. At a 1600px-wide map 13 units renders near 21px;
-     at 430px it renders near 5.6px, which is illegible, so the mobile rule below
-     scales them up rather than leaving them to shrink with the map. */
-  .diaspora-absent-title {
+  .diaspora-readout-sub,
+  .diaspora-readout-note {
     font-family: var(--font-sans);
     font-size: 13px;
-    font-weight: 600;
-    fill: var(--text-secondary);
+    line-height: 1.5;
+    color: var(--text-secondary);
+    margin: var(--space-2) 0 0 0;
   }
-  .diaspora-absent-note {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    fill: var(--text-tertiary);
-  }
+  .diaspora-readout-note { color: var(--text-tertiary); }
 
-  /* Legend: bottom-left, on cream. No colour ramp any more: area is the only
-     quantitative channel, so the legend shows sized discs and the two
-     definitional marks plus the origin diamond. */
+  /* Legend: in the rail, on cream, over nothing. It used to float in a corner of
+     the map, and measured against the rendered European frame there is no corner
+     free of data: bottom-left hits France and Portugal, bottom-right hits Turkey
+     and Cyprus, top-left hits Iceland.
+
+     One basis only. The disc ticks are round scale anchors (1k / 20k / 100k),
+     not countries. The old top tick was 113,773, which is Czechia, whose figure
+     is the citizenship-basis outlier the section's argument turns on, so the
+     legend for a birthplace map was keyed to a non-birthplace number. */
   .diaspora-legend {
-    position: absolute;
-    bottom: var(--space-4);
-    left: var(--space-4);
-    max-width: 280px;
-    padding: var(--space-3) var(--space-4);
-    background: rgba(251, 247, 240, 0.94);
-    border: 1px solid var(--border-subtle);
-    border-radius: var(--radius-sm);
+    padding-bottom: var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
   }
   .diaspora-legend-title {
     font-family: var(--font-sans);
@@ -159,7 +178,7 @@ import Section3App from '../components/Section3App';
     display: flex;
     align-items: flex-end;
     gap: var(--space-4);
-    margin-bottom: var(--space-2);
+    margin-bottom: var(--space-3);
   }
   .diaspora-legend-item {
     display: flex;
@@ -190,15 +209,70 @@ import Section3App from '../components/Section3App';
     color: var(--text-secondary);
     margin: var(--space-2) 0 0 0;
   }
-  /* Swatch marks are inline SVG, drawn the same way the map draws them, so the
-     solid ring, the dashed ring and the Slovakia diamond stay distinguishable.
-     A CSS dashed border on a circle this small does not. */
+  /* One swatch now, not three. Inline SVG, drawn the way the map draws it: a CSS
+     border on a circle this small does not survive, and the solid-versus-dashed
+     ring pair it replaced could not be told apart at 15px anyway. */
   .diaspora-legend-mark {
     width: 15px;
     height: 15px;
     flex: 0 0 auto;
     display: block;
     overflow: visible;
+  }
+
+  /* ─── World locator ──────────────────────────────────────────── */
+  /* Carries the 16 destinations outside the European frame, 6.2 percent of the
+     total, and the United States annotation. Same disc scale as the main frame:
+     both viewBoxes are authored at 1 unit = 1px at full size, so one legend
+     serves both and a disc means the same thing in each. */
+  .diaspora-locator-title {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-2) 0;
+  }
+  .diaspora-locator-svg {
+    display: block;
+    width: 100%;
+    height: auto;
+    /* Natural Earth 1's own aspect at this frame, 300/131. */
+    aspect-ratio: 300 / 131;
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+  }
+  /* The European window, so the locator says where the primary figure is. */
+  .diaspora-window-outline {
+    fill: none;
+    stroke: var(--accent-primary);
+    stroke-width: 1.1;
+    stroke-dasharray: 3 2;
+    pointer-events: none;
+  }
+  .diaspora-locator-note,
+  .diaspora-absent {
+    font-family: var(--font-sans);
+    font-size: 11.5px;
+    line-height: 1.5;
+    color: var(--text-tertiary);
+    margin: var(--space-2) 0 0 0;
+  }
+  /* HTML, not SVG text: it wraps, and it scales with the reader's type size
+     rather than with the width of the frame. The old version authored its line
+     breaks by hand in the content module and needed a mobile font-size override
+     to stay legible. */
+  .diaspora-absent-title {
+    font-weight: 600;
+    color: var(--text-secondary);
+  }
+
+  .diaspora-rail-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3) var(--space-4);
   }
 
   /* Cursor-following tooltip, per 05-design.md: cream surface, subtle border,
@@ -236,54 +310,8 @@ import Section3App from '../components/Section3App';
     margin-top: 2px;
   }
 
-  /* The "click a country to zoom in" chip is gone with the zoom. Top-right now
-     carries the European inset, which answers the question the zoom was for. */
-
-  /* Detail card BELOW the map, in the content column. */
-  .diaspora-detail {
-    max-width: var(--max-content);
-    margin: var(--space-6) auto 0;
-    padding: 0 var(--space-6);
-    display: flex;
-    flex-wrap: wrap;
-    align-items: baseline;
-    gap: var(--space-2) var(--space-6);
-  }
-  .diaspora-detail-eyebrow {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    margin: 0;
-    flex: 1 0 100%;
-  }
-  .diaspora-detail-value {
-    font-family: var(--font-serif);
-    font-size: 42px;
-    font-weight: 500;
-    line-height: 1;
-    color: var(--text-primary);
-    margin: 0;
-  }
-  .diaspora-detail-sub,
-  .diaspora-detail-note {
-    font-family: var(--font-sans);
-    font-size: 14px;
-    color: var(--text-secondary);
-    margin: 0;
-    max-width: 52ch;
-  }
-  .diaspora-detail-note { color: var(--text-tertiary); }
-  .diaspora-detail-meta {
-    flex: 1 0 100%;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-4);
-    margin-top: var(--space-3);
-  }
+  /* The "click a country to zoom in" chip is gone with the zoom, and the detail
+     card that used to sit below the map is now .diaspora-readout in the rail. */
   .diaspora-src {
     font-family: var(--font-mono);
     font-size: 11px;
@@ -527,6 +555,46 @@ import Section3App from '../components/Section3App';
     .about-data-overlay, .about-data-panel { animation: none; }
   }
 
+  /* ─── Narrow: the rail stops being a rail ────────────────────── */
+  /* Below this the 300px rail squeezes the map to under 500px, at which point
+     Slovenia's disc is a smudge. Everything becomes one column.
+
+     The order matters and a plain source order will not give it. The readout must
+     stay ADJACENT to the map, because it is the feedback for tapping it: the
+     first attempt at this breakpoint reordered .diaspora-rail as a block, which
+     left the legend and the locator sitting between the readout and the map and
+     pushed the map 1038px down a 844px viewport, reintroducing the defect in a
+     new place. So the stage is one grid and the rail's three children are
+     promoted into it with `display: contents`, which lets them be ordered
+     against the map itself rather than only against each other:
+
+       1 readout   2 map   3 legend   4 locator   5 meta                       */
+  @media (max-width: 900px) {
+    .diaspora-stage {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-4);
+    }
+    .diaspora-rail { display: contents; }
+    .diaspora-readout { order: 1; border-bottom: none; padding-bottom: 0; }
+    .diaspora-primary { order: 2; }
+    .diaspora-legend { order: 3; }
+    .diaspora-locator { order: 4; }
+    .diaspora-rail-meta { order: 5; }
+    .diaspora-readout-value { font-size: 32px; }
+  }
+
+  @media (max-width: 640px) {
+    .diaspora-stage { padding: 0 var(--space-4); }
+    /* SVG user units against a 760-wide viewBox: at a 392px frame this label
+       would render near 6.7px. Scaled to hold roughly its desktop apparent size,
+       which is the one thing in the figure that cannot be HTML, because it is
+       pinned to a projected coordinate. */
+    .diaspora-origin-label { font-size: 21px; stroke-width: 5px; }
+    /* The locator is 300 units wide and already near its floor here, so the tail
+       discs are given a little more frame rather than less. */
+    .diaspora-locator-svg { max-width: 420px; }
+  }
+
   /* ─── Mobile ─────────────────────────────────────────────────── */
   @media (max-width: 640px) {
     .section3-editorial {
@@ -537,29 +605,6 @@ import Section3App from '../components/Section3App';
     .section3-prose p { font-size: 16px; }
     .section3-h3 { font-size: 20px; }
     .stat-callout-value { font-size: 52px; }
-    .diaspora-card-value { font-size: 2rem; }
-    /* Inset and legend stop floating: at this width an overlay covers the map it
-       is meant to explain. Both become blocks under it, inset first, because it
-       carries 94 percent of the data. */
-    .diaspora-inset {
-      position: static;
-      width: auto;
-      margin: var(--space-3) var(--space-4) 0;
-      box-shadow: none;
-    }
-    .diaspora-legend {
-      position: static;
-      max-width: none;
-      margin: var(--space-3) var(--space-4) var(--space-4);
-      background: transparent;
-      border: none;
-      padding: 0;
-    }
-    /* The US annotation is in SVG user units, so at this width it would render
-       around 5.6px. Scaled up to hold roughly the desktop apparent size. The
-       note drops to a shorter line via the two-line layout in the component. */
-    .diaspora-absent-title { font-size: 34px; }
-    .diaspora-absent-note { font-size: 27px; }
     .about-data-panel {
       width: 100%;
       padding: var(--space-12) var(--space-4) var(--space-6);

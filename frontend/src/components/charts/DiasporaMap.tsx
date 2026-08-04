@@ -1,44 +1,49 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { geoEqualEarth, geoPath, geoCentroid } from 'd3-geo';
+import { geoAzimuthalEqualArea, geoNaturalEarth1, geoPath, geoCentroid } from 'd3-geo';
 import { AboutData } from './AboutData';
 import { useLocale } from '../../lib/locale';
 import type { SourcePanel } from '../../content/internal';
 
 /**
- * Section 3 centrepiece: the diaspora as proportional discs on a world map,
- * plus a European inset carrying the 92 percent of the data that piles up
- * around Slovakia.
+ * Section 3 centrepiece: the diaspora as proportional discs.
  *
- * NOT scrollytelling. The earlier four-step plan is void: it was built on a
- * 1990-to-2020 transition, and every UN DESA reference year is modelled, so a
- * transition between two of them animates two model outputs.
+ * EUROPE IS THE PRIMARY FIGURE, the world is a locator. Inverted 2026-08 from
+ * the reverse arrangement. 393,444 of the 419,651 counted people, 93.8 percent,
+ * and 35 of the 51 destinations sit inside lon -25..45, lat 34..72. A world map
+ * cannot resolve that pile, which is why the previous build shipped a subtitle
+ * explaining that its own main chart could not be read, and then a floating
+ * inset to compensate. The inset was doing the work; it is now the figure. The
+ * world frame keeps the 14-destination tail (25,847 people, 6.2 percent) and the
+ * United States annotation, which are the only things it was ever needed for.
  *
- * WHY SVG AND d3.geoPath, NOT deck.gl. The previous build mapped lon/lat
- * linearly to x/y, which is equirectangular in all but name, and hand-rolled an
- * antimeridian split in the pipeline to compensate. Three defects came out of
- * that one decision: Chukotka rendered as a rectangular block (the split's
- * closing edges were filled as a quadrilateral), the 82-degree crop cut straight
- * lines across northern Russia, Canada and Greenland, and Greenland was inflated
- * to rival Africa. d3.geoPath clips on the sphere before projecting, so it needs
- * no pre-split, and Equal Earth is an equal-area projection, so a disc's
- * surroundings are not distorted out of proportion to it.
+ * NOT scrollytelling, and no zoom. Every UN DESA reference year is modelled, so
+ * a transition between two of them animates two model outputs. Nothing here
+ * attaches a wheel listener, so the page scrolls over the figure.
  *
- * WHY EQUAL EARTH. Greenland's projected footprint drops from Africa-scale to
- * 4,443 square pixels at a 1000x500 frame, against 7,404 on Natural Earth and
- * far more on equirectangular. Antarctica is dropped in the pipeline, not
- * clipped here: it will never carry a Slovak figure and it was taking a fifth of
- * the frame to say so.
+ * WHY LAEA FOR EUROPE, NOT EQUAL EARTH. Equal Earth is equal-area but it
+ * compresses vertically toward the poles, and measured on a render rather than
+ * argued from theory it is severe: at a 1000x500 frame it yields 3.71 px per
+ * degree of latitude at the equator against 1.72 px between 60 and 83.6 degrees,
+ * a 2.2x squash. Greenland came out at width/height 2.67 against 1.94 on Natural
+ * Earth, and the whole world at aspect 2.278 inside a 2:1 box. Lambert azimuthal
+ * equal-area centred on 10E 52N is what Europe's own statistical standard
+ * (EPSG:3035) uses, is equal-area without the polar squash inside this window,
+ * and gives the window a natural aspect of 1.3926, which is where 760x546 comes
+ * from. The locator uses Natural Earth 1 because a whole-world frame needs a
+ * compromise projection and its Greenland is the less distorted of the two.
  *
- * NO ZOOM, AND NO SCROLL CAPTURE. The map is a static projection. Click-to-zoom
- * existed to let the reader separate the European pile, and the inset does that
- * permanently and without interaction, so the camera work is gone rather than
- * repaired. Nothing here attaches a wheel listener, so the page scrolls over the
- * map as it does over any figure.
+ * PROJECTION DOES NOT AFFECT THE DISCS. A radius depends only on the value, so
+ * the two frames share one absolute area scale and one legend serves both. Both
+ * viewBoxes are authored at 1 unit = 1 CSS pixel at full size, so MAX_R means
+ * the same apparent size in each. The projection affects only the land beneath.
  *
- * ENCODING: one channel, area. Discs are a single terracotta fill; the log
- * colour ramp is gone, because area already carried the magnitude and doubling
- * up made the small discs nearly invisible against cream. Radius scales as
- * sqrt(value), so area is proportional to the count.
+ * TWO SYMBOL CONVENTIONS, down from four. A disc, whose area is the count, and a
+ * ring on that disc, meaning the figure is not a place-of-birth count. The ring
+ * covers both the 3 citizenship-basis rows and the 1 model-imputed row: they
+ * were a solid ring and a dashed ring before, which asked the reader to tell two
+ * dash patterns apart on an 11px circle to learn something the readout states in
+ * words. Slovakia and the United States are now text annotations rather than a
+ * diamond and a crossed circle, because neither is a datum on this scale.
  */
 
 interface CountryDatum {
@@ -54,8 +59,8 @@ interface CountryDatum {
   /**
    * True where the row is imputed from a regional model (type I) rather than
    * observed. Bosnia and Herzegovina is the only one. Carried separately from
-   * citizenBasis because the subtitle previously folded it in with the
-   * birth-derived rows.
+   * citizenBasis because the readout names which of the two applies, even though
+   * both now draw the same ring.
    */
   imputed?: boolean;
 }
@@ -70,21 +75,19 @@ interface DiasporaMapLabels {
   resetLabel: string;
   noData: string;
   legendTitle: string;
-  /** Marker label and footnote for the citizenship-basis countries. */
-  citizenBasisLabel: string;
+  /** The single ring convention, covering both non-birthplace bases. */
+  offBasisLabel: string;
+  /** Readout note naming which basis applies. */
   citizenBasisNote: string;
-  /** Marker label and footnote for the model-imputed country. */
-  imputedLabel: string;
   imputedNote: string;
-  /** Label on the Slovakia diamond. */
+  /** Text annotation at Slovakia, in the European frame. */
   originLabel: string;
-  /** Inset heading and its own caption. */
-  insetTitle: string;
-  insetNote: string;
-  /** The United States annotation: an absence, not a zero. */
+  /** Heading and caption for the world locator. */
+  locatorTitle: string;
+  locatorNote: string;
+  /** The United States: an absence, not a zero. Plain HTML, so it wraps. */
   absentTitle: string;
-  /** One entry per rendered line: SVG text does not wrap. */
-  absentNote: string[];
+  absentNote: string;
   srcLine: string;
 }
 
@@ -96,41 +99,46 @@ interface DiasporaMapProps {
   sourcePanel: SourcePanel;
 }
 
-/** Projection frame for the world map, in SVG user units. */
-const W = 1000;
-const H = 500;
-
-/** Projection frame for the European inset. */
-const INSET_W = 420;
-const INSET_H = 420;
+/**
+ * European frame. 760x546 is the window's own natural aspect (1.3926) at a width
+ * that fits the content column beside a 300px readout rail.
+ */
+const EU_W = 760;
+const EU_H = 546;
 
 /**
- * Inset window: lon -11..32, lat 34..71. Holds 32 of the 51 destinations and
- * 93.5 percent of the counted total, which is the pile the world view cannot
- * resolve. At world scale Czechia's disc has a 42px radius while Austria's
- * centroid sits 7px away and Slovakia's 10.6px, so all three are inside it.
+ * The European window: lon -25..45, lat 34..72. Holds 35 of the 51 destinations
+ * and 393,444 of the 419,651 counted people. Wider than the -11..32 box the old
+ * inset used, which excluded Iceland, Turkey and Cyprus for no reason beyond the
+ * box being drawn tight around the largest discs.
  */
-const INSET_BOUNDS: [[number, number], [number, number]] = [[-11, 34], [32, 71]];
+const EU_WINDOW: [[number, number], [number, number]] = [[-25, 34], [45, 72]];
 
-/** Slovakia, the origin. Rendered as a diamond, never as a disc or a ring. */
+/** EPSG:3035's centre. */
+const EU_CENTRE: [number, number] = [10, 52];
+
+/** World locator, sized to the rail. Aspect is Natural Earth 1's own, 2.298. */
+const LOC_W = 300;
+const LOC_H = 131;
+
+/** Slovakia, the origin. A text label, not a glyph. */
 const ORIGIN: [number, number] = [19.7, 48.73];
-
-/**
- * The United States. Annotated because its absence is the section's argument:
- * UN DESA has no US row at all, since the US publishes only a combined
- * Czechoslovakia birthplace line. Placed over the continental US.
- */
-const ABSENT_MARKER: [number, number] = [-98.5, 39.5];
 
 /** Single terracotta, --accent-primary. Area is the only quantitative channel. */
 const DISC_FILL = '#B83A1F';
 const DISC_STROKE = '#FBF7F0';
+/** The one ring: figure is not a place-of-birth count. */
+const RING_STROKE = '#2A1810';
 
-/** Radius in SVG units at world scale; the inset scales these up. */
-const MAX_R = 40;
-const MIN_R = 2.2;
-const INSET_MAX_R = 30;
-const INSET_MIN_R = 3;
+/**
+ * One radius scale for both frames, in SVG units, which equal CSS pixels at full
+ * size in each viewBox. MAX_R 36 is the largest value that leaves no disc fully
+ * swallowed by a larger one in the European frame: at 40 Slovenia disappears
+ * inside Austria, and at 54, which is what the old world frame's 40 worked out
+ * to here, Poland and Slovenia both vanish inside Czechia.
+ */
+const MAX_R = 36;
+const MIN_R = 2.4;
 
 interface Bubble {
   code: string;
@@ -139,6 +147,47 @@ interface Bubble {
   lonLat: [number, number];
   citizenBasis: boolean;
   imputed: boolean;
+  /** True where the figure is not a place-of-birth count: one ring, either way. */
+  offBasis: boolean;
+}
+
+/** Samples the window's edges for fitExtent.
+ *
+ * A MultiPoint, not a Polygon: a ring wound counter-clockwise is the complement
+ * of the box on the sphere and d3 then fits the whole world, which is how the
+ * first version of the old inset rendered as a second tiny world map. And curved
+ * meridians mean the four corners alone understate the box's width at
+ * mid-latitudes, so the edges are sampled rather than just the corners.
+ */
+function windowSample([[w, s], [e, n]]: [[number, number], [number, number]]) {
+  const coordinates: [number, number][] = [];
+  for (let i = 0; i <= 60; i++) {
+    const t = i / 60;
+    coordinates.push([w + (e - w) * t, s], [w + (e - w) * t, n]);
+    coordinates.push([w, s + (n - s) * t], [e, s + (n - s) * t]);
+  }
+  return { type: 'MultiPoint' as const, coordinates };
+}
+
+/**
+ * The same window as a closed LineString, for drawing its outline on the
+ * locator. Not a Polygon: see the call site.
+ */
+function windowOutline([[w, s], [e, n]]: [[number, number], [number, number]]) {
+  const coordinates: [number, number][] = [];
+  const along = (
+    from: [number, number], to: [number, number],
+  ) => {
+    for (let i = 0; i <= 30; i++) {
+      const t = i / 30;
+      coordinates.push([from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t]);
+    }
+  };
+  along([w, s], [e, s]);
+  along([e, s], [e, n]);
+  along([e, n], [w, n]);
+  along([w, n], [w, s]);
+  return { type: 'LineString' as const, coordinates } as any;
 }
 
 export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: DiasporaMapProps) {
@@ -146,7 +195,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
   const [geojson, setGeojson] = useState<any>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number; b: Bubble } | null>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   const byCode = useMemo(() => {
     const m = new Map<string, CountryDatum>();
@@ -166,36 +215,19 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       .catch(() => setGeojson(null));
   }, []);
 
-  // World projection, fitted once to the whole feature collection.
-  const world = useMemo(() => {
-    if (!geojson) return null;
-    const projection = geoEqualEarth().fitExtent([[2, 2], [W - 2, H - 2]], geojson);
+  // Europe: LAEA on EPSG:3035's centre, fitted to the stated window rather than
+  // to whatever features happen to carry data.
+  const eu = useMemo(() => {
+    const projection = geoAzimuthalEqualArea()
+      .rotate([-EU_CENTRE[0], -EU_CENTRE[1]])
+      .fitExtent([[8, 8], [EU_W - 8, EU_H - 8]], windowSample(EU_WINDOW));
     return { projection, path: geoPath(projection) };
-  }, [geojson]);
+  }, []);
 
-  // Inset projection, fitted to the European window rather than to the features,
-  // so the frame is the stated lon/lat box and not a bounding box of whatever
-  // happens to carry data.
-  //
-  // The window is passed as a SAMPLED MultiPoint, not a Polygon, for two reasons.
-  // A polygon ring wound counter-clockwise is the complement of the box on the
-  // sphere, and d3 then fits the whole world: the first version of this did
-  // exactly that and the inset rendered as a second, tiny world map. And Equal
-  // Earth curves its meridians, so the four corners alone understate the box's
-  // width at mid-latitudes. Sampling the edges avoids both traps.
-  const inset = useMemo(() => {
+  // Locator: fitted to the whole feature collection.
+  const loc = useMemo(() => {
     if (!geojson) return null;
-    const [[w, s], [e, n]] = INSET_BOUNDS;
-    const edge: [number, number][] = [];
-    for (let i = 0; i <= 24; i++) {
-      const t = i / 24;
-      edge.push([w + (e - w) * t, s], [w + (e - w) * t, n]);
-      edge.push([w, s + (n - s) * t], [e, s + (n - s) * t]);
-    }
-    const projection = geoEqualEarth().fitExtent(
-      [[2, 2], [INSET_W - 2, INSET_H - 2]],
-      { type: 'MultiPoint', coordinates: edge } as any,
-    );
+    const projection = geoNaturalEarth1().fitExtent([[2, 2], [LOC_W - 2, LOC_H - 2]], geojson);
     return { projection, path: geoPath(projection) };
   }, [geojson]);
 
@@ -208,13 +240,16 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       if (!d || d.value <= 0) continue;
       const c = geoCentroid(f);
       if (!c || Number.isNaN(c[0])) continue;
+      const citizenBasis = Boolean(d.citizenBasis);
+      const imputed = Boolean(d.imputed);
       out.push({
         code,
         name: f.properties?.name || code,
         value: d.value,
         lonLat: [c[0], c[1]],
-        citizenBasis: Boolean(d.citizenBasis),
-        imputed: Boolean(d.imputed),
+        citizenBasis,
+        imputed,
+        offBasis: citizenBasis || imputed,
       });
     }
     // Largest first, so small discs paint on top and stay hoverable.
@@ -222,35 +257,52 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
     return out;
   }, [geojson, byCode]);
 
-  const inInset = (b: Bubble) => {
-    const [[w, s], [e, n]] = INSET_BOUNDS;
+  const inEurope = (b: Bubble) => {
+    const [[w, s], [e, n]] = EU_WINDOW;
     const [lon, lat] = b.lonLat;
     return lon >= w && lon <= e && lat >= s && lat <= n;
   };
 
-  const radius = (v: number, maxR: number, minR: number) =>
-    Math.max(minR, maxR * Math.sqrt(v / maxValue));
+  const european = useMemo(() => bubbles.filter(inEurope), [bubbles]);
+  /** The tail: everything the European frame does not hold. */
+  const tail = useMemo(() => bubbles.filter(b => !inEurope(b)), [bubbles]);
+
+  const radius = (v: number) => Math.max(MIN_R, MAX_R * Math.sqrt(v / maxValue));
 
   const fmt = (n: number) => Math.round(n).toLocaleString(locale === 'sk' ? 'sk-SK' : 'en');
 
   function showTip(e: React.MouseEvent, b: Bubble) {
-    const box = wrapRef.current?.getBoundingClientRect();
+    const box = stageRef.current?.getBoundingClientRect();
     if (!box) return;
     setTip({ x: e.clientX - box.left, y: e.clientY - box.top, b });
   }
 
-  const selectedDatum = selected ? byCode.get(selected) : undefined;
-  const selectedName = selected
-    ? bubbles.find(b => b.code === selected)?.name || selected
-    : null;
+  const clearTip = () => setTip(null);
 
-  /** One disc, shared by both frames. */
-  function Disc({
-    b, projection, maxR, minR,
-  }: { b: Bubble; projection: any; maxR: number; minR: number }) {
+  // The per-disc mouseleave is not enough on its own. A fast exit off the edge of
+  // an SVG, a disc unmounting under the cursor, and every touch interaction all
+  // leave a tooltip on screen with nothing to dismiss it, which is how the
+  // previous build's tooltip persisted indefinitely. Scroll and window blur are
+  // the two other ways the cursor stops being where the tooltip says it is.
+  useEffect(() => {
+    if (!tip) return;
+    window.addEventListener('scroll', clearTip, { passive: true });
+    window.addEventListener('blur', clearTip);
+    return () => {
+      window.removeEventListener('scroll', clearTip);
+      window.removeEventListener('blur', clearTip);
+    };
+  }, [tip]);
+
+  const selectedDatum = selected ? byCode.get(selected) : undefined;
+  const selectedBubble = selected ? bubbles.find(b => b.code === selected) : undefined;
+  const selectedName = selectedBubble?.name || selected;
+
+  /** One disc. Identical radius scale in both frames. */
+  function Disc({ b, projection }: { b: Bubble; projection: any }) {
     const p = projection(b.lonLat);
     if (!p) return null;
-    const r = radius(b.value, maxR, minR);
+    const r = radius(b.value);
     const isSelected = selected === b.code;
     return (
       <circle
@@ -259,12 +311,11 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
         r={r}
         fill={DISC_FILL}
         fillOpacity={isSelected ? 0.95 : 0.72}
-        stroke={b.citizenBasis || b.imputed ? '#2A1810' : DISC_STROKE}
-        strokeWidth={b.citizenBasis || b.imputed ? 1.4 : 0.6}
-        strokeDasharray={b.imputed ? '2.5 2' : undefined}
-        style={{ cursor: 'pointer' }}
+        stroke={b.offBasis ? RING_STROKE : DISC_STROKE}
+        strokeWidth={b.offBasis ? 1.4 : 0.6}
+        className="diaspora-disc"
         onMouseMove={e => showTip(e, b)}
-        onMouseLeave={() => setTip(null)}
+        onMouseLeave={clearTip}
         onClick={() => setSelected(b.code === selected ? null : b.code)}
         tabIndex={0}
         role="button"
@@ -274,21 +325,40 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
     );
   }
 
-  /** Slovakia: a diamond. Rings are reserved for the definitional flags. */
-  function OriginDiamond({ projection, size }: { projection: any; size: number }) {
-    const p = projection(ORIGIN);
-    if (!p) return null;
-    return (
-      <g aria-label={labels.originLabel} transform={`translate(${p[0]},${p[1]})`}>
-        <path
-          d={`M0,${-size} L${size},0 L0,${size} L${-size},0 Z`}
-          fill="#FBF7F0"
-          stroke="#2A1810"
-          strokeWidth={1.4}
-        />
-      </g>
-    );
-  }
+  const readout = (
+    <div className="diaspora-readout">
+      {!selected ? (
+        <>
+          <p className="diaspora-readout-eyebrow">{labels.totalLabel}</p>
+          <p className="diaspora-readout-value">{fmt(total)}</p>
+          <p className="diaspora-readout-sub">{labels.year}</p>
+        </>
+      ) : (
+        <>
+          <p className="diaspora-readout-eyebrow">{selectedName}</p>
+          {selectedDatum && selectedDatum.value > 0 ? (
+            <>
+              <p className="diaspora-readout-value">{fmt(selectedDatum.value)}</p>
+              <p className="diaspora-readout-sub">
+                {labels.tooltipUnit} · {labels.year}
+              </p>
+              {selectedDatum.citizenBasis && (
+                <p className="diaspora-readout-note">{labels.citizenBasisNote}</p>
+              )}
+              {selectedDatum.imputed && (
+                <p className="diaspora-readout-note">{labels.imputedNote}</p>
+              )}
+            </>
+          ) : (
+            <p className="diaspora-readout-note">{labels.noData}</p>
+          )}
+          <button type="button" className="diaspora-reset" onClick={() => setSelected(null)}>
+            {labels.resetLabel}
+          </button>
+        </>
+      )}
+    </div>
+  );
 
   return (
     <figure className="diaspora-figure">
@@ -298,71 +368,31 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
         <p className="diaspora-subtitle">{labels.subtitle}</p>
       </figcaption>
 
-      <div ref={wrapRef} className="diaspora-map-wrap">
-        {world && geojson && (
+      {/* Map and readout are siblings in one grid, so they are on screen
+          together: the readout used to sit below a full-viewport-height map and
+          was never visible at the same time as the thing it described. */}
+      <div ref={stageRef} className="diaspora-stage" onMouseLeave={clearTip}>
+        <div className="diaspora-primary">
           <svg
-            className="diaspora-svg"
-            viewBox={`0 0 ${W} ${H}`}
+            className="diaspora-eu-svg"
+            viewBox={`0 0 ${EU_W} ${EU_H}`}
             role="img"
             aria-label={labels.title}
             preserveAspectRatio="xMidYMid meet"
           >
-            <g>
-              {geojson.features.map((f: any, i: number) => (
-                <path
-                  key={f.properties?.iso3 || i}
-                  d={world.path(f) || undefined}
-                  fill="#F4EFE3"
-                  stroke="#D4A547"
-                  strokeOpacity={0.45}
-                  strokeWidth={0.4}
-                />
-              ))}
-            </g>
-
-            {/* United States: a labelled absence. Drawn before the discs so no
-                disc is obscured by it. */}
-            <UnitedStatesAbsence
-              projection={world.projection}
-              title={labels.absentTitle}
-              note={labels.absentNote}
-            />
-
-            <g>
-              {bubbles.map(b => (
-                <Disc key={b.code} b={b} projection={world.projection} maxR={MAX_R} minR={MIN_R} />
-              ))}
-            </g>
-
-            <OriginDiamond projection={world.projection} size={5} />
-          </svg>
-        )}
-
-        {/* European inset. Roughly 93 percent of the counted total is inside
-            this window and unreadable at world scale. */}
-        {inset && geojson && (
-          <div className="diaspora-inset">
-            <p className="diaspora-inset-title">{labels.insetTitle}</p>
-            <svg
-              viewBox={`0 0 ${INSET_W} ${INSET_H}`}
-              className="diaspora-inset-svg"
-              role="img"
-              aria-label={labels.insetTitle}
-            >
-              <defs>
-                {/* Everything outside the frame is clipped, so land beyond the
-                    window does not spill over the inset's border. */}
-                <clipPath id="diaspora-inset-clip">
-                  <rect x={0} y={0} width={INSET_W} height={INSET_H} />
-                </clipPath>
-              </defs>
-              <rect x={0} y={0} width={INSET_W} height={INSET_H} fill="#DCE9EE" />
-              <g clipPath="url(#diaspora-inset-clip)">
+            <defs>
+              <clipPath id="diaspora-eu-clip">
+                <rect x={0} y={0} width={EU_W} height={EU_H} />
+              </clipPath>
+            </defs>
+            <rect x={0} y={0} width={EU_W} height={EU_H} fill="#DCE9EE" />
+            {geojson && (
+              <g clipPath="url(#diaspora-eu-clip)">
                 <g>
                   {geojson.features.map((f: any, i: number) => (
                     <path
                       key={f.properties?.iso3 || i}
-                      d={inset.path(f) || undefined}
+                      d={eu.path(f) || undefined}
                       fill="#F4EFE3"
                       stroke="#D4A547"
                       strokeOpacity={0.5}
@@ -371,63 +401,124 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                   ))}
                 </g>
                 <g>
-                  {bubbles.filter(inInset).map(b => (
-                    <Disc
-                      key={b.code}
-                      b={b}
-                      projection={inset.projection}
-                      maxR={INSET_MAX_R}
-                      minR={INSET_MIN_R}
-                    />
+                  {european.map(b => (
+                    <Disc key={b.code} b={b} projection={eu.projection} />
                   ))}
                 </g>
-                <OriginDiamond projection={inset.projection} size={6} />
+                {/* Slovakia: a label, not a symbol. paint-order puts the cream
+                    stroke behind the glyphs so it reads over land and over the
+                    edge of Czechia's disc without a box. */}
+                <text
+                  className="diaspora-origin-label"
+                  x={eu.projection(ORIGIN)[0] + 8}
+                  y={eu.projection(ORIGIN)[1] - 8}
+                >
+                  {labels.originLabel}
+                </text>
               </g>
-            </svg>
-            <p className="diaspora-inset-note">{labels.insetNote}</p>
-          </div>
-        )}
+            )}
+          </svg>
+        </div>
 
-        <div className="diaspora-legend">
-          <p className="diaspora-legend-title">{labels.legendTitle}</p>
-          <div className="diaspora-legend-bubbles">
-            {[1000, 20_000, 113_773].map(t => {
-              const r = radius(t, 26, 2);
-              return (
-                <div className="diaspora-legend-item" key={t}>
-                  <span
-                    className="diaspora-legend-disc"
-                    style={{ width: r * 2, height: r * 2 }}
-                  />
-                  <span className="diaspora-legend-tick">{fmt(t)}</span>
-                </div>
-              );
-            })}
+        <div className="diaspora-rail">
+          {readout}
+
+          <div className="diaspora-legend">
+            <p className="diaspora-legend-title">{labels.legendTitle}</p>
+            {/* Ticks are round scale anchors, not countries. They used to be
+                1,000 / 20,000 / 113,773, and that last one is Czechia, whose
+                figure is the citizenship-basis outlier: the legend was
+                illustrating a birthplace map with a non-birthplace number. The
+                scale is the same in both frames, so this legend serves both. */}
+            <div className="diaspora-legend-bubbles">
+              {[1000, 20_000, 100_000].map(t => {
+                const r = radius(t);
+                return (
+                  <div className="diaspora-legend-item" key={t}>
+                    <span
+                      className="diaspora-legend-disc"
+                      style={{ width: r * 2, height: r * 2 }}
+                    />
+                    <span className="diaspora-legend-tick">{fmt(t)}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Swatch is inline SVG, drawn the way the map draws it. A CSS border
+                on a circle this small does not survive. */}
+            <p className="diaspora-legend-flag">
+              <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
+                <circle cx="10" cy="10" r="7" fill={DISC_FILL} fillOpacity={0.72}
+                  stroke={RING_STROKE} strokeWidth={1.8} />
+              </svg>
+              {labels.offBasisLabel}
+            </p>
           </div>
-          {/* Swatches are inline SVG, not bordered spans: a CSS dashed border on
-              an 11px circle renders as a smudge at this size and could not be
-              told apart from the solid one. */}
-          <p className="diaspora-legend-flag">
-            <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
-              <circle cx="10" cy="10" r="7" fill={DISC_FILL} fillOpacity={0.72}
-                stroke="#2A1810" strokeWidth={1.6} />
-            </svg>
-            {labels.citizenBasisLabel}
-          </p>
-          <p className="diaspora-legend-flag">
-            <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
-              <circle cx="10" cy="10" r="7" fill={DISC_FILL} fillOpacity={0.72}
-                stroke="#2A1810" strokeWidth={1.6} strokeDasharray="3 2.4" />
-            </svg>
-            {labels.imputedLabel}
-          </p>
-          <p className="diaspora-legend-flag">
-            <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
-              <path d="M10,2 L18,10 L10,18 L2,10 Z" fill="#FBF7F0"
-                stroke="#2A1810" strokeWidth={1.6} />
-            </svg>
-            {labels.originLabel}
-          </p>
+
+          {loc && geojson && (
+            <div className="diaspora-locator">
+              <p className="diaspora-locator-title">{labels.locatorTitle}</p>
+              <svg
+                viewBox={`0 0 ${LOC_W} ${LOC_H}`}
+                className="diaspora-locator-svg"
+                role="img"
+                aria-label={labels.locatorTitle}
+              >
+                <rect x={0} y={0} width={LOC_W} height={LOC_H} fill="#DCE9EE" />
+                <g>
+                  {geojson.features.map((f: any, i: number) => {
+                    const iso = f.properties?.iso3;
+                    // The United States is outlined, not filled differently: the
+                    // annotation beneath says what the outline means, so this is
+                    // not a fourth symbol convention competing with the discs.
+                    const isUS = iso === 'USA';
+                    return (
+                      <path
+                        key={iso || i}
+                        d={loc.path(f) || undefined}
+                        fill="#F4EFE3"
+                        stroke={isUS ? RING_STROKE : '#D4A547'}
+                        strokeOpacity={isUS ? 0.85 : 0.45}
+                        strokeWidth={isUS ? 0.9 : 0.4}
+                      />
+                    );
+                  })}
+                </g>
+                {/* The European window, so the locator says where the primary
+                    figure is.
+
+                    A LineString, not a Polygon. As a Polygon this drew a dashed
+                    loop around most of the world: d3 reads ring winding to decide
+                    which side is the interior, and the wrong sense makes the box
+                    the complement of itself on the sphere. A LineString has no
+                    interior to get backwards. The edges are sampled rather than
+                    cornered because Natural Earth curves its meridians. */}
+                <path
+                  className="diaspora-window-outline"
+                  d={loc.path(windowOutline(EU_WINDOW)) || undefined}
+                />
+                <g>
+                  {tail.map(b => (
+                    <Disc key={b.code} b={b} projection={loc.projection} />
+                  ))}
+                </g>
+              </svg>
+              <p className="diaspora-locator-note">{labels.locatorNote}</p>
+              {/* HTML, not SVG text. The old version authored its line breaks by
+                  hand in the content module and needed a mobile font-size
+                  override, because SVG text neither wraps nor scales with the
+                  reader's type size. */}
+              <p className="diaspora-absent">
+                <span className="diaspora-absent-title">{labels.absentTitle}</span>{' '}
+                {labels.absentNote}
+              </p>
+            </div>
+          )}
+
+          <div className="diaspora-rail-meta">
+            <p className="diaspora-src">{labels.srcLine}</p>
+            <AboutData label={aboutLabel} panel={sourcePanel} />
+          </div>
         </div>
 
         {tip && (
@@ -438,103 +529,15 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
           >
             <span className="diaspora-tip-name">{tip.b.name}</span>
             <span className="diaspora-tip-value">{fmt(tip.b.value)}</span>
-            {tip.b.citizenBasis && (
-              <span className="diaspora-tip-basis">{labels.citizenBasisLabel}</span>
-            )}
-            {tip.b.imputed && (
-              <span className="diaspora-tip-basis">{labels.imputedLabel}</span>
+            {/* The short flag, not the full note. The tooltip used to print the
+                same three-line paragraph the readout does, one inch away from it,
+                which is the whole readout duplicated on top of the map. */}
+            {tip.b.offBasis && (
+              <span className="diaspora-tip-basis">{labels.offBasisLabel}</span>
             )}
           </div>
         )}
       </div>
-
-      <div className="diaspora-detail">
-        {!selected ? (
-          <>
-            <p className="diaspora-detail-eyebrow">{labels.totalLabel}</p>
-            <p className="diaspora-detail-value">{fmt(total)}</p>
-            <p className="diaspora-detail-sub">{labels.year}</p>
-          </>
-        ) : (
-          <>
-            <p className="diaspora-detail-eyebrow">{selectedName}</p>
-            {selectedDatum && selectedDatum.value > 0 ? (
-              <>
-                <p className="diaspora-detail-value">{fmt(selectedDatum.value)}</p>
-                <p className="diaspora-detail-sub">
-                  {labels.tooltipUnit} · {labels.year}
-                </p>
-                {selectedDatum.citizenBasis && (
-                  <p className="diaspora-detail-note">{labels.citizenBasisNote}</p>
-                )}
-                {selectedDatum.imputed && (
-                  <p className="diaspora-detail-note">{labels.imputedNote}</p>
-                )}
-              </>
-            ) : (
-              <p className="diaspora-detail-note">{labels.noData}</p>
-            )}
-            <button type="button" className="diaspora-reset" onClick={() => setSelected(null)}>
-              {labels.resetLabel}
-            </button>
-          </>
-        )}
-        <div className="diaspora-detail-meta">
-          <p className="diaspora-src">{labels.srcLine}</p>
-          <AboutData label={aboutLabel} panel={sourcePanel} />
-        </div>
-      </div>
     </figure>
-  );
-}
-
-/**
- * The United States, annotated as an absence.
- *
- * Currently the largest empty space on the map, which reads as a rendering bug.
- * It is not: UN DESA has no United States row for Slovak origin at all, because
- * the US publishes only a combined "Czechoslovakia (includes Czech Republic and
- * Slovakia)" birthplace line, and the UN builds origin estimates from what
- * destinations publish. Verified in the source workbook: 150 origin countries
- * are published for the US and Slovakia is not among them, while the row's
- * world total exceeds the sum of its published origins by 4.05 million.
- *
- * A hollow marker with a rule to a label, so it cannot be read as a disc.
- */
-function UnitedStatesAbsence({
-  projection, title, note,
-}: { projection: any; title: string; note: string[] }) {
-  const p = projection(ABSENT_MARKER);
-  if (!p) return null;
-  const [x, y] = p;
-  // Label sits down-left of the marker, over the eastern Pacific, clear of the
-  // Mexican and Central American discs.
-  const lx = x - 96;
-  const ly = y + 74;
-  return (
-    <g className="diaspora-absent" aria-label={`${title}. ${note.join(' ')}`}>
-      <circle
-        cx={x}
-        cy={y}
-        r={7}
-        fill="none"
-        stroke="#8B6F4F"
-        strokeWidth={1.1}
-        strokeDasharray="3 2.5"
-      />
-      <line x1={x - 3.4} y1={y - 3.4} x2={x + 3.4} y2={y + 3.4} stroke="#8B6F4F" strokeWidth={1.1} />
-      <line x1={x - 3.4} y1={y + 3.4} x2={x + 3.4} y2={y - 3.4} stroke="#8B6F4F" strokeWidth={1.1} />
-      <line x1={x - 6} y1={y + 6} x2={lx + 84} y2={ly - 12} stroke="#8B6F4F" strokeWidth={0.7} />
-      <text x={lx} y={ly} className="diaspora-absent-title">{title}</text>
-      {/* SVG text does not wrap and the mobile breakpoint scales this up, so the
-          line breaks are authored in the content module. dy is in em, so the
-          leading tracks whatever font-size the breakpoint sets. The first line's
-          baseline clears the title by 1.6em for the same reason. */}
-      <text x={lx} y={ly} className="diaspora-absent-note">
-        {note.map((line, i) => (
-          <tspan key={i} x={lx} dy={i === 0 ? '1.6em' : '1.25em'}>{line}</tspan>
-        ))}
-      </text>
-    </g>
   );
 }
