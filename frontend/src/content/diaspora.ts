@@ -49,7 +49,7 @@ export interface Section3Content {
   sub4: string;
   closing: string[];
 
-  /** Labels rendered inside the interactive world map. */
+  /** Labels rendered inside the world map and its European inset. */
   map: {
     eyebrow: string;
     /** Chart title, rendered above the map. */
@@ -58,15 +58,22 @@ export interface Section3Content {
     year: string;
     totalLabel: string;
     tooltipUnit: string;
-    hint: string;
     resetLabel: string;
     /** Shown when the clicked country holds no Slovak diaspora record. */
     noData: string;
     legendTitle: string;
-    legendNote: string;
     citizenBasisLabel: string;
     citizenBasisNote: string;
+    /** The model-imputed row, kept distinct from the citizenship-basis ones. */
+    imputedLabel: string;
+    imputedNote: string;
     originLabel: string;
+    insetTitle: string;
+    insetNote: string;
+    /** The United States: an absence in the source, not a zero. */
+    absentTitle: string;
+    /** One entry per rendered line: SVG text does not wrap. */
+    absentNote: string[];
     srcLine: string;
   };
 
@@ -116,7 +123,7 @@ const en: Section3Content = {
 
   sub1: 'Where the diaspora is, on one definition',
   caption1:
-    'Slovak-born residents by destination, 2020. 51 destinations with data. Czechia\u2019s figure is compiled from foreign-citizenship data, not place of birth. src: UN DESA bilateral migrant stock, 2020 revision.',
+    'Slovaks counted abroad by destination, 2020. 51 destinations with data, of which 47 are compiled from place-of-birth data, 3 from foreign-citizenship data (Czechia, Jordan, Mongolia) and 1 from a regional model (Bosnia and Herzegovina). src: UN DESA bilateral migrant stock, 2020 revision.',
   // APPROVED 2026-07-31. Figures: 113,773 CZE and 27.1% share; 47 birth-derived
   // + 1 imputed + 3 citizen-derived = 51; matched panel 25 countries, born
   // 305,669 vs citizen 297,234 (3%); ex-Czechia born exceeds citizen by 15,954
@@ -190,23 +197,38 @@ const en: Section3Content = {
     eyebrow: '§3 · Global diaspora',
     // NOT "Slovak-born residents by country": four of the 51 figures are not
     // birth-derived, and one of those four is the largest number on the map.
-    // The title states coverage; the subtitle states the basis and its exception.
     title: 'Slovaks counted abroad, 2020',
+    // THIRD FIX to this sentence. The previous two both said "place-of-birth data
+    // except where ringed", which folded Bosnia's model-imputed row in with the
+    // 47 birth-derived ones: the ring meant foreign citizens only, so Bosnia read
+    // as birth-derived. The three bases are now counted out explicitly and each
+    // has its own mark. 47 + 3 + 1 = 51.
     subtitle:
-      'One disc per destination, area proportional to the count. Compiled from place-of-birth data except where ringed, where the destination reports foreign citizens instead.',
+      'One disc per destination, area proportional to the count. Of the 51 figures, 47 are compiled from place-of-birth data, 3 from foreign-citizenship data (solid ring), and 1 is imputed from a regional model (dashed ring).',
     year: '2020',
     totalLabel: 'Total counted across 51 destinations',
     tooltipUnit: 'people',
-    hint: 'Click any country for its figure',
-    resetLabel: 'Back to the world',
+    resetLabel: 'Clear selection',
     noData: 'No figure recorded for this country',
     legendTitle: 'Disc area = people counted',
-    legendNote:
-      'Colour follows a logarithmic scale, so each step is a tenfold change. Czechia holds more than 100,000 and the smallest recorded figure is two.',
     citizenBasisLabel: 'Counted as foreign citizens, not by birthplace',
     citizenBasisNote:
       'The United Nations compiled this figure from foreign-citizenship data rather than place of birth, because that is what this country publishes. It is not directly comparable with the others.',
+    imputedLabel: 'Imputed from a regional model, not observed',
+    imputedNote:
+      'The United Nations produced this figure from a regional model rather than from any figure the destination published. It is the only one of the 51 on that basis.',
     originLabel: 'Slovakia',
+    insetTitle: 'Europe, same scale of measure',
+    insetNote:
+      'The same discs over the region holding 32 of the 51 destinations and 94 percent of the counted total. At world scale Czechia’s disc covers Austria, Slovakia and Hungary entirely.',
+    // The absence IS the argument, so it is annotated rather than left blank.
+    absentTitle: 'United States: no entry exists',
+    // Authored as explicit lines: this renders as SVG text, which does not wrap,
+    // and the mobile breakpoint scales it up. One array entry per rendered line.
+    absentNote: [
+      'Not zero. The US publishes no Slovakia',
+      'birthplace figure, so the UN table has no row.',
+    ],
     srcLine: 'src: UN DESA bilateral migrant stock, 2020 revision',
   },
 
@@ -215,9 +237,9 @@ const en: Section3Content = {
       title: 'The global diaspora map',
       source: 'UN DESA, International Migrant Stock 2020 revision, Table 1 (bilateral matrix, destination by origin). Boundaries: world-atlas 110m country outlines.',
       derivation:
-        'Slovak-born residents by destination country for 2020, the most recent year with comprehensive coverage. UN DESA publishes this matrix only at five-year intervals, so the map is a single snapshot rather than an animation. Colour is a sequential scale over the 51 countries with a recorded value; clicking a country zooms to it and shows its own figure and, where the full series exists, its 1990 to 2020 trend.',
+        'Slovak-born residents by destination country for 2020, the most recent year with comprehensive coverage. UN DESA publishes this matrix only at five-year intervals, so the map is a single snapshot rather than an animation. One disc per destination, area proportional to the count and radius to its square root; a single fill colour, because area already carries the magnitude. Projection is Equal Earth, which is equal-area, so a disc is not distorted relative to the land under it. Antarctica is omitted. The inset repeats the European window at larger scale.',
       caveat:
-        'Counts people born in Slovakia, which includes those born before 1993 in what was then Czechoslovakia, and excludes children born abroad to Slovak parents. Two countries with data, Malta (305 people) and Liechtenstein (55), are too small to appear as clickable shapes at this map resolution; they are present in the charts.',
+        'Counts people born in Slovakia, which includes those born before 1993 in what was then Czechoslovakia, and excludes children born abroad to Slovak parents. Two countries with data, Malta (305 people) and Liechtenstein (55), have no polygon at this boundary resolution and so carry no disc; both are in the underlying table. The United States is absent from the source entirely and is marked on the map as such.',
     },
     ranked: {
       title: 'Diaspora by destination country',

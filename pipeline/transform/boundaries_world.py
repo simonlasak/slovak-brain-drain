@@ -7,17 +7,34 @@ Reads from:
 Writes to:
 - data/processed/boundaries_world.geojson
 
-Two jobs, both of which have to happen somewhere and belong here rather than in
+Three jobs, all of which have to happen somewhere and belong here rather than in
 the frontend:
 
 1. Decode TopoJSON to GeoJSON. The source is quantized and delta-encoded (arcs
-   plus a scale/translate transform), which deck.gl cannot read directly.
+   plus a scale/translate transform), which the renderer cannot read directly.
 
 2. Normalise the country key. The world-atlas geometries are identified by UN
    M49 numeric codes ("203"), while section3_diaspora.parquet carries a MIX of
    numeric codes (UN DESA rows) and ISO3 alpha codes (OECD rows). Emitting a
    single `iso3` property per feature lets the frontend join on one key instead
    of carrying a lookup table and a branch.
+
+3. Drop Antarctica. It will never carry a Slovak diaspora figure and, on any
+   whole-world projection, it takes a fifth of the frame to say so.
+
+NO ANTIMERIDIAN HANDLING HERE, DELIBERATELY. An earlier version of this module
+split every ring that crossed 180 degrees into eastern and western fragments and
+closed each against the meridian it was cut at. That was solving a problem this
+pipeline should never have had: it exists only if the renderer maps lon/lat
+linearly to x/y, which the August 2026 build did. Chukotka shipped as a
+rectangular block because the closing segments ran straight down the meridian
+and the fragment was filled as a quadrilateral.
+
+d3.geoPath clips on the sphere before projecting, so it separates Chukotka and
+Wrangel Island from mainland Russia correctly with no pre-processing. Verified
+against the raw geometry: Russia yields 14 subpaths, no NaN coordinates, no band
+across the Pacific. Splitting rings here would now be actively harmful, because
+the artificial meridian edges would be projected as real coastline.
 
 Deliberately stdlib-only: no topojson or pycountry dependency for a one-off
 geometry conversion.
@@ -135,74 +152,11 @@ def _stitch(arc_indices: list[int], arcs: list[list[list[float]]]) -> list[list[
     return ring
 
 
-# Countries whose territory crosses the 180th meridian have rings that jump from
-# +179 to -179. A renderer joining those points draws a band straight across the
-# map: Russia and Fiji both smear the whole Pacific. Splitting each ring at the
-# antimeridian into an eastern and a western part fixes it without reprojecting.
-#
-# Antarctica also spans the full longitude range but for the opposite reason: its
-# ring genuinely wraps the pole. It carries no diaspora and is trimmed out of the
-# map's viewport, so it is left alone.
-ANTIMERIDIAN_SPLIT = {"RUS", "FJI", "NZL", "USA", "KIR"}
-
-
-def _split_ring_at_antimeridian(ring: list[list[float]]) -> list[list[list[float]]]:
-    """Cut a ring wherever consecutive points jump more than 180 degrees."""
-    if len(ring) < 2:
-        return [ring]
-    parts: list[list[list[float]]] = []
-    current = [ring[0]]
-    for prev, point in zip(ring, ring[1:]):
-        if abs(point[0] - prev[0]) > 180:
-            parts.append(current)
-            current = [point]
-        else:
-            current.append(point)
-    parts.append(current)
-    if len(parts) == 1:
-        return [ring]
-    # Close each fragment against the meridian it was cut at, so a 3-point
-    # sliver becomes a valid ring rather than being dropped. Wrangel Island in
-    # the Russian ring is exactly this case: cut into two pieces of 7 and 3
-    # points, both of which a >=4 length filter would discard, taking the
-    # island with them.
-    closed: list[list[list[float]]] = []
-    for part in parts:
-        if len(part) < 2:
-            continue
-        edge = 180.0 if part[0][0] > 0 else -180.0
-        ring_out = [[edge, part[0][1]]] + part + [[edge, part[-1][1]]]
-        # A GeoJSON ring must be explicitly closed.
-        if ring_out[0] != ring_out[-1]:
-            ring_out.append(list(ring_out[0]))
-        if len(ring_out) >= 4:
-            closed.append(ring_out)
-    return closed or [ring]
-
-
-def _fix_antimeridian(geometry: dict) -> dict:
-    """Split every ring of a polygon or multipolygon at the antimeridian."""
-    if geometry["type"] == "Polygon":
-        rings = geometry["coordinates"]
-        pieces = [_split_ring_at_antimeridian(r) for r in rings]
-        if all(len(p) == 1 for p in pieces):
-            return geometry
-        # Each fragment becomes its own polygon; holes are dropped rather than
-        # misassigned, which is safe here because these are coastlines.
-        return {
-            "type": "MultiPolygon",
-            "coordinates": [[frag] for group in pieces for frag in group],
-        }
-    if geometry["type"] == "MultiPolygon":
-        out = []
-        for polygon in geometry["coordinates"]:
-            pieces = [_split_ring_at_antimeridian(r) for r in polygon]
-            if all(len(p) == 1 for p in pieces):
-                out.append(polygon)
-            else:
-                out.extend([[frag] for group in pieces for frag in group])
-        return {"type": "MultiPolygon", "coordinates": out}
-    return geometry
+# Antarctica. Dropped rather than clipped: on Equal Earth it occupies the bottom
+# fifth of the frame, it is the one landmass guaranteed never to hold a Slovak
+# diaspora figure, and its ring genuinely wraps the pole so every projection
+# renders it awkwardly. Excluded here so the frontend never has to filter it.
+EXCLUDED_ISO3 = {"ATA"}
 
 
 def _geometry_to_geojson(geom: dict, arcs: list[list[list[float]]]) -> dict | None:
@@ -224,6 +178,69 @@ def _geometry_to_geojson(geom: dict, arcs: list[list[list[float]]]) -> dict | No
     return None
 
 
+def _count_meridian_points(geometry: dict) -> int:
+    """How many vertices sit exactly on +/-180 degrees."""
+    polys = (
+        [geometry["coordinates"]]
+        if geometry["type"] == "Polygon"
+        else geometry["coordinates"]
+    )
+    return sum(
+        1
+        for poly in polys
+        for ring in poly
+        for x, _ in ring
+        if abs(abs(x) - 180.0) < 1e-9
+    )
+
+
+# Vertices sitting exactly on +/-180 degrees, per country, as world-atlas 110m
+# draws them. Two countries have them and both are the source's own work: it
+# already cuts Fiji into eastern and western pieces, and it ends Russia's Chukotka
+# arc on the meridian. Read off the decoded source, then pinned here as literals.
+#
+# Pinned on purpose. The check below has to compare against something OUTSIDE this
+# module; derived from the same geometry it validates, it would pass
+# unconditionally, which is the failure mode this whole exercise is about.
+#
+# Note what these numbers are NOT: evidence the map renders correctly. They say
+# the pipeline is not writing meridian edges. Whether Chukotka draws as an island
+# rather than a block is a question about the renderer, answered by looking at it.
+EXPECTED_MERIDIAN_VERTICES = {"FJI": 4, "RUS": 5}
+
+
+def _assert_geometry_untouched(features: list[dict]) -> None:
+    """Fail if the emitted rings carry any antimeridian vertex the source lacks.
+
+    This is the inverse of the check the previous version made. That one asserted
+    "no ring spans the antimeridian" and PASSED, because the split had already cut
+    every such ring. It could not see that the cut itself was the defect: the
+    closing segments it introduced ran along the meridian, and the renderer filled
+    the result as a rectangle. That is how Chukotka shipped as a block behind a
+    green check.
+
+    So the property to hold is not "no rings span 180" but "nothing here writes a
+    meridian edge". An absolute rule cannot express that: world-atlas ships Fiji
+    already cut, with four vertices pinned to +/-180, and rejecting those would be
+    rejecting valid input. Hence a pinned expectation per country. If the source
+    file is ever swapped, this fails loudly and asks to be re-read rather than
+    silently accepting new geometry.
+    """
+    actual = {}
+    for f in features:
+        key = f["properties"]["iso3"] or f["properties"]["m49"]
+        n = _count_meridian_points(f["geometry"])
+        if n:
+            actual[key] = n
+    if actual != EXPECTED_MERIDIAN_VERTICES:
+        raise ValueError(
+            "boundaries_world: antimeridian vertex counts changed. "
+            f"expected {EXPECTED_MERIDIAN_VERTICES}, got {actual}. Rings must "
+            "leave here exactly as the source drew them; the renderer clips on "
+            "the sphere. See the module docstring."
+        )
+
+
 def run(raw_path: Path | None = None, out_path: Path | None = None) -> Path:
     raw_path = raw_path or RAW_PATH
     out_path = out_path or OUT_PATH
@@ -238,6 +255,7 @@ def run(raw_path: Path | None = None, out_path: Path | None = None) -> Path:
 
     features = []
     unmapped = []
+    excluded: list[str] = []
     for geom in geometries:
         raw_id = geom.get("id")
         # world-atlas ids are numeric strings, sometimes without zero padding.
@@ -248,11 +266,13 @@ def run(raw_path: Path | None = None, out_path: Path | None = None) -> Path:
         if iso3 is None and key not in (None, "-99"):
             unmapped.append((key, name))
 
+        if iso3 in EXCLUDED_ISO3:
+            excluded.append(iso3)
+            continue
+
         gj = _geometry_to_geojson(geom, arcs)
         if gj is None:
             continue
-        if iso3 in ANTIMERIDIAN_SPLIT:
-            gj = _fix_antimeridian(gj)
 
         features.append({
             "type": "Feature",
@@ -272,6 +292,10 @@ def run(raw_path: Path | None = None, out_path: Path | None = None) -> Path:
             "transform.boundaries_world.unmapped count=%d %s",
             len(unmapped), unmapped,
         )
+    if excluded:
+        log.info("transform.boundaries_world.excluded %s", sorted(set(excluded)))
+
+    _assert_geometry_untouched(features)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     collection = {"type": "FeatureCollection", "features": features}

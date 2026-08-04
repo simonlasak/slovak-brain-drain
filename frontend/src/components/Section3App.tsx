@@ -23,7 +23,7 @@ function Section3App() {
   const c = getSection3Content(locale);
 
   const [mapData, setMapData] = useState<
-    { code: string; value: number; citizenBasis: boolean }[]
+    { code: string; value: number; citizenBasis: boolean; imputed: boolean }[]
   >([]);
   const [ranked, setRanked] = useState<
     { code: string; name: string; value: number; growth: number | null }[]
@@ -58,13 +58,19 @@ function Section3App() {
 
         const byCode = new Map<string, { year: number; value: number }[]>();
         const basisByCode = new Map<string, boolean>();
+        const imputedByCode = new Map<string, boolean>();
         for (const r of rows) {
           const list = byCode.get(r.code) || [];
           list.push({ year: Number(r.year), value: Number(r.value) });
           byCode.set(r.code, list);
-          if (String(r.data_type).trim().toUpperCase().startsWith('C')) {
-            basisByCode.set(r.code, true);
-          }
+          // data_type is a space-separated set of UN DESA codes, so test for
+          // membership rather than a prefix: Bosnia's value is "I R", and Jordan
+          // and Mongolia are "C R". A startsWith('C') test reads the first token
+          // only, which happens to work for C but would silently miss a row
+          // where C or I is not first.
+          const codes = String(r.data_type).trim().toUpperCase().split(/\s+/);
+          if (codes.includes('C')) basisByCode.set(r.code, true);
+          if (codes.includes('I')) imputedByCode.set(r.code, true);
         }
 
         const snapshot: typeof mapData = [];
@@ -75,6 +81,7 @@ function Section3App() {
             code,
             value: current.value,
             citizenBasis: basisByCode.get(code) === true,
+            imputed: imputedByCode.get(code) === true,
           });
         }
         snapshot.sort((a, b) => b.value - a.value);

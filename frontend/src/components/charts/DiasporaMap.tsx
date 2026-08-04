@@ -1,29 +1,44 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { DeckGL } from '@deck.gl/react';
-import { GeoJsonLayer, ScatterplotLayer } from '@deck.gl/layers';
-import { WebMercatorViewport, FlyToInterpolator } from '@deck.gl/core';
+import { geoEqualEarth, geoPath, geoCentroid } from 'd3-geo';
 import { AboutData } from './AboutData';
 import { useLocale } from '../../lib/locale';
 import type { SourcePanel } from '../../content/internal';
 
 /**
- * Section 3 centrepiece: the diaspora as proportional bubbles on a world map.
+ * Section 3 centrepiece: the diaspora as proportional discs on a world map,
+ * plus a European inset carrying the 92 percent of the data that piles up
+ * around Slovakia.
  *
  * NOT scrollytelling. The earlier four-step plan is void: it was built on a
  * 1990-to-2020 transition, and every UN DESA reference year is modelled, so a
- * transition between two of them animates two model outputs. This is one
- * snapshot with interaction.
+ * transition between two of them animates two model outputs.
  *
- * ENCODING: bubbles only, no choropleth. Four channels (choropleth + bubble +
- * log scale + type-C flag) read as clutter, and the choropleth is the one to
- * drop because polygon area is not the quantity: Canada pale-and-huge against
- * Czechia dark-and-small inverts the ranking for anyone reading area. Bubble
- * area carries magnitude with no area bias, so the land underneath can stay
- * neutral cream and do nothing but locate.
+ * WHY SVG AND d3.geoPath, NOT deck.gl. The previous build mapped lon/lat
+ * linearly to x/y, which is equirectangular in all but name, and hand-rolled an
+ * antimeridian split in the pipeline to compensate. Three defects came out of
+ * that one decision: Chukotka rendered as a rectangular block (the split's
+ * closing edges were filled as a quadrilateral), the 82-degree crop cut straight
+ * lines across northern Russia, Canada and Greenland, and Greenland was inflated
+ * to rival Africa. d3.geoPath clips on the sphere before projecting, so it needs
+ * no pre-split, and Equal Earth is an equal-area projection, so a disc's
+ * surroundings are not distorted out of proportion to it.
  *
- * WHY BUBBLE AREA AND NOT RADIUS: radius proportional to value would make
- * Czechia's disc ~240x the area of a 2-person country. Radius scales with the
- * square root, so area is proportional to the count.
+ * WHY EQUAL EARTH. Greenland's projected footprint drops from Africa-scale to
+ * 4,443 square pixels at a 1000x500 frame, against 7,404 on Natural Earth and
+ * far more on equirectangular. Antarctica is dropped in the pipeline, not
+ * clipped here: it will never carry a Slovak figure and it was taking a fifth of
+ * the frame to say so.
+ *
+ * NO ZOOM, AND NO SCROLL CAPTURE. The map is a static projection. Click-to-zoom
+ * existed to let the reader separate the European pile, and the inset does that
+ * permanently and without interaction, so the camera work is gone rather than
+ * repaired. Nothing here attaches a wheel listener, so the page scrolls over the
+ * map as it does over any figure.
+ *
+ * ENCODING: one channel, area. Discs are a single terracotta fill; the log
+ * colour ramp is gone, because area already carried the magnitude and doubling
+ * up made the small discs nearly invisible against cream. Radius scales as
+ * sqrt(value), so area is proportional to the count.
  */
 
 interface CountryDatum {
@@ -31,34 +46,45 @@ interface CountryDatum {
   code: string;
   value: number;
   /**
-   * True where UN DESA compiled this row from foreign-citizenship data rather
-   * than place of birth. Only Czechia matters at scale, and bridge 1 turns on
-   * it, so the map must not present it as one of the other fifty.
+   * True where UN DESA compiled this row from foreign-citizenship data (type C)
+   * rather than place of birth. Only Czechia matters at scale, and bridge 1
+   * turns on it.
    */
   citizenBasis?: boolean;
+  /**
+   * True where the row is imputed from a regional model (type I) rather than
+   * observed. Bosnia and Herzegovina is the only one. Carried separately from
+   * citizenBasis because the subtitle previously folded it in with the
+   * birth-derived rows.
+   */
+  imputed?: boolean;
 }
 
 interface DiasporaMapLabels {
-  /** Section eyebrow, e.g. "§3 · GLOBAL DIASPORA". */
   eyebrow: string;
-  /** Chart title above the map. */
   title: string;
-  /** One-line description of what is plotted. */
   subtitle: string;
   year: string;
   totalLabel: string;
   tooltipUnit: string;
-  hint: string;
   resetLabel: string;
   noData: string;
-  /** Legend heading, and the note that the scale is not linear. */
   legendTitle: string;
-  legendNote: string;
   /** Marker label and footnote for the citizenship-basis countries. */
   citizenBasisLabel: string;
   citizenBasisNote: string;
-  /** Label on the Slovakia marker. */
+  /** Marker label and footnote for the model-imputed country. */
+  imputedLabel: string;
+  imputedNote: string;
+  /** Label on the Slovakia diamond. */
   originLabel: string;
+  /** Inset heading and its own caption. */
+  insetTitle: string;
+  insetNote: string;
+  /** The United States annotation: an absence, not a zero. */
+  absentTitle: string;
+  /** One entry per rendered line: SVG text does not wrap. */
+  absentNote: string[];
   srcLine: string;
 }
 
@@ -70,76 +96,57 @@ interface DiasporaMapProps {
   sourcePanel: SourcePanel;
 }
 
-// Trimmed at the poles: Antarctica carries no diaspora and eats a third of the
-// frame. The north edge clears Greenland and Svalbard, which the previous
-// version clipped under the nav.
-const WORLD_BOUNDS: [[number, number], [number, number]] = [[-168, -56], [178, 82]];
+/** Projection frame for the world map, in SVG user units. */
+const W = 1000;
+const H = 500;
 
-// Slovakia, marked so the reader has an origin to read distance from.
+/** Projection frame for the European inset. */
+const INSET_W = 420;
+const INSET_H = 420;
+
+/**
+ * Inset window: lon -11..32, lat 34..71. Holds 32 of the 51 destinations and
+ * 93.5 percent of the counted total, which is the pile the world view cannot
+ * resolve. At world scale Czechia's disc has a 42px radius while Austria's
+ * centroid sits 7px away and Slovakia's 10.6px, so all three are inside it.
+ */
+const INSET_BOUNDS: [[number, number], [number, number]] = [[-11, 34], [32, 71]];
+
+/** Slovakia, the origin. Rendered as a diamond, never as a disc or a ring. */
 const ORIGIN: [number, number] = [19.7, 48.73];
 
-// Terracotta sequential, per 05-design.md. The previous build shipped Tatra
-// blue on a terracotta spec.
-const TERRACOTTA: [number, number, number][] = [
-  [251, 224, 216],  // #FBE0D8
-  [232, 154, 130],  // #E89A82
-  [184, 58, 31],    // #B83A1F
-  [138, 40, 18],    // #8A2812
-  [90, 24, 8],      // #5A1808
-];
+/**
+ * The United States. Annotated because its absence is the section's argument:
+ * UN DESA has no US row at all, since the US publishes only a combined
+ * Czechoslovakia birthplace line. Placed over the continental US.
+ */
+const ABSENT_MARKER: [number, number] = [-98.5, 39.5];
 
-// Bubble radius in metres, so discs scale with the map. Area proportional to
-// the count: r = k * sqrt(value).
-const RADIUS_K = 1400;
-const MIN_RADIUS_PX = 3;
-const MAX_RADIUS_PX = 46;
+/** Single terracotta, --accent-primary. Area is the only quantitative channel. */
+const DISC_FILL = '#B83A1F';
+const DISC_STROKE = '#FBF7F0';
 
-function rampColour(value: number, maxLog: number): [number, number, number] {
-  if (value <= 0) return TERRACOTTA[0];
-  const t = Math.min(1, Math.log10(value + 1) / maxLog);
-  const i = Math.min(TERRACOTTA.length - 1, Math.floor(t * TERRACOTTA.length));
-  return TERRACOTTA[i];
-}
+/** Radius in SVG units at world scale; the inset scales these up. */
+const MAX_R = 40;
+const MIN_R = 2.2;
+const INSET_MAX_R = 30;
+const INSET_MIN_R = 3;
 
-function centroidOf(geometry: any): [number, number] | null {
-  // Area-weighted centroid of the largest ring, which keeps the marker on the
-  // mainland for countries with distant territories (France, Norway, the US).
-  let best: { area: number; pt: [number, number] } | null = null;
-  const rings: number[][][] = [];
-  const collect = (c: any, depth: number) => {
-    if (!Array.isArray(c)) return;
-    if (typeof c[0] === 'number') return;
-    if (typeof c[0][0] === 'number') { rings.push(c as number[][]); return; }
-    for (const k of c) collect(k, depth + 1);
-  };
-  collect(geometry.coordinates, 0);
-  for (const ring of rings) {
-    let a = 0, cx = 0, cy = 0;
-    for (let i = 0; i < ring.length - 1; i++) {
-      const [x0, y0] = ring[i];
-      const [x1, y1] = ring[i + 1];
-      const f = x0 * y1 - x1 * y0;
-      a += f; cx += (x0 + x1) * f; cy += (y0 + y1) * f;
-    }
-    if (a === 0) continue;
-    const area = Math.abs(a / 2);
-    const pt: [number, number] = [cx / (3 * a), cy / (3 * a)];
-    if (!best || area > best.area) best = { area, pt };
-  }
-  return best ? best.pt : null;
+interface Bubble {
+  code: string;
+  name: string;
+  value: number;
+  lonLat: [number, number];
+  citizenBasis: boolean;
+  imputed: boolean;
 }
 
 export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: DiasporaMapProps) {
   const locale = useLocale();
   const [geojson, setGeojson] = useState<any>(null);
-  const [viewState, setViewState] = useState<any>(null);
-  const [selected, setSelected] = useState<{ code: string; name: string } | null>(null);
-  const [isMobile, setIsMobile] = useState(false);
-  // Cursor-following tooltip. The previous build anchored a dark panel to the
-  // bottom-left that duplicated the card verbatim.
-  const [tip, setTip] = useState<{ x: number; y: number; name: string; value: number; citizenBasis: boolean } | null>(null);
+  const [selected, setSelected] = useState<string | null>(null);
+  const [tip, setTip] = useState<{ x: number; y: number; b: Bubble } | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
-  const selectedRef = useRef<typeof selected>(null);
 
   const byCode = useMemo(() => {
     const m = new Map<string, CountryDatum>();
@@ -147,175 +154,141 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
     return m;
   }, [data]);
 
-  const maxLog = useMemo(() => {
-    const max = data.reduce((acc, d) => (d.value > acc ? d.value : acc), 0);
-    return Math.log10(max + 1) || 1;
-  }, [data]);
-
-  // One bubble per country that has a figure and a geometry to sit on.
-  const bubbles = useMemo(() => {
-    if (!geojson) return [];
-    const out: {
-      code: string; name: string; value: number;
-      position: [number, number]; citizenBasis: boolean;
-    }[] = [];
-    for (const f of geojson.features) {
-      const code = f.properties?.iso3;
-      const d = code ? byCode.get(code) : undefined;
-      if (!d || d.value <= 0) continue;
-      const pos = centroidOf(f.geometry);
-      if (!pos) continue;
-      out.push({
-        code,
-        name: f.properties?.name || code,
-        value: d.value,
-        position: pos,
-        citizenBasis: Boolean(d.citizenBasis),
-      });
-    }
-    // Largest first so small discs draw on top and stay clickable.
-    out.sort((a, b) => b.value - a.value);
-    return out;
-  }, [geojson, byCode]);
-
-  function fitWorld(animate = false) {
-    const el = wrapRef.current;
-    if (!el) return;
-    const width = el.clientWidth, height = el.clientHeight;
-    if (width <= 0 || height <= 0) return;
-    try {
-      const vp = new WebMercatorViewport({ width, height });
-      const { longitude, latitude, zoom } = vp.fitBounds(WORLD_BOUNDS, {
-        padding: width < 640 ? 8 : 32,
-      });
-      setViewState({
-        longitude, latitude, zoom, pitch: 0, bearing: 0,
-        ...(animate ? { transitionDuration: 600, transitionInterpolator: new FlyToInterpolator() } : {}),
-      });
-    } catch {
-      // Keep the last good view.
-    }
-  }
+  const maxValue = useMemo(
+    () => data.reduce((acc, d) => (d.value > acc ? d.value : acc), 0) || 1,
+    [data],
+  );
 
   useEffect(() => {
     fetch('/data/world_countries.geojson')
       .then(r => r.json())
-      .then(gj => { setGeojson(gj); fitWorld(); });
-
-    const mq = window.matchMedia('(max-width: 640px)');
-    const onMq = () => setIsMobile(mq.matches);
-    onMq();
-    mq.addEventListener('change', onMq);
-
-    let ro: ResizeObserver | null = null;
-    if (wrapRef.current && typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(() => { if (!selectedRef.current) fitWorld(); });
-      ro.observe(wrapRef.current);
-    }
-    return () => {
-      mq.removeEventListener('change', onMq);
-      if (ro) ro.disconnect();
-    };
+      .then(setGeojson)
+      .catch(() => setGeojson(null));
   }, []);
 
-  useEffect(() => { selectedRef.current = selected; }, [selected]);
+  // World projection, fitted once to the whole feature collection.
+  const world = useMemo(() => {
+    if (!geojson) return null;
+    const projection = geoEqualEarth().fitExtent([[2, 2], [W - 2, H - 2]], geojson);
+    return { projection, path: geoPath(projection) };
+  }, [geojson]);
 
-  function selectCode(code: string, name: string) {
-    setSelected({ code, name });
-    setTip(null);
-  }
+  // Inset projection, fitted to the European window rather than to the features,
+  // so the frame is the stated lon/lat box and not a bounding box of whatever
+  // happens to carry data.
+  //
+  // The window is passed as a SAMPLED MultiPoint, not a Polygon, for two reasons.
+  // A polygon ring wound counter-clockwise is the complement of the box on the
+  // sphere, and d3 then fits the whole world: the first version of this did
+  // exactly that and the inset rendered as a second, tiny world map. And Equal
+  // Earth curves its meridians, so the four corners alone understate the box's
+  // width at mid-latitudes. Sampling the edges avoids both traps.
+  const inset = useMemo(() => {
+    if (!geojson) return null;
+    const [[w, s], [e, n]] = INSET_BOUNDS;
+    const edge: [number, number][] = [];
+    for (let i = 0; i <= 24; i++) {
+      const t = i / 24;
+      edge.push([w + (e - w) * t, s], [w + (e - w) * t, n]);
+      edge.push([w, s + (n - s) * t], [e, s + (n - s) * t]);
+    }
+    const projection = geoEqualEarth().fitExtent(
+      [[2, 2], [INSET_W - 2, INSET_H - 2]],
+      { type: 'MultiPoint', coordinates: edge } as any,
+    );
+    return { projection, path: geoPath(projection) };
+  }, [geojson]);
 
-  function resetView() {
-    setSelected(null);
-    setTip(null);
-    fitWorld(true);
-  }
-
-  const layers = useMemo(() => {
+  const bubbles = useMemo<Bubble[]>(() => {
     if (!geojson) return [];
-    return [
-      // Land: neutral cream, doing nothing but locating. #F4EFE3 per the spec's
-      // map rules; the previous build used #EDF3F5, a blue-grey nowhere in the
-      // palette.
-      new GeoJsonLayer({
-        id: 'world-land',
-        data: geojson,
-        filled: true,
-        stroked: true,
-        getFillColor: [244, 239, 227, 255],
-        getLineColor: (f: any) =>
-          selected && f.properties?.iso3 === selected.code
-            ? [184, 58, 31, 230]
-            : [212, 165, 71, 110],
-        getLineWidth: (f: any) =>
-          selected && f.properties?.iso3 === selected.code ? 2 : 0.5,
-        lineWidthMinPixels: 0.4,
-        lineWidthMaxPixels: 2.5,
-        pickable: true,
-        onClick: ({ object }: any) => {
-          if (!object?.properties?.iso3) return;
-          selectCode(object.properties.iso3, object.properties.name || object.properties.iso3);
-        },
-        updateTriggers: {
-          getLineColor: [selected?.code],
-          getLineWidth: [selected?.code],
-        },
-        transitions: { getLineColor: 200, getLineWidth: 200 },
-      }),
+    const out: Bubble[] = [];
+    for (const f of geojson.features) {
+      const code = f.properties?.iso3;
+      const d = code ? byCode.get(code) : undefined;
+      if (!d || d.value <= 0) continue;
+      const c = geoCentroid(f);
+      if (!c || Number.isNaN(c[0])) continue;
+      out.push({
+        code,
+        name: f.properties?.name || code,
+        value: d.value,
+        lonLat: [c[0], c[1]],
+        citizenBasis: Boolean(d.citizenBasis),
+        imputed: Boolean(d.imputed),
+      });
+    }
+    // Largest first, so small discs paint on top and stay hoverable.
+    out.sort((a, b) => b.value - a.value);
+    return out;
+  }, [geojson, byCode]);
 
-      // Slovakia, so the reader has an origin. Diamond per the folk-motif rule
-      // is not available on ScatterplotLayer, so this is the one small circle,
-      // outlined rather than filled to read as a marker not a magnitude.
-      new ScatterplotLayer({
-        id: 'origin',
-        data: [{ position: ORIGIN }],
-        getPosition: (d: any) => d.position,
-        getRadius: 5,
-        radiusUnits: 'pixels',
-        filled: false,
-        stroked: true,
-        getLineColor: [42, 24, 16, 235],
-        lineWidthUnits: 'pixels',
-        getLineWidth: 1.6,
-        pickable: false,
-      }),
+  const inInset = (b: Bubble) => {
+    const [[w, s], [e, n]] = INSET_BOUNDS;
+    const [lon, lat] = b.lonLat;
+    return lon >= w && lon <= e && lat >= s && lat <= n;
+  };
 
-      new ScatterplotLayer({
-        id: 'diaspora-bubbles',
-        data: bubbles,
-        getPosition: (d: any) => d.position,
-        // Area proportional to the count.
-        getRadius: (d: any) => RADIUS_K * Math.sqrt(d.value),
-        radiusMinPixels: MIN_RADIUS_PX,
-        radiusMaxPixels: MAX_RADIUS_PX,
-        filled: true,
-        stroked: true,
-        getFillColor: (d: any) => [...rampColour(d.value, maxLog), 205] as any,
-        // Citizenship-basis countries get a dark ring: the figure is on a
-        // different definition from the rest and the map says so.
-        getLineColor: (d: any) =>
-          d.citizenBasis ? [42, 24, 16, 255] : [251, 247, 240, 200] as any,
-        lineWidthUnits: 'pixels',
-        getLineWidth: (d: any) => (d.citizenBasis ? 2 : 0.8),
-        pickable: true,
-        onClick: ({ object }: any) => object && selectCode(object.code, object.name),
-        onHover: ({ object, x, y }: any) => {
-          if (!object) { setTip(null); return; }
-          setTip({ x, y, name: object.name, value: object.value, citizenBasis: object.citizenBasis });
-        },
-        updateTriggers: {
-          getFillColor: [maxLog],
-          getLineColor: [],
-        },
-      }),
-    ];
-  }, [geojson, bubbles, maxLog, selected]);
+  const radius = (v: number, maxR: number, minR: number) =>
+    Math.max(minR, maxR * Math.sqrt(v / maxValue));
 
-  const selectedDatum = selected ? byCode.get(selected.code) : undefined;
   const fmt = (n: number) => Math.round(n).toLocaleString(locale === 'sk' ? 'sk-SK' : 'en');
 
-  // Legend ticks at powers of ten, which is what makes the log scale legible.
-  const legendTicks = [100, 10_000, 100_000];
+  function showTip(e: React.MouseEvent, b: Bubble) {
+    const box = wrapRef.current?.getBoundingClientRect();
+    if (!box) return;
+    setTip({ x: e.clientX - box.left, y: e.clientY - box.top, b });
+  }
+
+  const selectedDatum = selected ? byCode.get(selected) : undefined;
+  const selectedName = selected
+    ? bubbles.find(b => b.code === selected)?.name || selected
+    : null;
+
+  /** One disc, shared by both frames. */
+  function Disc({
+    b, projection, maxR, minR,
+  }: { b: Bubble; projection: any; maxR: number; minR: number }) {
+    const p = projection(b.lonLat);
+    if (!p) return null;
+    const r = radius(b.value, maxR, minR);
+    const isSelected = selected === b.code;
+    return (
+      <circle
+        cx={p[0]}
+        cy={p[1]}
+        r={r}
+        fill={DISC_FILL}
+        fillOpacity={isSelected ? 0.95 : 0.72}
+        stroke={b.citizenBasis || b.imputed ? '#2A1810' : DISC_STROKE}
+        strokeWidth={b.citizenBasis || b.imputed ? 1.4 : 0.6}
+        strokeDasharray={b.imputed ? '2.5 2' : undefined}
+        style={{ cursor: 'pointer' }}
+        onMouseMove={e => showTip(e, b)}
+        onMouseLeave={() => setTip(null)}
+        onClick={() => setSelected(b.code === selected ? null : b.code)}
+        tabIndex={0}
+        role="button"
+        aria-label={`${b.name}: ${fmt(b.value)} ${labels.tooltipUnit}`}
+        onFocus={() => setSelected(b.code)}
+      />
+    );
+  }
+
+  /** Slovakia: a diamond. Rings are reserved for the definitional flags. */
+  function OriginDiamond({ projection, size }: { projection: any; size: number }) {
+    const p = projection(ORIGIN);
+    if (!p) return null;
+    return (
+      <g aria-label={labels.originLabel} transform={`translate(${p[0]},${p[1]})`}>
+        <path
+          d={`M0,${-size} L${size},0 L0,${size} L${-size},0 Z`}
+          fill="#FBF7F0"
+          stroke="#2A1810"
+          strokeWidth={1.4}
+        />
+      </g>
+    );
+  }
 
   return (
     <figure className="diaspora-figure">
@@ -326,67 +299,155 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       </figcaption>
 
       <div ref={wrapRef} className="diaspora-map-wrap">
-        {viewState && (
-          <DeckGL
-            viewState={viewState}
-            onViewStateChange={({ viewState: vs }: any) => setViewState(vs)}
-            controller={{ dragRotate: false, touchRotate: false }}
-            layers={layers}
-            getCursor={({ isHovering }: any) => (isHovering ? 'pointer' : 'grab')}
-            style={{ background: 'var(--accent-secondary-light)', width: '100%', height: '100%' }}
-          />
+        {world && geojson && (
+          <svg
+            className="diaspora-svg"
+            viewBox={`0 0 ${W} ${H}`}
+            role="img"
+            aria-label={labels.title}
+            preserveAspectRatio="xMidYMid meet"
+          >
+            <g>
+              {geojson.features.map((f: any, i: number) => (
+                <path
+                  key={f.properties?.iso3 || i}
+                  d={world.path(f) || undefined}
+                  fill="#F4EFE3"
+                  stroke="#D4A547"
+                  strokeOpacity={0.45}
+                  strokeWidth={0.4}
+                />
+              ))}
+            </g>
+
+            {/* United States: a labelled absence. Drawn before the discs so no
+                disc is obscured by it. */}
+            <UnitedStatesAbsence
+              projection={world.projection}
+              title={labels.absentTitle}
+              note={labels.absentNote}
+            />
+
+            <g>
+              {bubbles.map(b => (
+                <Disc key={b.code} b={b} projection={world.projection} maxR={MAX_R} minR={MIN_R} />
+              ))}
+            </g>
+
+            <OriginDiamond projection={world.projection} size={5} />
+          </svg>
+        )}
+
+        {/* European inset. Roughly 93 percent of the counted total is inside
+            this window and unreadable at world scale. */}
+        {inset && geojson && (
+          <div className="diaspora-inset">
+            <p className="diaspora-inset-title">{labels.insetTitle}</p>
+            <svg
+              viewBox={`0 0 ${INSET_W} ${INSET_H}`}
+              className="diaspora-inset-svg"
+              role="img"
+              aria-label={labels.insetTitle}
+            >
+              <defs>
+                {/* Everything outside the frame is clipped, so land beyond the
+                    window does not spill over the inset's border. */}
+                <clipPath id="diaspora-inset-clip">
+                  <rect x={0} y={0} width={INSET_W} height={INSET_H} />
+                </clipPath>
+              </defs>
+              <rect x={0} y={0} width={INSET_W} height={INSET_H} fill="#DCE9EE" />
+              <g clipPath="url(#diaspora-inset-clip)">
+                <g>
+                  {geojson.features.map((f: any, i: number) => (
+                    <path
+                      key={f.properties?.iso3 || i}
+                      d={inset.path(f) || undefined}
+                      fill="#F4EFE3"
+                      stroke="#D4A547"
+                      strokeOpacity={0.5}
+                      strokeWidth={0.5}
+                    />
+                  ))}
+                </g>
+                <g>
+                  {bubbles.filter(inInset).map(b => (
+                    <Disc
+                      key={b.code}
+                      b={b}
+                      projection={inset.projection}
+                      maxR={INSET_MAX_R}
+                      minR={INSET_MIN_R}
+                    />
+                  ))}
+                </g>
+                <OriginDiamond projection={inset.projection} size={6} />
+              </g>
+            </svg>
+            <p className="diaspora-inset-note">{labels.insetNote}</p>
+          </div>
         )}
 
         <div className="diaspora-legend">
           <p className="diaspora-legend-title">{labels.legendTitle}</p>
           <div className="diaspora-legend-bubbles">
-            {legendTicks.map(t => {
-              const px = Math.max(
-                MIN_RADIUS_PX,
-                Math.min(MAX_RADIUS_PX, 46 * Math.sqrt(t / 113773)),
-              );
+            {[1000, 20_000, 113_773].map(t => {
+              const r = radius(t, 26, 2);
               return (
                 <div className="diaspora-legend-item" key={t}>
                   <span
                     className="diaspora-legend-disc"
-                    style={{
-                      width: px * 2, height: px * 2,
-                      background: `rgb(${rampColour(t, maxLog).join(',')})`,
-                    }}
+                    style={{ width: r * 2, height: r * 2 }}
                   />
                   <span className="diaspora-legend-tick">{fmt(t)}</span>
                 </div>
               );
             })}
           </div>
-          <p className="diaspora-legend-note">{labels.legendNote}</p>
-          <p className="diaspora-legend-basis">
-            <span className="diaspora-legend-ring" aria-hidden="true" />
+          {/* Swatches are inline SVG, not bordered spans: a CSS dashed border on
+              an 11px circle renders as a smudge at this size and could not be
+              told apart from the solid one. */}
+          <p className="diaspora-legend-flag">
+            <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
+              <circle cx="10" cy="10" r="7" fill={DISC_FILL} fillOpacity={0.72}
+                stroke="#2A1810" strokeWidth={1.6} />
+            </svg>
             {labels.citizenBasisLabel}
+          </p>
+          <p className="diaspora-legend-flag">
+            <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
+              <circle cx="10" cy="10" r="7" fill={DISC_FILL} fillOpacity={0.72}
+                stroke="#2A1810" strokeWidth={1.6} strokeDasharray="3 2.4" />
+            </svg>
+            {labels.imputedLabel}
+          </p>
+          <p className="diaspora-legend-flag">
+            <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
+              <path d="M10,2 L18,10 L10,18 L2,10 Z" fill="#FBF7F0"
+                stroke="#2A1810" strokeWidth={1.6} />
+            </svg>
+            {labels.originLabel}
           </p>
         </div>
 
-        {/* Cursor-following tooltip, distinct from the card. */}
-        {!isMobile && tip && (
+        {tip && (
           <div
             className="diaspora-tip"
             style={{ left: tip.x + 14, top: tip.y + 14 }}
             aria-hidden="true"
           >
-            <span className="diaspora-tip-name">{tip.name}</span>
-            <span className="diaspora-tip-value">{fmt(tip.value)}</span>
-            {tip.citizenBasis && (
+            <span className="diaspora-tip-name">{tip.b.name}</span>
+            <span className="diaspora-tip-value">{fmt(tip.b.value)}</span>
+            {tip.b.citizenBasis && (
               <span className="diaspora-tip-basis">{labels.citizenBasisLabel}</span>
+            )}
+            {tip.b.imputed && (
+              <span className="diaspora-tip-basis">{labels.imputedLabel}</span>
             )}
           </div>
         )}
-
-        {!selected && (
-          <p className="diaspora-affordance">{labels.hint}</p>
-        )}
       </div>
 
-      {/* Detail card sits BELOW the map, not floating over the ocean. */}
       <div className="diaspora-detail">
         {!selected ? (
           <>
@@ -396,7 +457,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
           </>
         ) : (
           <>
-            <p className="diaspora-detail-eyebrow">{selected.name}</p>
+            <p className="diaspora-detail-eyebrow">{selectedName}</p>
             {selectedDatum && selectedDatum.value > 0 ? (
               <>
                 <p className="diaspora-detail-value">{fmt(selectedDatum.value)}</p>
@@ -406,11 +467,14 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                 {selectedDatum.citizenBasis && (
                   <p className="diaspora-detail-note">{labels.citizenBasisNote}</p>
                 )}
+                {selectedDatum.imputed && (
+                  <p className="diaspora-detail-note">{labels.imputedNote}</p>
+                )}
               </>
             ) : (
               <p className="diaspora-detail-note">{labels.noData}</p>
             )}
-            <button type="button" className="diaspora-reset" onClick={resetView}>
+            <button type="button" className="diaspora-reset" onClick={() => setSelected(null)}>
               {labels.resetLabel}
             </button>
           </>
@@ -421,5 +485,56 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
         </div>
       </div>
     </figure>
+  );
+}
+
+/**
+ * The United States, annotated as an absence.
+ *
+ * Currently the largest empty space on the map, which reads as a rendering bug.
+ * It is not: UN DESA has no United States row for Slovak origin at all, because
+ * the US publishes only a combined "Czechoslovakia (includes Czech Republic and
+ * Slovakia)" birthplace line, and the UN builds origin estimates from what
+ * destinations publish. Verified in the source workbook: 150 origin countries
+ * are published for the US and Slovakia is not among them, while the row's
+ * world total exceeds the sum of its published origins by 4.05 million.
+ *
+ * A hollow marker with a rule to a label, so it cannot be read as a disc.
+ */
+function UnitedStatesAbsence({
+  projection, title, note,
+}: { projection: any; title: string; note: string[] }) {
+  const p = projection(ABSENT_MARKER);
+  if (!p) return null;
+  const [x, y] = p;
+  // Label sits down-left of the marker, over the eastern Pacific, clear of the
+  // Mexican and Central American discs.
+  const lx = x - 96;
+  const ly = y + 74;
+  return (
+    <g className="diaspora-absent" aria-label={`${title}. ${note.join(' ')}`}>
+      <circle
+        cx={x}
+        cy={y}
+        r={7}
+        fill="none"
+        stroke="#8B6F4F"
+        strokeWidth={1.1}
+        strokeDasharray="3 2.5"
+      />
+      <line x1={x - 3.4} y1={y - 3.4} x2={x + 3.4} y2={y + 3.4} stroke="#8B6F4F" strokeWidth={1.1} />
+      <line x1={x - 3.4} y1={y + 3.4} x2={x + 3.4} y2={y - 3.4} stroke="#8B6F4F" strokeWidth={1.1} />
+      <line x1={x - 6} y1={y + 6} x2={lx + 84} y2={ly - 12} stroke="#8B6F4F" strokeWidth={0.7} />
+      <text x={lx} y={ly} className="diaspora-absent-title">{title}</text>
+      {/* SVG text does not wrap and the mobile breakpoint scales this up, so the
+          line breaks are authored in the content module. dy is in em, so the
+          leading tracks whatever font-size the breakpoint sets. The first line's
+          baseline clears the title by 1.6em for the same reason. */}
+      <text x={lx} y={ly} className="diaspora-absent-note">
+        {note.map((line, i) => (
+          <tspan key={i} x={lx} dy={i === 0 ? '1.6em' : '1.25em'}>{line}</tspan>
+        ))}
+      </text>
+    </g>
   );
 }

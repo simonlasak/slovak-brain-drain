@@ -57,20 +57,85 @@ import Section3App from '../components/Section3App';
     margin: 0;
   }
 
+  /* The map is now an inline SVG with an aspect-ratio box rather than a WebGL
+     canvas with a pixel height. Nothing attaches a wheel listener, so the page
+     scrolls over it: the previous build's scrollZoom trapped the scroll. */
   .diaspora-map-wrap {
     position: relative;
     width: 100vw;
     margin-left: calc(-50vw + 50%);
-    /* Was 100dvh - 72px, which pushed the north edge under the nav and clipped
-       Greenland. Bounded height with room for the legend instead. */
-    height: min(62vh, 620px);
-    min-height: 380px;
     background: var(--accent-secondary-light);
     border-top: 1px solid var(--border-subtle);
     border-bottom: 1px solid var(--border-subtle);
   }
+  .diaspora-svg {
+    display: block;
+    width: 100%;
+    /* Matches the 1000x500 viewBox, so no letterboxing and no clipped pole. */
+    aspect-ratio: 2 / 1;
+    height: auto;
+  }
 
-  /* Legend: bottom-left, on cream, stating that the scale is logarithmic. */
+  /* ─── European inset ─────────────────────────────────────────── */
+  /* 93.5% of the counted total sits inside lon -11..32, lat 34..71, where at
+     world scale Czechia's 42px-radius disc covers Austria, Slovakia and Hungary.
+     This is what click-to-zoom was compensating for. */
+  .diaspora-inset {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    width: clamp(200px, 26vw, 320px);
+    padding: var(--space-3);
+    background: rgba(251, 247, 240, 0.96);
+    border: 1px solid var(--border-emphasis);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-floating);
+  }
+  .diaspora-inset-title {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-2) 0;
+  }
+  .diaspora-inset-svg {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    height: auto;
+    border: 1px solid var(--border-subtle);
+    border-radius: 2px;
+  }
+  .diaspora-inset-note {
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    line-height: 1.45;
+    color: var(--text-tertiary);
+    margin: var(--space-2) 0 0 0;
+  }
+
+  /* United States annotation: an absence, drawn as SVG text inside the map.
+     Sizes are SVG USER UNITS against a 1000-wide viewBox, not CSS pixels, so
+     they scale with the frame. At a 1600px-wide map 13 units renders near 21px;
+     at 430px it renders near 5.6px, which is illegible, so the mobile rule below
+     scales them up rather than leaving them to shrink with the map. */
+  .diaspora-absent-title {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 600;
+    fill: var(--text-secondary);
+  }
+  .diaspora-absent-note {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    fill: var(--text-tertiary);
+  }
+
+  /* Legend: bottom-left, on cream. No colour ramp any more: area is the only
+     quantitative channel, so the legend shows sized discs and the two
+     definitional marks plus the origin diamond. */
   .diaspora-legend {
     position: absolute;
     bottom: var(--space-4);
@@ -105,36 +170,35 @@ import Section3App from '../components/Section3App';
   .diaspora-legend-disc {
     display: block;
     border-radius: 50%;
-    border: 0.8px solid rgba(251, 247, 240, 0.8);
+    /* Single fill, matching the map. The log ramp is gone. */
+    background: var(--accent-primary);
+    opacity: 0.72;
+    border: 0.6px solid rgba(251, 247, 240, 0.9);
   }
   .diaspora-legend-tick {
     font-family: var(--font-mono);
     font-size: 10px;
     color: var(--text-secondary);
   }
-  .diaspora-legend-note {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    line-height: 1.45;
-    color: var(--text-tertiary);
-    margin: 0;
-  }
-  .diaspora-legend-basis {
+  .diaspora-legend-flag {
     display: flex;
     align-items: center;
     gap: 6px;
     font-family: var(--font-sans);
     font-size: 11px;
+    line-height: 1.35;
     color: var(--text-secondary);
     margin: var(--space-2) 0 0 0;
   }
-  .diaspora-legend-ring {
-    width: 11px;
-    height: 11px;
+  /* Swatch marks are inline SVG, drawn the same way the map draws them, so the
+     solid ring, the dashed ring and the Slovakia diamond stay distinguishable.
+     A CSS dashed border on a circle this small does not. */
+  .diaspora-legend-mark {
+    width: 15px;
+    height: 15px;
     flex: 0 0 auto;
-    border-radius: 50%;
-    background: var(--accent-primary);
-    border: 2px solid var(--text-primary);
+    display: block;
+    overflow: visible;
   }
 
   /* Cursor-following tooltip, per 05-design.md: cream surface, subtle border,
@@ -172,22 +236,8 @@ import Section3App from '../components/Section3App';
     margin-top: 2px;
   }
 
-  /* Affordance: a real chip on the map's own surface, top-right, not text
-     floating in the ocean. */
-  .diaspora-affordance {
-    position: absolute;
-    top: var(--space-4);
-    right: var(--space-4);
-    margin: 0;
-    padding: 6px 12px;
-    font-family: var(--font-sans);
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-    background: rgba(251, 247, 240, 0.94);
-    border: 1px solid var(--border-emphasis);
-    border-radius: var(--radius-sm);
-  }
+  /* The "click a country to zoom in" chip is gone with the zoom. Top-right now
+     carries the European inset, which answers the question the zoom was for. */
 
   /* Detail card BELOW the map, in the content column. */
   .diaspora-detail {
@@ -488,7 +538,28 @@ import Section3App from '../components/Section3App';
     .section3-h3 { font-size: 20px; }
     .stat-callout-value { font-size: 52px; }
     .diaspora-card-value { font-size: 2rem; }
-    .diaspora-legend { max-width: none; right: var(--space-4); }
+    /* Inset and legend stop floating: at this width an overlay covers the map it
+       is meant to explain. Both become blocks under it, inset first, because it
+       carries 94 percent of the data. */
+    .diaspora-inset {
+      position: static;
+      width: auto;
+      margin: var(--space-3) var(--space-4) 0;
+      box-shadow: none;
+    }
+    .diaspora-legend {
+      position: static;
+      max-width: none;
+      margin: var(--space-3) var(--space-4) var(--space-4);
+      background: transparent;
+      border: none;
+      padding: 0;
+    }
+    /* The US annotation is in SVG user units, so at this width it would render
+       around 5.6px. Scaled up to hold roughly the desktop apparent size. The
+       note drops to a shorter line via the two-line layout in the component. */
+    .diaspora-absent-title { font-size: 34px; }
+    .diaspora-absent-note { font-size: 27px; }
     .about-data-panel {
       width: 100%;
       padding: var(--space-12) var(--space-4) var(--space-6);
