@@ -135,6 +135,76 @@ def _stitch(arc_indices: list[int], arcs: list[list[list[float]]]) -> list[list[
     return ring
 
 
+# Countries whose territory crosses the 180th meridian have rings that jump from
+# +179 to -179. A renderer joining those points draws a band straight across the
+# map: Russia and Fiji both smear the whole Pacific. Splitting each ring at the
+# antimeridian into an eastern and a western part fixes it without reprojecting.
+#
+# Antarctica also spans the full longitude range but for the opposite reason: its
+# ring genuinely wraps the pole. It carries no diaspora and is trimmed out of the
+# map's viewport, so it is left alone.
+ANTIMERIDIAN_SPLIT = {"RUS", "FJI", "NZL", "USA", "KIR"}
+
+
+def _split_ring_at_antimeridian(ring: list[list[float]]) -> list[list[list[float]]]:
+    """Cut a ring wherever consecutive points jump more than 180 degrees."""
+    if len(ring) < 2:
+        return [ring]
+    parts: list[list[list[float]]] = []
+    current = [ring[0]]
+    for prev, point in zip(ring, ring[1:]):
+        if abs(point[0] - prev[0]) > 180:
+            parts.append(current)
+            current = [point]
+        else:
+            current.append(point)
+    parts.append(current)
+    if len(parts) == 1:
+        return [ring]
+    # Close each fragment against the meridian it was cut at, so a 3-point
+    # sliver becomes a valid ring rather than being dropped. Wrangel Island in
+    # the Russian ring is exactly this case: cut into two pieces of 7 and 3
+    # points, both of which a >=4 length filter would discard, taking the
+    # island with them.
+    closed: list[list[list[float]]] = []
+    for part in parts:
+        if len(part) < 2:
+            continue
+        edge = 180.0 if part[0][0] > 0 else -180.0
+        ring_out = [[edge, part[0][1]]] + part + [[edge, part[-1][1]]]
+        # A GeoJSON ring must be explicitly closed.
+        if ring_out[0] != ring_out[-1]:
+            ring_out.append(list(ring_out[0]))
+        if len(ring_out) >= 4:
+            closed.append(ring_out)
+    return closed or [ring]
+
+
+def _fix_antimeridian(geometry: dict) -> dict:
+    """Split every ring of a polygon or multipolygon at the antimeridian."""
+    if geometry["type"] == "Polygon":
+        rings = geometry["coordinates"]
+        pieces = [_split_ring_at_antimeridian(r) for r in rings]
+        if all(len(p) == 1 for p in pieces):
+            return geometry
+        # Each fragment becomes its own polygon; holes are dropped rather than
+        # misassigned, which is safe here because these are coastlines.
+        return {
+            "type": "MultiPolygon",
+            "coordinates": [[frag] for group in pieces for frag in group],
+        }
+    if geometry["type"] == "MultiPolygon":
+        out = []
+        for polygon in geometry["coordinates"]:
+            pieces = [_split_ring_at_antimeridian(r) for r in polygon]
+            if all(len(p) == 1 for p in pieces):
+                out.append(polygon)
+            else:
+                out.extend([[frag] for group in pieces for frag in group])
+        return {"type": "MultiPolygon", "coordinates": out}
+    return geometry
+
+
 def _geometry_to_geojson(geom: dict, arcs: list[list[list[float]]]) -> dict | None:
     gtype = geom.get("type")
     if gtype == "Polygon":
@@ -181,6 +251,8 @@ def run(raw_path: Path | None = None, out_path: Path | None = None) -> Path:
         gj = _geometry_to_geojson(geom, arcs)
         if gj is None:
             continue
+        if iso3 in ANTIMERIDIAN_SPLIT:
+            gj = _fix_antimeridian(gj)
 
         features.append({
             "type": "Feature",

@@ -13,7 +13,7 @@ import figures from '../data/headline_figures.json';
 const departures = figures.mirror_registered_departures_2004_2024.value;
 const czResidents = figures.slovaks_in_cz_residents_2025.value;
 const czLabour = figures.slovaks_in_cz_labour_2024.value;
-const destinations = figures.diaspora_destinations_2020.value;
+const destinations = figures.diaspora_destinations_un_desa_2020.value;
 const mirrorImplied = figures.mirror_implied_departures_2004_2024.value;
 const mirrorPanel = figures.mirror_panel_countries.value;
 const fmt = (n: number) => n.toLocaleString('en');
@@ -54,7 +54,7 @@ const fmt = (n: number) => n.toLocaleString('en');
     <a href="/diaspora" class="section-card">
       <span class="eyebrow">&sect;3 &middot; DIASPORA</span>
       <h2>Global Diaspora</h2>
-      <p>Slovak-born populations in {destinations} countries. How many Slovaks live abroad depends on what makes someone Slovak.</p>
+      <p>Slovaks counted in {destinations} countries. How many live abroad depends on what makes someone Slovak.</p>
     </a>
     <a href="/people" class="section-card">
       <span class="eyebrow">&sect;4 &middot; PEOPLE</span>

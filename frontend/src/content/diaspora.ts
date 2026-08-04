@@ -52,16 +52,22 @@ export interface Section3Content {
   /** Labels rendered inside the interactive world map. */
   map: {
     eyebrow: string;
+    /** Chart title, rendered above the map. */
+    title: string;
+    subtitle: string;
     year: string;
     totalLabel: string;
     tooltipUnit: string;
-    /** Shown in the detail panel when a country has no trend series. */
-    noTrend: string;
-    trendLabel: string;
     hint: string;
     resetLabel: string;
     /** Shown when the clicked country holds no Slovak diaspora record. */
     noData: string;
+    legendTitle: string;
+    legendNote: string;
+    citizenBasisLabel: string;
+    citizenBasisNote: string;
+    originLabel: string;
+    srcLine: string;
   };
 
   sources: {
@@ -181,15 +187,27 @@ const en: Section3Content = {
   ],
 
   map: {
-    eyebrow: 'Slovak-born residents by country',
+    eyebrow: '§3 · Global diaspora',
+    // NOT "Slovak-born residents by country": four of the 51 figures are not
+    // birth-derived, and one of those four is the largest number on the map.
+    // The title states coverage; the subtitle states the basis and its exception.
+    title: 'Slovaks counted abroad, 2020',
+    subtitle:
+      'One disc per destination, area proportional to the count. Compiled from place-of-birth data except where ringed, where the destination reports foreign citizens instead.',
     year: '2020',
-    totalLabel: 'total abroad',
-    tooltipUnit: 'Slovak-born',
-    noTrend: 'No trend data for this country',
-    trendLabel: '1990 to 2020',
-    hint: 'click a country to zoom in',
+    totalLabel: 'Total counted across 51 destinations',
+    tooltipUnit: 'people',
+    hint: 'Click any country for its figure',
     resetLabel: 'Back to the world',
-    noData: 'No recorded Slovak-born population',
+    noData: 'No figure recorded for this country',
+    legendTitle: 'Disc area = people counted',
+    legendNote:
+      'Colour follows a logarithmic scale, so each step is a tenfold change. Czechia holds more than 100,000 and the smallest recorded figure is two.',
+    citizenBasisLabel: 'Counted as foreign citizens, not by birthplace',
+    citizenBasisNote:
+      'The United Nations compiled this figure from foreign-citizenship data rather than place of birth, because that is what this country publishes. It is not directly comparable with the others.',
+    originLabel: 'Slovakia',
+    srcLine: 'src: UN DESA bilateral migrant stock, 2020 revision',
   },
 
   sources: {

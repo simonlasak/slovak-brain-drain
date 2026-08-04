@@ -16,14 +16,14 @@ const BASELINE_YEAR = 1990;
 const DESA_SOURCE = 'un_desa_bilateral_2020';
 const TOP_N = 12;
 
-interface StockRow { code: string; year: number; value: number }
+interface StockRow { code: string; year: number; value: number; data_type: string }
 
 function Section3App() {
   const locale = useLocale();
   const c = getSection3Content(locale);
 
   const [mapData, setMapData] = useState<
-    { code: string; value: number; trend: { year: number; value: number }[] }[]
+    { code: string; value: number; citizenBasis: boolean }[]
   >([]);
   const [ranked, setRanked] = useState<
     { code: string; name: string; value: number; growth: number | null }[]
@@ -39,20 +39,32 @@ function Section3App() {
 
         // Every UN DESA snapshot year, so the map's per-country detail panel can
         // draw a trend without a second round trip.
+        // data_type is UN DESA's own "type of data of destination" column: a
+        // leading C means the figure was compiled from foreign-citizenship data
+        // rather than place of birth. The map rings those discs, because
+        // bridge 1 turns on the fact that the largest one is among them.
         const rows = await query(`
-          SELECT destination_iso3 AS code, year, value
+          SELECT destination_iso3 AS code, year, value,
+                 COALESCE(data_type, '') AS data_type
           FROM 's3.parquet'
           WHERE metric = 'stock'
             AND source = '${DESA_SOURCE}'
             AND sex = 'all'
+            AND slovak_def = 'born'
+            AND age_bracket = 'all'
+            AND education = 'all'
           ORDER BY destination_iso3, year
-        `) as StockRow[];
+        `) as unknown as StockRow[];
 
         const byCode = new Map<string, { year: number; value: number }[]>();
+        const basisByCode = new Map<string, boolean>();
         for (const r of rows) {
           const list = byCode.get(r.code) || [];
           list.push({ year: Number(r.year), value: Number(r.value) });
           byCode.set(r.code, list);
+          if (String(r.data_type).trim().toUpperCase().startsWith('C')) {
+            basisByCode.set(r.code, true);
+          }
         }
 
         const snapshot: typeof mapData = [];
@@ -62,9 +74,7 @@ function Section3App() {
           snapshot.push({
             code,
             value: current.value,
-            // A single point cannot be drawn as a trend; the map falls back to
-            // the "no trend data" line in that case.
-            trend: series.length > 1 ? series : [],
+            citizenBasis: basisByCode.get(code) === true,
           });
         }
         snapshot.sort((a, b) => b.value - a.value);
@@ -99,6 +109,15 @@ function Section3App() {
 
   return (
     <>
+      {/* The notice must precede the map: the map carries English labels under an
+          unreviewed locale, so a Slovak reader has to be told before reading it,
+          not four screens later. */}
+      {!c.reviewed && c.translationNotice && (
+        <p className="section3-translation-notice section3-notice-top">
+          {c.translationNotice}
+        </p>
+      )}
+
       <DiasporaMap
         data={mapData}
         total={total}
@@ -109,12 +128,9 @@ function Section3App() {
 
       <div className="section3-editorial">
 
-        {!c.reviewed && c.translationNotice && (
-          <p className="section3-translation-notice">{c.translationNotice}</p>
-        )}
-
+        {/* No eyebrow here: the map's own figcaption carries it, and repeating
+            it put the same label on screen twice. */}
         <header className="section3-header">
-          <SectionEyebrow>{c.eyebrow}</SectionEyebrow>
           <h1 className="section3-h1">{c.h1}</h1>
         </header>
 

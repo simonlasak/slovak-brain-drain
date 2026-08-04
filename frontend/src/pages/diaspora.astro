@@ -16,113 +16,253 @@ import Section3App from '../components/Section3App';
   body { overflow-x: hidden; }
 
   /* ─── Interactive world map ──────────────────────────────────── */
+  /* Rebuilt 2026-08. The previous version shipped a blue-grey (#EDF3F5) ocean
+     against a terracotta spec, a dark tooltip duplicating the card, a card
+     floating over the ocean, Greenland clipped under the nav, and a hint
+     sitting in open water as the only affordance. */
+
+  .diaspora-figure {
+    margin: 0 0 var(--space-16);
+  }
+
+  /* The head sits ABOVE the map, in the prose column, so the map is not
+     full-bleed-with-no-title. */
+  .diaspora-head {
+    max-width: var(--max-prose);
+    margin: 0 auto var(--space-6);
+    padding: var(--space-16) var(--space-6) 0;
+  }
+  .diaspora-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-6) 0;
+  }
+  .diaspora-title {
+    font-family: var(--font-serif);
+    font-size: 32px;
+    font-weight: 500;
+    line-height: 1.15;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-3) 0;
+  }
+  .diaspora-subtitle {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+
   .diaspora-map-wrap {
     position: relative;
     width: 100vw;
     margin-left: calc(-50vw + 50%);
-    height: calc(100dvh - 72px);
-    background: #EDF3F5;
+    /* Was 100dvh - 72px, which pushed the north edge under the nav and clipped
+       Greenland. Bounded height with room for the legend instead. */
+    height: min(62vh, 620px);
+    min-height: 380px;
+    background: var(--accent-secondary-light);
+    border-top: 1px solid var(--border-subtle);
+    border-bottom: 1px solid var(--border-subtle);
   }
-  .diaspora-card {
+
+  /* Legend: bottom-left, on cream, stating that the scale is logarithmic. */
+  .diaspora-legend {
     position: absolute;
-    top: 2.5rem;
-    left: 2.5rem;
-    max-width: 320px;
-    padding: 1.25rem 1.5rem;
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(10px);
-    border-radius: 10px;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    bottom: var(--space-4);
+    left: var(--space-4);
+    max-width: 280px;
+    padding: var(--space-3) var(--space-4);
+    background: rgba(251, 247, 240, 0.94);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
   }
-  .diaspora-card.is-mobile {
-    top: 1rem;
-    left: 1rem;
-    right: 1rem;
-    max-width: none;
-    padding: 1rem 1.15rem;
-  }
-  .diaspora-card-eyebrow {
+  .diaspora-legend-title {
     font-family: var(--font-sans);
-    font-size: 0.7rem;
+    font-size: 11px;
     font-weight: 500;
-    text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: var(--text-tertiary);
-    margin: 0 0 0.3rem 0;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0 0 var(--space-2) 0;
   }
-  .diaspora-card-value {
+  .diaspora-legend-bubbles {
+    display: flex;
+    align-items: flex-end;
+    gap: var(--space-4);
+    margin-bottom: var(--space-2);
+  }
+  .diaspora-legend-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .diaspora-legend-disc {
+    display: block;
+    border-radius: 50%;
+    border: 0.8px solid rgba(251, 247, 240, 0.8);
+  }
+  .diaspora-legend-tick {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-secondary);
+  }
+  .diaspora-legend-note {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    line-height: 1.45;
+    color: var(--text-tertiary);
+    margin: 0;
+  }
+  .diaspora-legend-basis {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin: var(--space-2) 0 0 0;
+  }
+  .diaspora-legend-ring {
+    width: 11px;
+    height: 11px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: var(--accent-primary);
+    border: 2px solid var(--text-primary);
+  }
+
+  /* Cursor-following tooltip, per 05-design.md: cream surface, subtle border,
+     one floating shadow. Not the old dark panel. */
+  .diaspora-tip {
+    position: absolute;
+    z-index: 3;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    padding: 8px 12px;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-floating);
+    max-width: 220px;
+  }
+  .diaspora-tip-name {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+  }
+  .diaspora-tip-value {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .diaspora-tip-basis {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    line-height: 1.35;
+    color: var(--accent-primary-hover);
+    margin-top: 2px;
+  }
+
+  /* Affordance: a real chip on the map's own surface, top-right, not text
+     floating in the ocean. */
+  .diaspora-affordance {
+    position: absolute;
+    top: var(--space-4);
+    right: var(--space-4);
+    margin: 0;
+    padding: 6px 12px;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: rgba(251, 247, 240, 0.94);
+    border: 1px solid var(--border-emphasis);
+    border-radius: var(--radius-sm);
+  }
+
+  /* Detail card BELOW the map, in the content column. */
+  .diaspora-detail {
+    max-width: var(--max-content);
+    margin: var(--space-6) auto 0;
+    padding: 0 var(--space-6);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-2) var(--space-6);
+  }
+  .diaspora-detail-eyebrow {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin: 0;
+    flex: 1 0 100%;
+  }
+  .diaspora-detail-value {
     font-family: var(--font-serif);
-    font-size: 2.4rem;
-    font-weight: 400;
+    font-size: 42px;
+    font-weight: 500;
     line-height: 1;
     color: var(--text-primary);
     margin: 0;
   }
-  .diaspora-card-sub {
-    font-family: var(--font-mono);
-    font-size: 0.78rem;
-    color: var(--text-secondary);
-    margin: 0.4rem 0 0.75rem 0;
-  }
-  .diaspora-card-note {
+  .diaspora-detail-sub,
+  .diaspora-detail-note {
     font-family: var(--font-sans);
-    font-size: 0.8rem;
-    color: var(--text-tertiary);
-    margin: 0.6rem 0 0.75rem 0;
-  }
-  .diaspora-spark { margin: 0.7rem 0 0.5rem; }
-  .diaspora-spark-label {
-    font-family: var(--font-mono);
-    font-size: 0.72rem;
+    font-size: 14px;
     color: var(--text-secondary);
-    margin: 0.2rem 0 0 0;
+    margin: 0;
+    max-width: 52ch;
+  }
+  .diaspora-detail-note { color: var(--text-tertiary); }
+  .diaspora-detail-meta {
+    flex: 1 0 100%;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-4);
+    margin-top: var(--space-3);
+  }
+  .diaspora-src {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin: 0;
   }
   .diaspora-reset {
     font-family: var(--font-sans);
-    font-size: 0.78rem;
+    font-size: 14px;
     font-weight: 500;
-    color: var(--accent-secondary);
+    color: var(--accent-primary);
     background: none;
     border: none;
-    padding: 0.35rem 0 0;
+    border-bottom: 1px solid currentColor;
+    padding: 0;
     cursor: pointer;
   }
-  .diaspora-reset:hover { color: var(--text-primary); }
+  .diaspora-reset:hover { color: var(--accent-primary-hover); }
 
-  .diaspora-tooltip {
-    position: absolute;
-    bottom: 2.5rem;
-    left: 2.5rem;
-    pointer-events: none;
-    background: rgba(42, 24, 16, 0.88);
-    backdrop-filter: blur(6px);
-    border-radius: 6px;
-    padding: 0.55rem 0.95rem;
-    min-width: 150px;
-  }
-  .diaspora-tooltip-name {
+  .section3-notice-top {
+    max-width: var(--max-prose);
+    margin: var(--space-6) auto 0;
+    padding: var(--space-3) var(--space-4);
+    background: var(--accent-tertiary-light);
+    border-left: 2px solid var(--border-emphasis);
+    border-radius: var(--radius-sm);
     font-family: var(--font-sans);
-    font-size: 0.8rem;
-    font-weight: 500;
-    color: #FBF7F0;
-    margin: 0;
-  }
-  .diaspora-tooltip-value {
-    font-family: var(--font-mono);
-    font-size: 0.75rem;
-    color: rgba(251, 247, 240, 0.72);
-    margin: 2px 0 0 0;
-  }
-  .diaspora-hint {
-    position: absolute;
-    bottom: 1.25rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-family: var(--font-sans);
-    font-size: 12px;
-    color: var(--text-tertiary);
-    opacity: 0.7;
-    pointer-events: none;
+    font-size: 13px;
+    color: var(--text-secondary);
   }
 
   /* ─── Editorial ──────────────────────────────────────────────── */
@@ -348,7 +488,7 @@ import Section3App from '../components/Section3App';
     .section3-h3 { font-size: 20px; }
     .stat-callout-value { font-size: 52px; }
     .diaspora-card-value { font-size: 2rem; }
-    .diaspora-hint { bottom: 0.75rem; }
+    .diaspora-legend { max-width: none; right: var(--space-4); }
     .about-data-panel {
       width: 100%;
       padding: var(--space-12) var(--space-4) var(--space-6);
