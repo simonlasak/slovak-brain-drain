@@ -30,10 +30,14 @@ import Section3App from '../components/Section3App';
 
   /* The head sits ABOVE the map, in the prose column, so the map is not
      full-bleed-with-no-title. */
+  /* Aligned to the CONTENT column, not the prose column: at 1440 the head used to
+     start 180px right of the map's left edge, because it was max-prose (720) and
+     the stage is max-content (1080), both centred. Space above cut from 64px to
+     32px, which is most of what was pushing the map under the fold. */
   .diaspora-head {
-    max-width: var(--max-prose);
-    margin: 0 auto var(--space-6);
-    padding: var(--space-16) var(--space-6) 0;
+    max-width: var(--max-content);
+    margin: 0 auto var(--space-4);
+    padding: var(--space-8) var(--space-6) 0;
   }
   .diaspora-eyebrow {
     font-family: var(--font-sans);
@@ -42,40 +46,50 @@ import Section3App from '../components/Section3App';
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--text-secondary);
-    margin: 0 0 var(--space-6) 0;
+    margin: 0 0 var(--space-3) 0;
   }
   .diaspora-title {
     font-family: var(--font-serif);
-    font-size: 32px;
+    font-size: 30px;
     font-weight: 500;
     line-height: 1.15;
     color: var(--text-primary);
-    margin: 0 0 var(--space-3) 0;
+    margin: 0 0 var(--space-2) 0;
   }
+  /* One line at this column width. The three facts the old three-line subtitle
+     carried are all on screen elsewhere: coverage and percentage in the locator
+     caption, the ring split named here and keyed in the strip. */
   .diaspora-subtitle {
     font-family: var(--font-sans);
     font-size: 14px;
-    line-height: 1.6;
+    line-height: 1.55;
     color: var(--text-secondary);
     margin: 0;
+    max-width: 104ch;
   }
 
-  /* The stage: map and readout side by side, in one grid, inside the content
-     column. Both are therefore on screen together at any viewport taller than
-     about 640px, which is the defect the stacked layout could not fix: the map
-     was 100vw wide and full-bleed, so it was always taller than the fold and the
-     readout was always below it.
+  /* The stage: two rows.
 
-     No fixed height and no 100vh. The height is whatever the 760x546 viewBox
-     resolves to at the column width, which at 1080px content minus a 300px rail
-     is about 540px of map. */
+     Row 1 is the Europe map with a locator column beside it. Row 2 is a single
+     full-width strip under both, carrying the total, the disc scale, the ring key
+     and About this data. Putting those in the strip rather than in the right
+     column is what lets the locator column be only as tall as the map, and stops
+     the readout from competing with the map for horizontal space.
+
+     No fixed height and no 100vh anywhere. The map's height follows its own
+     aspect-ratio at whatever width the column gives it. */
   .diaspora-stage {
     position: relative;
     max-width: var(--max-content);
     margin: 0 auto;
     padding: 0 var(--space-6);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 20px);
+  }
+  .diaspora-row1 {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-columns: minmax(0, 1fr) 316px;
     gap: var(--space-6);
     align-items: start;
   }
@@ -84,9 +98,8 @@ import Section3App from '../components/Section3App';
     display: block;
     width: 100%;
     height: auto;
-    /* The window's own natural aspect under LAEA, 760/546. Authored as the ratio
-       rather than a rounded decimal so it cannot drift from the viewBox. */
-    aspect-ratio: 760 / 546;
+    /* The viewBox is computed from the discs at runtime, so the aspect cannot be
+       hard-coded here. It is set inline from the same numbers. */
     background: var(--accent-secondary-light);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
@@ -97,9 +110,13 @@ import Section3App from '../components/Section3App';
     outline-offset: 2px;
   }
 
-  /* Slovakia, as a label rather than a glyph. paint-order draws the cream stroke
-     under the letterforms, so it stays legible over land and over the edge of
-     Czechia's disc without needing a plate behind it. */
+  /* Slovakia: a label with a leader tick to its centroid, dropped below the
+     Czechia-Austria-Hungary pile. Beside Czechia's disc it read as a label for
+     that disc, which is the one reading that must not happen: Slovakia is the
+     origin, the only country here with no disc at all.
+
+     paint-order draws the cream stroke under the letterforms, so the label stays
+     legible over land without needing a plate behind it. */
   .diaspora-origin-label {
     font-family: var(--font-sans);
     font-size: 13px;
@@ -110,21 +127,44 @@ import Section3App from '../components/Section3App';
     paint-order: stroke fill;
     pointer-events: none;
   }
+  /* Thin, and stopping short of both ends, so it reads as an anchor rather than
+     as a pointer at a value. */
+  .diaspora-origin-tick {
+    stroke: var(--text-primary);
+    stroke-width: 0.9;
+    pointer-events: none;
+  }
+  .diaspora-origin-dot {
+    fill: var(--text-primary);
+    pointer-events: none;
+  }
 
-  /* ─── Side rail: readout, legend, locator ────────────────────── */
-  .diaspora-rail {
+  /* ─── Row 2: the horizontal strip ────────────────────────────── */
+  /* Total, disc scale, ring key and About, in one band under both frames. Rules
+     between the three groups rather than boxes: this sits on cream, not over the
+     map, so it needs no surface of its own. */
+  .diaspora-strip {
+    display: grid;
+    grid-template-columns: minmax(210px, auto) minmax(200px, auto) minmax(0, 1fr);
+    align-items: start;
+    gap: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .diaspora-strip > * + * {
+    padding-left: var(--space-6);
+    border-left: 1px solid var(--border-subtle);
+  }
+  .diaspora-strip-key {
     display: flex;
     flex-direction: column;
-    gap: var(--space-6);
-    min-width: 0;
+    align-items: flex-start;
+    gap: var(--space-3);
   }
 
-  /* The readout is the first thing in the rail, beside the map rather than under
-     it, so a click has feedback at roughly the height of the thing clicked. */
-  .diaspora-readout {
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--border-subtle);
-  }
+  /* The readout leads the strip. It is directly under the map it describes, so a
+     click has feedback within the same screen rather than a scroll away. */
+  .diaspora-readout { min-width: 0; }
   .diaspora-readout-eyebrow {
     font-family: var(--font-sans);
     font-size: 11px;
@@ -136,7 +176,7 @@ import Section3App from '../components/Section3App';
   }
   .diaspora-readout-value {
     font-family: var(--font-serif);
-    font-size: 38px;
+    font-size: 34px;
     font-weight: 500;
     line-height: 1;
     color: var(--text-primary);
@@ -149,10 +189,11 @@ import Section3App from '../components/Section3App';
     line-height: 1.5;
     color: var(--text-secondary);
     margin: var(--space-2) 0 0 0;
+    max-width: 44ch;
   }
   .diaspora-readout-note { color: var(--text-tertiary); }
 
-  /* Legend: in the rail, on cream, over nothing. It used to float in a corner of
+  /* Legend: in the strip, on cream, over nothing. It used to float in a corner of
      the map, and measured against the rendered European frame there is no corner
      free of data: bottom-left hits France and Portugal, bottom-right hits Turkey
      and Cyprus, top-left hits Iceland.
@@ -161,10 +202,7 @@ import Section3App from '../components/Section3App';
      not countries. The old top tick was 113,773, which is Czechia, whose figure
      is the citizenship-basis outlier the section's argument turns on, so the
      legend for a birthplace map was keyed to a non-birthplace number. */
-  .diaspora-legend {
-    padding-bottom: var(--space-4);
-    border-bottom: 1px solid var(--border-subtle);
-  }
+  .diaspora-legend { min-width: 0; }
   .diaspora-legend-title {
     font-family: var(--font-sans);
     font-size: 11px;
@@ -268,11 +306,20 @@ import Section3App from '../components/Section3App';
     color: var(--text-secondary);
   }
 
-  .diaspora-rail-meta {
+  /* The locator column runs to the map's height: the caption, the US annotation
+     and the source line stack from the top and the source line is pushed to the
+     foot, so the column reads as a full-height sibling of the map rather than as
+     a short block floating at its top. stretch + flex is what does it; the column
+     has no background, so the extra space is simply cream. */
+  .diaspora-row1 { align-items: stretch; }
+  .diaspora-locator {
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: var(--space-3) var(--space-4);
+    flex-direction: column;
+    min-width: 0;
+  }
+  .diaspora-locator .diaspora-src {
+    margin-top: auto;
+    padding-top: var(--space-4);
   }
 
   /* Cursor-following tooltip, per 05-design.md: cream surface, subtle border,
@@ -555,41 +602,53 @@ import Section3App from '../components/Section3App';
     .about-data-overlay, .about-data-panel { animation: none; }
   }
 
-  /* ─── Narrow: the rail stops being a rail ────────────────────── */
-  /* Below this the 300px rail squeezes the map to under 500px, at which point
-     Slovenia's disc is a smudge. Everything becomes one column.
+  /* ─── Narrow: both rows collapse to one column ───────────────── */
+  /* Below this the 316px locator column squeezes the map to under 500px, at which
+     point Slovenia's disc is a smudge. Map first, then locator, then the strip
+     unrolled vertically.
 
-     The order matters and a plain source order will not give it. The readout must
-     stay ADJACENT to the map, because it is the feedback for tapping it: the
-     first attempt at this breakpoint reordered .diaspora-rail as a block, which
-     left the legend and the locator sitting between the readout and the map and
-     pushed the map 1038px down a 844px viewport, reintroducing the defect in a
-     new place. So the stage is one grid and the rail's three children are
-     promoted into it with `display: contents`, which lets them be ordered
-     against the map itself rather than only against each other:
-
-       1 readout   2 map   3 legend   4 locator   5 meta                       */
+     The readout stays the first thing in the strip and the strip stays directly
+     under the map, so a tap still has feedback on the same screen. An earlier
+     attempt at this breakpoint put the legend and locator between the readout and
+     the map, pushing the map 1038px down an 844px viewport and reintroducing the
+     below-the-fold defect in a new place. */
   @media (max-width: 900px) {
-    .diaspora-stage {
+    .diaspora-row1 {
       grid-template-columns: minmax(0, 1fr);
       gap: var(--space-4);
     }
-    .diaspora-rail { display: contents; }
-    .diaspora-readout { order: 1; border-bottom: none; padding-bottom: 0; }
-    .diaspora-primary { order: 2; }
-    .diaspora-legend { order: 3; }
-    .diaspora-locator { order: 4; }
-    .diaspora-rail-meta { order: 5; }
-    .diaspora-readout-value { font-size: 32px; }
+    .diaspora-strip {
+      grid-template-columns: minmax(0, 1fr);
+      gap: var(--space-4);
+    }
+    /* Rules go horizontal when the strip stacks: a left border on a full-width
+       row reads as an indent, not as a divider. */
+    .diaspora-strip > * + * {
+      padding-left: 0;
+      border-left: none;
+      padding-top: var(--space-4);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .diaspora-strip-key {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-4);
+    }
   }
 
   @media (max-width: 640px) {
     .diaspora-stage { padding: 0 var(--space-4); }
-    /* SVG user units against a 760-wide viewBox: at a 392px frame this label
-       would render near 6.7px. Scaled to hold roughly its desktop apparent size,
-       which is the one thing in the figure that cannot be HTML, because it is
-       pinned to a projected coordinate. */
-    .diaspora-origin-label { font-size: 21px; stroke-width: 5px; }
+    .diaspora-readout-value { font-size: 30px; }
+    /* SVG user units against the 700-wide viewBox. At a 358px frame the scale is
+       0.511, so 13 units would render at 6.6px. 25 holds it near the desktop
+       apparent size of 12.9px (25 x 0.511 = 12.8) rather than overshooting it:
+       an earlier 34 here was carried over from a 1030-unit viewBox and rendered
+       at 17.4px, larger on the small screen than on the large one. It is the one
+       piece of text in the figure that cannot be HTML, because it is pinned to a
+       projected coordinate. */
+    .diaspora-origin-label { font-size: 25px; stroke-width: 6px; }
+    .diaspora-origin-tick { stroke-width: 1.8; }
     /* The locator is 300 units wide and already near its floor here, so the tail
        discs are given a little more frame rather than less. */
     .diaspora-locator-svg { max-width: 420px; }

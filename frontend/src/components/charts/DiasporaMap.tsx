@@ -100,29 +100,67 @@ interface DiasporaMapProps {
 }
 
 /**
- * European frame. 760x546 is the window's own natural aspect (1.3926) at a width
- * that fits the content column beside a 300px readout rail.
+ * MEMBERSHIP TEST, not the frame. Which destinations are "European" for the
+ * purpose of splitting the 51 rows between the two figures: lon -25..45, lat
+ * 34..72 holds 35 of them and 393,444 of the 419,651 counted people.
+ *
+ * This used to be the projection window too, and that was the cause of the empty
+ * Arctic and Atlantic bands. The box has to be generous to include Iceland and
+ * Cyprus as members, but a generous box projected literally puts its own corners
+ * in open ocean: measured on the render, the shipped -25..45/34..72 frame had
+ * 197px of dead water left of the westmost disc and 98px above the northmost, and
+ * only 41 percent of the frame carried ink. The two jobs are now separate. This
+ * decides membership; EU_MARGIN and the discs decide the frame.
  */
-const EU_W = 760;
-const EU_H = 546;
-
-/**
- * The European window: lon -25..45, lat 34..72. Holds 35 of the 51 destinations
- * and 393,444 of the 419,651 counted people. Wider than the -11..32 box the old
- * inset used, which excluded Iceland, Turkey and Cyprus for no reason beyond the
- * box being drawn tight around the largest discs.
- */
-const EU_WINDOW: [[number, number], [number, number]] = [[-25, 34], [45, 72]];
+const EU_MEMBER_BOX: [[number, number], [number, number]] = [[-25, 34], [45, 72]];
 
 /** EPSG:3035's centre. */
 const EU_CENTRE: [number, number] = [10, 52];
+
+/**
+ * Padding in projected units between the outermost disc EDGE and the frame. The
+ * viewBox is then computed from the discs' own bounding box, so the frame is the
+ * smallest one that still holds all 35 with a margin. Fill ratio goes from 0.412
+ * to 0.944. Edges are set by Portugal (west), Turkey (east), Iceland (north) and
+ * Cyprus (south), which is why those four are the ones to check after any change
+ * to MAX_R.
+ */
+const EU_MARGIN = 14;
+
+/**
+ * Target width of the European frame in SVG user units, which must equal CSS
+ * pixels at the frame's full rendered width for MAX_R and the label font size to
+ * mean what they say.
+ *
+ * NOT arbitrary, and the first version of the disc-fitted frame got this wrong:
+ * it fitted at a 1000-unit reference and then let the measured ink box become the
+ * viewBox, which came out 1032.8 units wide but rendered at 692px. Everything
+ * scaled by 0.67, so MIN_R 2.4 drew at 1.6px and the Slovakia label at 8.7px.
+ * The projection scale is now solved so the finished viewBox is EU_W wide.
+ */
+const EU_W = 700;
 
 /** World locator, sized to the rail. Aspect is Natural Earth 1's own, 2.298. */
 const LOC_W = 300;
 const LOC_H = 131;
 
-/** Slovakia, the origin. A text label, not a glyph. */
+/** Slovakia, the origin. A text label with a leader tick, not a glyph. */
 const ORIGIN: [number, number] = [19.7, 48.73];
+
+/**
+ * Offset from Slovakia's centroid to the label's anchor, in projected units:
+ * below and slightly right.
+ *
+ * Both numbers come from a grid search over the RENDERED layout, checking the
+ * label's measured box and the leader segment against every disc. Straight down
+ * does not work: Hungary's disc sits 31 units directly below Slovakia's centroid
+ * with under 1 unit of horizontal offset, so a vertical leader of any useful
+ * length passes through it, and a drop long enough to clear it (76) put the label
+ * in Croatia. Down-and-right at (44, 32) is the closest placement whose label box
+ * and leader are both clear, and it keeps the label below the
+ * Czechia-Austria-Hungary pile as intended.
+ */
+const ORIGIN_OFFSET: [number, number] = [44, 32];
 
 /** Single terracotta, --accent-primary. Area is the only quantitative channel. */
 const DISC_FILL = '#B83A1F';
@@ -151,26 +189,8 @@ interface Bubble {
   offBasis: boolean;
 }
 
-/** Samples the window's edges for fitExtent.
- *
- * A MultiPoint, not a Polygon: a ring wound counter-clockwise is the complement
- * of the box on the sphere and d3 then fits the whole world, which is how the
- * first version of the old inset rendered as a second tiny world map. And curved
- * meridians mean the four corners alone understate the box's width at
- * mid-latitudes, so the edges are sampled rather than just the corners.
- */
-function windowSample([[w, s], [e, n]]: [[number, number], [number, number]]) {
-  const coordinates: [number, number][] = [];
-  for (let i = 0; i <= 60; i++) {
-    const t = i / 60;
-    coordinates.push([w + (e - w) * t, s], [w + (e - w) * t, n]);
-    coordinates.push([w, s + (n - s) * t], [e, s + (n - s) * t]);
-  }
-  return { type: 'MultiPoint' as const, coordinates };
-}
-
 /**
- * The same window as a closed LineString, for drawing its outline on the
+ * The membership box as a closed LineString, for drawing its outline on the
  * locator. Not a Polygon: see the call site.
  */
 function windowOutline([[w, s], [e, n]]: [[number, number], [number, number]]) {
@@ -215,15 +235,6 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       .catch(() => setGeojson(null));
   }, []);
 
-  // Europe: LAEA on EPSG:3035's centre, fitted to the stated window rather than
-  // to whatever features happen to carry data.
-  const eu = useMemo(() => {
-    const projection = geoAzimuthalEqualArea()
-      .rotate([-EU_CENTRE[0], -EU_CENTRE[1]])
-      .fitExtent([[8, 8], [EU_W - 8, EU_H - 8]], windowSample(EU_WINDOW));
-    return { projection, path: geoPath(projection) };
-  }, []);
-
   // Locator: fitted to the whole feature collection.
   const loc = useMemo(() => {
     if (!geojson) return null;
@@ -258,7 +269,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
   }, [geojson, byCode]);
 
   const inEurope = (b: Bubble) => {
-    const [[w, s], [e, n]] = EU_WINDOW;
+    const [[w, s], [e, n]] = EU_MEMBER_BOX;
     const [lon, lat] = b.lonLat;
     return lon >= w && lon <= e && lat >= s && lat <= n;
   };
@@ -269,9 +280,68 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
 
   const radius = (v: number) => Math.max(MIN_R, MAX_R * Math.sqrt(v / maxValue));
 
+  /**
+   * Europe: LAEA on EPSG:3035's centre, then the viewBox is measured from the
+   * DISCS rather than from a lon/lat box, which is what removes the empty Arctic
+   * and Atlantic bands. Fitted to the member discs' centroids at an arbitrary
+   * reference size, the ink box is expanded by each disc's own radius, and
+   * EU_MARGIN is added all round.
+   *
+   * Depends on `european` and on the radius scale, so it has to come after them.
+   */
+  const eu = useMemo(() => {
+    const projection = geoAzimuthalEqualArea().rotate([-EU_CENTRE[0], -EU_CENTRE[1]]);
+    const cloud = {
+      type: 'MultiPoint',
+      coordinates: european.length ? european.map(b => b.lonLat) : [[-25, 34], [45, 72]],
+    } as any;
+
+    /**
+     * Measures the disc ink box at a given projection scale. The discs' radii are
+     * fixed in output units while the centroid spread scales, so the ink box is
+     * not a linear function of scale and the target width has to be solved for
+     * rather than computed in one step.
+     */
+    const ink = () => {
+      let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const b of european) {
+        const p = projection(b.lonLat);
+        if (!p) continue;
+        const r = radius(b.value);
+        x0 = Math.min(x0, p[0] - r); x1 = Math.max(x1, p[0] + r);
+        y0 = Math.min(y0, p[1] - r); y1 = Math.max(y1, p[1] + r);
+      }
+      return { x0, x1, y0, y1, w: x1 - x0, h: y1 - y0 };
+    };
+
+    const target = EU_W - 2 * EU_MARGIN;
+    projection.fitExtent([[0, 0], [target, target]], cloud);
+    if (!european.length) {
+      return { projection, path: geoPath(projection), viewBox: `0 0 ${EU_W} ${EU_W}` };
+    }
+    // Two Newton-ish passes on the scale converge to well under a pixel: the
+    // relationship is close to affine, since only the radii are scale-invariant.
+    for (let i = 0; i < 6; i++) {
+      const m = ink();
+      if (Math.abs(m.w - target) < 0.05) break;
+      projection.scale(projection.scale() * (target / m.w));
+    }
+    const m = ink();
+    const vx = m.x0 - EU_MARGIN;
+    const vy = m.y0 - EU_MARGIN;
+    const vw = m.w + 2 * EU_MARGIN;
+    const vh = m.h + 2 * EU_MARGIN;
+    return {
+      projection,
+      path: geoPath(projection),
+      viewBox: `${vx} ${vy} ${vw} ${vh}`,
+      box: { x: vx, y: vy, w: vw, h: vh },
+    };
+  }, [european, maxValue]);
+
   const fmt = (n: number) => Math.round(n).toLocaleString(locale === 'sk' ? 'sk-SK' : 'en');
 
-  function showTip(e: React.MouseEvent, b: Bubble) {
+  function showTip(e: { clientX: number; clientY: number }, b: Bubble) {
     const box = stageRef.current?.getBoundingClientRect();
     if (!box) return;
     setTip({ x: e.clientX - box.left, y: e.clientY - box.top, b });
@@ -279,11 +349,46 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
 
   const clearTip = () => setTip(null);
 
-  // The per-disc mouseleave is not enough on its own. A fast exit off the edge of
-  // an SVG, a disc unmounting under the cursor, and every touch interaction all
-  // leave a tooltip on screen with nothing to dismiss it, which is how the
-  // previous build's tooltip persisted indefinitely. Scroll and window blur are
-  // the two other ways the cursor stops being where the tooltip says it is.
+  /**
+   * HIT TEST ON THE SVG ROOT. This, not the per-disc mouseleave, is what actually
+   * dismisses the tooltip.
+   *
+   * The bug this replaces: moving off a disc into ocean INSIDE the same SVG fires
+   * no mouseleave on the root, and React's synthetic mouseleave on the circle was
+   * unreliable for the same reason the tooltip survived at all. The earlier
+   * verification tested the wrong event: it measured leaving the SVG entirely,
+   * which was never the failing case.
+   *
+   * So the root owns the tooltip. Every mousemove inside either frame is tested
+   * against every disc in that frame, and a miss clears. Distance is compared in
+   * the SVG's own user units via getScreenCTM().inverse(), because both viewBoxes
+   * are scaled by CSS and a client-pixel radius would be wrong by that factor.
+   * Topmost-wins: the list is painted largest-first, so it is searched in reverse
+   * to match what the reader can actually see and click.
+   */
+  function handleFrameMove(e: React.MouseEvent<SVGSVGElement>, frame: Bubble[], proj: any) {
+    const svg = e.currentTarget;
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return;
+    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+    for (let i = frame.length - 1; i >= 0; i--) {
+      const b = frame[i];
+      const p = proj(b.lonLat);
+      if (!p) continue;
+      const r = radius(b.value);
+      const dx = pt.x - p[0];
+      const dy = pt.y - p[1];
+      if (dx * dx + dy * dy <= r * r) {
+        showTip(e, b);
+        return;
+      }
+    }
+    if (tip) clearTip();
+  }
+
+  // The remaining ways the cursor stops being where the tooltip says it is:
+  // scrolling, the window losing focus, and leaving the stage entirely (which the
+  // stage's own onMouseLeave covers).
   useEffect(() => {
     if (!tip) return;
     window.addEventListener('scroll', clearTip, { passive: true });
@@ -314,14 +419,50 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
         stroke={b.offBasis ? RING_STROKE : DISC_STROKE}
         strokeWidth={b.offBasis ? 1.4 : 0.6}
         className="diaspora-disc"
-        onMouseMove={e => showTip(e, b)}
-        onMouseLeave={clearTip}
+        /* No onMouseMove/onMouseLeave here: the SVG root hit-tests instead, so
+           moving into ocean inside the same frame clears the tooltip. */
         onClick={() => setSelected(b.code === selected ? null : b.code)}
         tabIndex={0}
         role="button"
         aria-label={`${b.name}: ${fmt(b.value)} ${labels.tooltipUnit}`}
         onFocus={() => setSelected(b.code)}
       />
+    );
+  }
+
+  /**
+   * Slovakia. A label with a leader tick to its centroid, placed BELOW Czechia's
+   * disc rather than beside it.
+   *
+   * Beside the disc it read as a label FOR the disc, which is exactly wrong: the
+   * disc there is Czechia's 113,773, and Slovakia is the origin, the one country
+   * on the map with no disc at all. Dropping it below the pile and tying it back
+   * with a tick makes it a country label. The tick ends short of the centroid so
+   * the line does not read as a pointer to a datum.
+   */
+  function OriginLabel({ projection, label }: { projection: any; label: string }) {
+    const p = projection(ORIGIN);
+    if (!p) return null;
+    const [x, y] = p;
+    const tx = x + ORIGIN_OFFSET[0];
+    const ty = y + ORIGIN_OFFSET[1];
+    // The leader runs from just outside the centroid dot to just above the
+    // label's cap line, so it touches neither.
+    const len = Math.hypot(tx - x, ty - y) || 1;
+    const ux = (tx - x) / len;
+    const uy = (ty - y) / len;
+    return (
+      <g aria-label={label}>
+        <line
+          x1={x + ux * 3.5} y1={y + uy * 3.5}
+          x2={tx - ux * 4} y2={ty - 12}
+          className="diaspora-origin-tick"
+        />
+        <circle cx={x} cy={y} r={1.7} className="diaspora-origin-dot" />
+        <text className="diaspora-origin-label" x={tx} y={ty} textAnchor="middle">
+          {label}
+        </text>
+      </g>
     );
   }
 
@@ -368,59 +509,130 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
         <p className="diaspora-subtitle">{labels.subtitle}</p>
       </figcaption>
 
-      {/* Map and readout are siblings in one grid, so they are on screen
-          together: the readout used to sit below a full-viewport-height map and
-          was never visible at the same time as the thing it described. */}
+      {/* TWO ROWS.
+          Row 1: Europe left, locator column right (caption, US annotation, source).
+          Row 2: a full-width strip carrying readout, disc scale, ring key, About.
+
+          The strip is below both, so nothing in it competes with the map for
+          horizontal space and the map gets the width it needs to be legible. */}
       <div ref={stageRef} className="diaspora-stage" onMouseLeave={clearTip}>
-        <div className="diaspora-primary">
-          <svg
-            className="diaspora-eu-svg"
-            viewBox={`0 0 ${EU_W} ${EU_H}`}
-            role="img"
-            aria-label={labels.title}
-            preserveAspectRatio="xMidYMid meet"
-          >
-            <defs>
-              <clipPath id="diaspora-eu-clip">
-                <rect x={0} y={0} width={EU_W} height={EU_H} />
-              </clipPath>
-            </defs>
-            <rect x={0} y={0} width={EU_W} height={EU_H} fill="#DCE9EE" />
-            {geojson && (
-              <g clipPath="url(#diaspora-eu-clip)">
+        <div className="diaspora-row1">
+          <div className="diaspora-primary">
+            <svg
+              className="diaspora-eu-svg"
+              viewBox={eu.viewBox}
+              role="img"
+              aria-label={labels.title}
+              preserveAspectRatio="xMidYMid meet"
+              /* Aspect comes from the computed viewBox, not from CSS: the frame is
+                 measured from the discs at runtime, so there is no constant to
+                 put in the stylesheet. */
+              style={eu.box ? { aspectRatio: `${eu.box.w} / ${eu.box.h}` } : undefined}
+              onMouseMove={e => handleFrameMove(e, european, eu.projection)}
+            >
+              {eu.box && (
+                <>
+                  <defs>
+                    <clipPath id="diaspora-eu-clip">
+                      <rect x={eu.box.x} y={eu.box.y} width={eu.box.w} height={eu.box.h} />
+                    </clipPath>
+                  </defs>
+                  <rect
+                    x={eu.box.x} y={eu.box.y} width={eu.box.w} height={eu.box.h}
+                    fill="#DCE9EE"
+                  />
+                </>
+              )}
+              {geojson && (
+                <g clipPath="url(#diaspora-eu-clip)">
+                  <g>
+                    {geojson.features.map((f: any, i: number) => (
+                      <path
+                        key={f.properties?.iso3 || i}
+                        d={eu.path(f) || undefined}
+                        fill="#F4EFE3"
+                        stroke="#D4A547"
+                        strokeOpacity={0.5}
+                        strokeWidth={0.5}
+                      />
+                    ))}
+                  </g>
+                  <g>
+                    {european.map(b => (
+                      <Disc key={b.code} b={b} projection={eu.projection} />
+                    ))}
+                  </g>
+                  <OriginLabel projection={eu.projection} label={labels.originLabel} />
+                </g>
+              )}
+            </svg>
+          </div>
+
+          {loc && geojson && (
+            <div className="diaspora-locator">
+              <p className="diaspora-locator-title">{labels.locatorTitle}</p>
+              <svg
+                viewBox={`0 0 ${LOC_W} ${LOC_H}`}
+                className="diaspora-locator-svg"
+                role="img"
+                aria-label={labels.locatorTitle}
+                onMouseMove={e => handleFrameMove(e, tail, loc.projection)}
+              >
+                <rect x={0} y={0} width={LOC_W} height={LOC_H} fill="#DCE9EE" />
                 <g>
-                  {geojson.features.map((f: any, i: number) => (
-                    <path
-                      key={f.properties?.iso3 || i}
-                      d={eu.path(f) || undefined}
-                      fill="#F4EFE3"
-                      stroke="#D4A547"
-                      strokeOpacity={0.5}
-                      strokeWidth={0.5}
-                    />
+                  {geojson.features.map((f: any, i: number) => {
+                    const iso = f.properties?.iso3;
+                    // The United States is outlined, not filled differently: the
+                    // annotation beneath says what the outline means, so this is
+                    // not a third symbol convention competing with the discs.
+                    const isUS = iso === 'USA';
+                    return (
+                      <path
+                        key={iso || i}
+                        d={loc.path(f) || undefined}
+                        fill="#F4EFE3"
+                        stroke={isUS ? RING_STROKE : '#D4A547'}
+                        strokeOpacity={isUS ? 0.85 : 0.45}
+                        strokeWidth={isUS ? 0.9 : 0.4}
+                      />
+                    );
+                  })}
+                </g>
+                {/* The membership box, so the locator says where the primary
+                    figure is.
+
+                    A LineString, not a Polygon. As a Polygon this drew a dashed
+                    loop around most of the world: d3 reads ring winding to decide
+                    which side is the interior, and the wrong sense makes the box
+                    the complement of itself on the sphere. A LineString has no
+                    interior to get backwards. The edges are sampled rather than
+                    cornered because Natural Earth curves its meridians. */}
+                <path
+                  className="diaspora-window-outline"
+                  d={loc.path(windowOutline(EU_MEMBER_BOX)) || undefined}
+                />
+                <g>
+                  {tail.map(b => (
+                    <Disc key={b.code} b={b} projection={loc.projection} />
                   ))}
                 </g>
-                <g>
-                  {european.map(b => (
-                    <Disc key={b.code} b={b} projection={eu.projection} />
-                  ))}
-                </g>
-                {/* Slovakia: a label, not a symbol. paint-order puts the cream
-                    stroke behind the glyphs so it reads over land and over the
-                    edge of Czechia's disc without a box. */}
-                <text
-                  className="diaspora-origin-label"
-                  x={eu.projection(ORIGIN)[0] + 8}
-                  y={eu.projection(ORIGIN)[1] - 8}
-                >
-                  {labels.originLabel}
-                </text>
-              </g>
-            )}
-          </svg>
+              </svg>
+              {/* HTML, not SVG text. The old version authored its line breaks by
+                  hand in the content module and needed a mobile font-size
+                  override, because SVG text neither wraps nor scales with the
+                  reader's type size. */}
+              <p className="diaspora-locator-note">{labels.locatorNote}</p>
+              <p className="diaspora-absent">
+                <span className="diaspora-absent-title">{labels.absentTitle}</span>{' '}
+                {labels.absentNote}
+              </p>
+              <p className="diaspora-src">{labels.srcLine}</p>
+            </div>
+          )}
         </div>
 
-        <div className="diaspora-rail">
+        {/* Row 2: one horizontal strip, full width under both frames. */}
+        <div className="diaspora-strip">
           {readout}
 
           <div className="diaspora-legend">
@@ -444,6 +656,9 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                 );
               })}
             </div>
+          </div>
+
+          <div className="diaspora-strip-key">
             {/* Swatch is inline SVG, drawn the way the map draws it. A CSS border
                 on a circle this small does not survive. */}
             <p className="diaspora-legend-flag">
@@ -453,70 +668,6 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
               </svg>
               {labels.offBasisLabel}
             </p>
-          </div>
-
-          {loc && geojson && (
-            <div className="diaspora-locator">
-              <p className="diaspora-locator-title">{labels.locatorTitle}</p>
-              <svg
-                viewBox={`0 0 ${LOC_W} ${LOC_H}`}
-                className="diaspora-locator-svg"
-                role="img"
-                aria-label={labels.locatorTitle}
-              >
-                <rect x={0} y={0} width={LOC_W} height={LOC_H} fill="#DCE9EE" />
-                <g>
-                  {geojson.features.map((f: any, i: number) => {
-                    const iso = f.properties?.iso3;
-                    // The United States is outlined, not filled differently: the
-                    // annotation beneath says what the outline means, so this is
-                    // not a fourth symbol convention competing with the discs.
-                    const isUS = iso === 'USA';
-                    return (
-                      <path
-                        key={iso || i}
-                        d={loc.path(f) || undefined}
-                        fill="#F4EFE3"
-                        stroke={isUS ? RING_STROKE : '#D4A547'}
-                        strokeOpacity={isUS ? 0.85 : 0.45}
-                        strokeWidth={isUS ? 0.9 : 0.4}
-                      />
-                    );
-                  })}
-                </g>
-                {/* The European window, so the locator says where the primary
-                    figure is.
-
-                    A LineString, not a Polygon. As a Polygon this drew a dashed
-                    loop around most of the world: d3 reads ring winding to decide
-                    which side is the interior, and the wrong sense makes the box
-                    the complement of itself on the sphere. A LineString has no
-                    interior to get backwards. The edges are sampled rather than
-                    cornered because Natural Earth curves its meridians. */}
-                <path
-                  className="diaspora-window-outline"
-                  d={loc.path(windowOutline(EU_WINDOW)) || undefined}
-                />
-                <g>
-                  {tail.map(b => (
-                    <Disc key={b.code} b={b} projection={loc.projection} />
-                  ))}
-                </g>
-              </svg>
-              <p className="diaspora-locator-note">{labels.locatorNote}</p>
-              {/* HTML, not SVG text. The old version authored its line breaks by
-                  hand in the content module and needed a mobile font-size
-                  override, because SVG text neither wraps nor scales with the
-                  reader's type size. */}
-              <p className="diaspora-absent">
-                <span className="diaspora-absent-title">{labels.absentTitle}</span>{' '}
-                {labels.absentNote}
-              </p>
-            </div>
-          )}
-
-          <div className="diaspora-rail-meta">
-            <p className="diaspora-src">{labels.srcLine}</p>
             <AboutData label={aboutLabel} panel={sourcePanel} />
           </div>
         </div>
