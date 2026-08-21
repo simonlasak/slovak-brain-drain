@@ -36,13 +36,19 @@ export interface Section3Content {
   caption2: string;
   bridge2: string[];
 
+  /** The annual-arrivals chart: a FLOW, and on the citizenship definition. */
+  subFlows: string;
+  captionFlows: string;
+  bridgeFlows: string[];
+  /** Labels rendered inside the arrivals chart. */
+  arrivals: {
+    yAxis: string;
+    tableToggle: string;
+    tableYear: string;
+  };
+
   sub3: string;
-  /**
-   * For the annual-arrivals chart, which is NOT yet built: section 3 currently
-   * carries the flow story in prose only (map + 2 ranked charts = 3 visuals,
-   * the low end of the 3-4 the spec asks for). Kept here with its source panel
-   * so the chart can be dropped in without touching content structure.
-   */
+  /** No chart under sub3: the ancestry material is one country, so it is prose. */
   caption3: string;
   bridge3: string[];
 
@@ -145,8 +151,14 @@ const en: Section3Content = {
   callout2: { value: '25', label: 'Destinations reporting both a Slovak-born and a Slovak-citizen count for 2020' },
 
   sub2: 'The same people, counted twice',
+  // CORRECTED. This read "Slovak-born against Slovak citizens, 2020, for the 25
+  // destinations reporting both", sourced to UN DESA plus Eurostat. That describes a
+  // chart this section does not contain: the figure underneath is percent change
+  // 1990 to 2020 for 12 destinations, from UN DESA alone, which is what the About
+  // panel beside it has always said. The born-against-citizen comparison the old
+  // caption promised is still unbuilt; bridge 1 and bridge 2 carry it in prose.
   caption2:
-    'Slovak-born against Slovak citizens, 2020, for the 25 destinations reporting both. src: UN DESA bilateral migrant stock 2020 revision; Eurostat migr_pop1ctz.',
+    'Percent change in each destination’s Slovak-born population, 1990 to 2020, for the 12 largest by 2020 size. Log axis: the range runs from +62 percent to +62,883 percent. src: UN DESA bilateral migrant stock, 2020 revision.',
   // APPROVED 2026-07-31 after the Hungary residence fork was resolved. Windows:
   // FR series starts 2004, HU 2002, both accumulated to end-2019 against a
   // 1 Jan 2020 stock. FR 1,248/1,561 = 80%. HU 3,441/10,399 = 33%, residue
@@ -163,6 +175,34 @@ const en: Section3Content = {
     'The Netherlands is that ordinary imprecision, at the other extreme. The United Nations puts the Slovak-born population there at 1,671 in 2020. The Netherlands itself reports 6,856 Slovak citizens resident that year, and the OECD, whose Dutch series begins the following year, puts the Slovak-born population at 7,418 in 2021. Two of those three describe roughly the same population and one does not. The United Nations estimate is simply too low, and that is a disagreement between compilers rather than between definitions.',
     'Which leaves the third definition, the one that cannot be compared at all.',
   ],
+
+  // NEW 2026-08, and the first draft of this prose is mine, not Simon's.
+  //
+  // Every figure verified against section3_diaspora.parquet, metric='inflow',
+  // source='oecd_mig_flows_B11', sex/age/education='all', slovak_def='citizen':
+  //   panel        22 destinations reporting in every year 2008-2023
+  //   coverage     97.3% of what all reporting countries recorded in 2019
+  //   top three    Germany + Czechia + Austria = 363,458 of 501,253 = 72.5%
+  //   2023         Germany 9,026 / Czechia 6,512 / Austria 4,258
+  //   Germany      8,590 in 2010 rising to 15,518 in 2014
+  //   UK           one year only in this source, 2013; Ireland none at all
+  //   UK 2020 stock 72,209 (2nd largest); Ireland 13,573 (8th)
+  // The 2008 start is justified in the chart component's header comment: the panel
+  // grows from 5 reporters to 29, Czechia's pre-2008 series is contradicted by the
+  // stock arithmetic, and Switzerland steps level at the boundary.
+  subFlows: 'Arrivals, which are a different measurement again',
+  captionFlows:
+    'Slovak citizens recorded arriving each year, 2008 to 2023, for the three largest reporting destinations. Restricted to the 22 destinations that reported in every year of the window, which together account for 97.3 percent of what all reporting countries recorded in 2019; the three shown are 72.5 percent of that. The series starts in 2008 because the reporting panel and the Czech register both change before it. The United Kingdom appears in this source for a single year and Ireland not at all. src: OECD International Migration Database, measure B11.',
+  bridgeFlows: [
+    'Everything so far has counted people who are somewhere. This counts people arriving, which is a flow rather than a stock, and it is recorded on the citizenship definition rather than on birthplace. It cannot be added to the map, netted against it, or drawn on the same axis, and the three definitions of the previous sections do not become four: this is the same citizenship definition, measured as movement instead of presence.',
+    'What it shows is steadiness rather than surge. Germany runs between roughly 8,600 and 15,500 a year, with the rise beginning in 2011, the year its transitional restriction on workers from the 2004 accession states expired. Czechia and Austria are flatter still, Czechia between 5,000 and 7,600 and Austria between 4,000 and 6,500. Nothing in the window looks like an exodus, and nothing looks like a stop.',
+    'The chart also cannot answer the question most readers will bring to it, and the reason is worth stating rather than burying. The United Kingdom appears in this source for one year, 2013, and Ireland appears not at all, yet the United Kingdom is the second-largest destination in the 2020 stock and Ireland the eighth. The two countries that absorbed the most post-accession movement are the two this measurement cannot see. A flow chart built here describes central Europe well and the Anglophone destinations not at all.',
+  ],
+  arrivals: {
+    yAxis: 'Arrivals per year',
+    tableToggle: 'Show the figures as a table',
+    tableYear: 'Year',
+  },
 
   sub3: 'The definition that cannot be compared',
   /**
@@ -276,9 +316,9 @@ const en: Section3Content = {
       title: 'Annual arrivals of Slovak citizens',
       source: 'OECD International Migration Database (DSD_MIG), measure B11, inflows of foreign population by nationality.',
       derivation:
-        'Count of Slovak citizens recorded as arriving in each destination country per year. B11 is one of five measures stacked in the same OECD table; the others cover departures, asylum, naturalisations, and resident stock, and are not mixed into this series.',
+        'Slovak citizens recorded arriving in each destination per year. B11 is one of five measures stacked in the same OECD table; the others cover departures, asylum, naturalisations and resident stock, and none is mixed into this series. The window is 2008 to 2023 and the panel is the 22 destinations that reported in every year of it, which is what makes the years comparable with each other: across the whole source the number of reporting countries grows from 5 in 1995 to 29 in 2021, so an unrestricted series would rise partly because countries joined it. The 22-country panel accounts for 97.3 percent of what all reporting countries recorded in 2019. The three destinations drawn are the largest by 2008-2023 volume and are 363,458 of the panel’s 501,253.',
       caveat:
-        'A flow, not a stock, and on a different definition from the map: this counts Slovak citizens arriving, while the map counts Slovak-born residents present. The two must not be added or plotted as one series. Coverage is 33 OECD countries, so non-OECD destinations have no annual series at all.',
+        'A flow, not a stock, and on the citizenship definition rather than birthplace: this counts arrivals of Slovak citizens, while the map counts Slovak-born residents present. The two must never be added, netted or drawn on one axis. Two limits are structural. The United Kingdom appears in this source for one year only (2013) and Ireland for none, while the UK is the second-largest destination in the 2020 stock at 72,209 and Ireland the eighth at 13,573, so the destinations that absorbed most post-accession movement are absent. And the window starts in 2008 rather than at accession because Czechia’s earlier figures are contradicted by its own stock: over 2001 to 2004 the Czech register recorded 54,067 Slovak arrivals while the Slovak-citizen stock there rose 23,381 to 33,148, a gain of 9,767, and the Eurostat stock series breaks in the same place, falling 42,908 to 23,381 between 2000 and 2001. What changed in Czech counting is not documented in anything this project holds, so those years are excluded rather than explained.',
     },
   },
 

@@ -487,6 +487,66 @@ import Section3App from '../components/Section3App';
     color: var(--text-secondary);
   }
 
+  /* ─── Arrivals chart ─────────────────────────────────────────── */
+  /* Legend above the plot, table view below it. Both are required rather than
+     decorative: with three series identity must not rest on hue alone, and the
+     locked gold sits at 2.92:1 against cream where 3:1 is the floor, which obliges
+     visible labels and a table. */
+  .arrivals-chart { width: 100%; }
+  .arrivals-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2) var(--space-4);
+    list-style: none;
+    margin: 0 0 var(--space-2) 0;
+    padding: 0;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .arrivals-legend li { display: flex; align-items: center; gap: 6px; }
+  /* A bar, not a dot: it reads as a line's colour rather than as a data point. */
+  .arrivals-swatch {
+    width: 14px;
+    height: 3px;
+    border-radius: 1px;
+    flex: 0 0 auto;
+  }
+  .arrivals-table {
+    margin-top: var(--space-3);
+    font-family: var(--font-sans);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .arrivals-table summary {
+    cursor: pointer;
+    color: var(--accent-primary);
+    font-weight: 500;
+  }
+  .arrivals-table summary:hover { color: var(--accent-primary-hover); }
+  .arrivals-table-scroll { overflow-x: auto; margin-top: var(--space-2); }
+  .arrivals-table table { border-collapse: collapse; font-family: var(--font-mono); font-size: 11px; }
+  .arrivals-table th,
+  .arrivals-table td {
+    padding: 3px var(--space-3) 3px 0;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .arrivals-table thead th {
+    text-align: right;
+    font-family: var(--font-sans);
+    font-weight: 500;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-emphasis);
+  }
+  .arrivals-table tbody th {
+    text-align: left;
+    font-weight: 400;
+    color: var(--text-tertiary);
+  }
+  .arrivals-table thead th:first-child,
+  .arrivals-table tbody th:first-child { text-align: left; }
+
   /* ─── About this data ────────────────────────────────────────── */
   .chart-caption-row {
     display: flex;

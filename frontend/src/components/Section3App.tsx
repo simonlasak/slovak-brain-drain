@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { query, registerParquet } from '../lib/db';
 import { DiasporaMap } from './charts/DiasporaMap';
 import { DiasporaRankedChart } from './charts/DiasporaRankedChart';
+import { DiasporaArrivalsChart } from './charts/DiasporaArrivalsChart';
+import type { ArrivalsSeries } from './charts/DiasporaArrivalsChart';
 import { SectionEyebrow } from './charts/SectionEyebrow';
 import { StatCallout } from './charts/StatCallout';
 import { AnimateOnScroll } from './charts/AnimateOnScroll';
@@ -16,6 +18,18 @@ const BASELINE_YEAR = 1990;
 const DESA_SOURCE = 'un_desa_bilateral_2020';
 const TOP_N = 12;
 
+/**
+ * The arrivals chart's window and panel. 2008 is not a stylistic choice: before it
+ * the reporting panel grows from 5 countries to 22, Czechia's register is
+ * contradicted by its own stock, and Switzerland steps level. See the chart
+ * component's header for the arithmetic. The three destinations are the largest by
+ * 2008-2023 volume and are 72.5 percent of the panel.
+ */
+const FLOW_SOURCE = 'oecd_mig_flows_B11';
+const FLOW_Y0 = 2008;
+const FLOW_Y1 = 2023;
+const FLOW_CODES = ['DEU', 'CZE', 'AUT'];
+
 interface StockRow { code: string; year: number; value: number; data_type: string }
 
 function Section3App() {
@@ -29,6 +43,7 @@ function Section3App() {
     { code: string; name: string; value: number; growth: number | null }[]
   >([]);
   const [total, setTotal] = useState(0);
+  const [arrivals, setArrivals] = useState<ArrivalsSeries[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,6 +116,39 @@ function Section3App() {
                 : null,
             };
           })
+        );
+        // Annual arrivals: a FLOW on the citizenship definition. Queried
+        // separately and never joined to the stock rows, because adding or netting
+        // the two would mix definitions.
+        const flowRows = await query(`
+          SELECT destination_iso3 AS code, year, value
+          FROM 's3.parquet'
+          WHERE metric = 'inflow'
+            AND source = '${FLOW_SOURCE}'
+            AND sex = 'all'
+            AND age_bracket = 'all'
+            AND education = 'all'
+            AND year BETWEEN ${FLOW_Y0} AND ${FLOW_Y1}
+            AND destination_iso3 IN (${FLOW_CODES.map(c => `'${c}'`).join(', ')})
+          ORDER BY destination_iso3, year
+        `) as unknown as { code: string; year: number; value: number }[];
+
+        const flowByCode = new Map<string, { year: number; value: number }[]>();
+        for (const r of flowRows) {
+          const list = flowByCode.get(r.code) || [];
+          list.push({ year: Number(r.year), value: Number(r.value) });
+          flowByCode.set(r.code, list);
+        }
+        // Kept in FLOW_CODES order so the colour assignment is fixed rather than
+        // dependent on what the query happened to return first.
+        setArrivals(
+          FLOW_CODES
+            .map(code => ({
+              code,
+              name: countryName(code, locale),
+              points: flowByCode.get(code) || [],
+            }))
+            .filter(s => s.points.length > 0)
         );
       } catch (e: any) {
         setError(e.message);
@@ -183,6 +231,28 @@ function Section3App() {
 
         <div className="section3-prose">
           {c.bridge2.map((p, i) => <p key={i}>{p}</p>)}
+        </div>
+
+        <h3 className="section3-h3">{c.subFlows}</h3>
+
+        <div className="section3-prose">
+          <p>{c.bridgeFlows[0]}</p>
+        </div>
+
+        <AnimateOnScroll>
+          {() => (
+            <div className="section3-chart-wide">
+              <DiasporaArrivalsChart series={arrivals} labels={c.arrivals} />
+              <div className="chart-caption-row">
+                <p className="section3-caption">{c.captionFlows}</p>
+                <AboutData label={c.aboutLabel} panel={c.sources.trend} />
+              </div>
+            </div>
+          )}
+        </AnimateOnScroll>
+
+        <div className="section3-prose">
+          {c.bridgeFlows.slice(1).map((p, i) => <p key={i}>{p}</p>)}
         </div>
 
         <h3 className="section3-h3">{c.sub3}</h3>
