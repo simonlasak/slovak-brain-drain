@@ -120,29 +120,54 @@ const EU_MEMBER_BOX: [[number, number], [number, number]] = [[-25, 34], [45, 72]
 const EU_CENTRE: [number, number] = [10, 52];
 
 /**
- * Padding in projected units between the frame and the outermost thing it must
- * hold. Small, because the frame is fitted to LAND as well as discs now, so the
- * margin is breathing room rather than the only thing preventing a clip.
+ * Padding in projected units between the frame and the outermost member land.
+ *
+ * Raised from 10 to 18 because 10 was not enough to stop a coastline READING as
+ * cut even when it was not: Cyprus sat about 10px inside the east edge and looked
+ * sliced. Nothing is clipped at either value; this is about apparent clearance.
  */
-const EU_MARGIN = 10;
+const EU_MARGIN = 18;
 
 /**
- * Target HEIGHT of the European frame in SVG user units, which equal CSS pixels
- * at the frame's design size, so MAX_R and the label font size mean what they say.
- *
- * Height rather than width, because height is the binding constraint. 435 is what
- * is left of a 900px viewport after the head (map top lands at 214), the gap, and
- * the strip, and it was arrived at by measuring the strip rather than by guessing:
- * the strip needs 215px, not the 170 the budget assumed, because its locator cell
- * holds a world map plus two paragraphs. The map gives up the difference so the
- * whole strip clears the fold. Width follows from the window's own aspect, 1.17.
- *
- * An earlier version solved for width and got this wrong in a way worth keeping a
- * note of: it fitted at a 1000-unit reference and let the measured ink box become
- * the viewBox, which came out 1032.8 units wide but rendered at 692px, so
- * everything scaled by 0.67 and MIN_R 2.4 drew at 1.6px.
+ * FIGURE WIDTH. Map and strip share this, so they share a left and right edge.
+ * The viewBox is authored in the same units, so 1 unit = 1 CSS pixel at full size
+ * and MAX_R, stroke widths and the SVG label size all mean what they say.
  */
-const EU_H = 435;
+const MAP_W = 900;
+
+/**
+ * MAP HEIGHT, and it is a budget outcome rather than a free choice.
+ *
+ * The figure must fit 900px in total including the title. Measured on the render,
+ * the rest of it costs: head 102, strip 230, foot 32, gaps 36 = 400. That leaves 500.
+ * 620 was asked for and does not fit: it lands the figure at about 1028, because the
+ * strip's locator cell needs 230 rather than the 170 the budget assumed.
+ *
+ * WHAT THIS COSTS, stated plainly. The tightest frame holding all 35 European
+ * destinations and their land has aspect 1.175, because Norway's north coast at
+ * 71N and Sicily set its height and nothing inside a 1 percent mass budget can
+ * move either. Forcing 900x500 means aspect 1.800, so about 35 percent of the
+ * width is beyond the tight box. That slack is the price of the shared edge and
+ * the height cap; it is not a fitting error. Making the map taller reduces it and
+ * pushes the figure past 900.
+ */
+const MAP_H = 500;
+
+/**
+ * How the horizontal slack is split, west versus east. Half each.
+ *
+ * Tried 0.34, biased east on the theory that slack spent over land looks less empty
+ * than slack spent over water. Wrong, on the render: 66 percent of 319 units pushed
+ * the frame into Iraq and Saudi Arabia, and a large empty LANDMASS reads as missing
+ * data in a proportional-symbol map, where empty ocean reads as nothing at all.
+ * Centred keeps the Middle East out of frame and puts the surplus in the Atlantic.
+ *
+ * No projection fixes this. Measured over the same 35 destinations, every candidate
+ * gives Europe essentially the same shape: LAEA 1.175, Albers 40/65 1.163, Albers
+ * 43/62 1.184, Lambert conformal 1.179. Europe is 1.17 wide-to-tall and the slack is
+ * a function of the target aspect alone.
+ */
+const EU_WEST_SHARE = 0.5;
 
 /**
  * World locator, cropped in latitude to -36..72.
@@ -162,23 +187,19 @@ const LOC_H = Math.round(LOC_W / 2.936);
 const ORIGIN: [number, number] = [19.7, 48.73];
 
 /**
- * Offset from Slovakia's centroid to the label's anchor, in projected units:
- * below and to the right.
+ * Half-width and half-height of the origin diamond, in projected units.
  *
- * From a grid search over the RENDERED layout, checking the label's measured box
- * and the leader segment against every disc. Straight down does not work: Hungary's
- * disc sits 31 units directly below Slovakia's centroid with under 1 unit of
- * horizontal offset, so a vertical leader of any useful length passes through it,
- * and a drop long enough to clear it (76) put the label in Croatia.
+ * The Cicmany diamond from 05-design.md, which is the one shape the design system
+ * allows and specifies for map markers: `M 0 -h L w 0 L 0 h L -w 0 Z`. Unfilled,
+ * no leader line, sitting on Slovakia's centroid.
  *
- * Pushed out from (44, 32) to (64, 44) after looking at the render. Geometric
- * clearance was never the problem: at (44, 32) the label box cleared every disc and
- * the leader cleared Hungary by 12.5 units, and it still read wrong, because the
- * leader's origin sat almost on Czechia's ring and the label's left edge almost
- * touched Hungary's disc. Proximity, not overlap. The extra distance plus the
- * outlined polygon below is what makes it a country label.
+ * This replaces an outlined polygon plus a leader plus a placed label, which went
+ * through three positions and still read as labelling a neighbour. The reason it
+ * kept failing is that a label needs an unambiguous anchor, and Slovakia has no
+ * disc to anchor to; a distinct mark at the point is the anchor. The word now lives
+ * in the key rather than on the map, so there is nothing left to collide.
  */
-const ORIGIN_OFFSET: [number, number] = [64, 44];
+const ORIGIN_R = 5.5;
 
 /** Single terracotta, --accent-primary. Area is the only quantitative channel. */
 const DISC_FILL = '#B83A1F';
@@ -207,26 +228,6 @@ interface Bubble {
   offBasis: boolean;
 }
 
-/**
- * The membership box as a closed LineString, for drawing its outline on the
- * locator. Not a Polygon: see the call site.
- */
-function windowOutline([[w, s], [e, n]]: [[number, number], [number, number]]) {
-  const coordinates: [number, number][] = [];
-  const along = (
-    from: [number, number], to: [number, number],
-  ) => {
-    for (let i = 0; i <= 30; i++) {
-      const t = i / 30;
-      coordinates.push([from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t]);
-    }
-  };
-  along([w, s], [e, s]);
-  along([e, s], [e, n]);
-  along([e, n], [w, n]);
-  along([w, n], [w, s]);
-  return { type: 'LineString' as const, coordinates } as any;
-}
 
 export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: DiasporaMapProps) {
   const locale = useLocale();
@@ -426,32 +427,45 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       return { x0, x1, y0, y1, w: x1 - x0, h: y1 - y0 };
     };
 
-    const target = EU_H - 2 * EU_MARGIN;
-    projection.fitExtent([[0, 0], [target, target]], seed);
+    projection.fitExtent([[0, 0], [MAP_H, MAP_H]], seed);
     if (!european.length || !memberLand.length) {
-      return { projection, path: geoPath(projection), viewBox: `0 0 ${EU_H} ${EU_H}` };
+      return { projection, path: geoPath(projection), viewBox: `0 0 ${MAP_W} ${MAP_H}` };
     }
-    // Converges to well under a pixel in a couple of passes: the relationship is
-    // close to affine, since only the radii are scale-invariant.
-    for (let i = 0; i < 8; i++) {
+
+    /**
+     * Solve the scale so the inflated ink box exactly fills the 900x520 frame in
+     * its binding dimension. Whichever of height or width/aspect is larger is the
+     * one that binds; for this window it is always height, but the max() keeps that
+     * an observation rather than an assumption.
+     *
+     * Iterated because the radii are fixed in output units while the geography
+     * scales, so the box is not a linear function of scale.
+     */
+    const A = MAP_W / MAP_H;
+    for (let i = 0; i < 10; i++) {
       const m = ink();
-      if (Math.abs(m.h - target) < 0.05) break;
-      projection.scale(projection.scale() * (target / m.h));
+      const need = Math.max(m.h + 2 * EU_MARGIN, (m.w + 2 * EU_MARGIN) / A);
+      if (Math.abs(need - MAP_H) < 0.05) break;
+      projection.scale(projection.scale() * (MAP_H / need));
     }
+
     const m = ink();
-    const vx = m.x0 - EU_MARGIN;
-    const vy = m.y0 - EU_MARGIN;
-    const vw = m.w + 2 * EU_MARGIN;
-    const vh = m.h + 2 * EU_MARGIN;
+    const w = m.w + 2 * EU_MARGIN;
+    // Vertically centred on the content. Horizontally, the slack goes mostly east.
+    const vy = (m.y0 + m.y1) / 2 - MAP_H / 2;
+    const vx = w < MAP_W
+      ? (m.x0 - EU_MARGIN) - (MAP_W - w) * EU_WEST_SHARE
+      : (m.x0 + m.x1) / 2 - MAP_W / 2;
     return {
       projection,
       path: geoPath(projection),
-      viewBox: `${vx} ${vy} ${vw} ${vh}`,
-      box: { x: vx, y: vy, w: vw, h: vh },
+      viewBox: `${vx} ${vy} ${MAP_W} ${MAP_H}`,
+      box: { x: vx, y: vy, w: MAP_W, h: MAP_H },
     };
   }, [memberLand, european, maxValue]);
 
   const fmt = (n: number) => Math.round(n).toLocaleString(locale === 'sk' ? 'sk-SK' : 'en');
+
 
   /** Feature by ISO3, for drawing a country's outline when it is active. */
   const featureByCode = useMemo(() => {
@@ -595,66 +609,16 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
   }
 
   /**
-   * Slovakia. A label with a leader tick to its centroid, placed BELOW Czechia's
-   * disc rather than beside it.
-   *
-   * Beside the disc it read as a label FOR the disc, which is exactly wrong: the
-   * disc there is Czechia's 113,773, and Slovakia is the origin, the one country
-   * on the map with no disc at all. Dropping it below the pile and tying it back
-   * with a tick makes it a country label. The tick ends short of the centroid so
-   * the line does not read as a pointer to a datum.
-   */
-  function OriginLabel({ projection, label }: { projection: any; label: string }) {
-    const p = projection(ORIGIN);
-    if (!p) return null;
-    const [x, y] = p;
-    const tx = x + ORIGIN_OFFSET[0];
-    const ty = y + ORIGIN_OFFSET[1];
-    // The leader runs from just outside the centroid dot to just above the
-    // label's cap line, so it touches neither.
-    const len = Math.hypot(tx - x, ty - y) || 1;
-    const ux = (tx - x) / len;
-    const uy = (ty - y) / len;
-    return (
-      <g aria-label={label}>
-        <line
-          x1={x + ux * 4} y1={y + uy * 4}
-          x2={tx - ux * 6} y2={ty - 12}
-          className="diaspora-origin-tick"
-        />
-        <text className="diaspora-origin-label" x={tx} y={ty} textAnchor="middle">
-          {label}
-        </text>
-      </g>
-    );
-  }
-
-  /**
-   * Slovakia's own outline, so the label has something to label.
-   *
-   * Slovakia is the one country in this frame with no disc, being the origin rather
-   * than a destination, and a label floating in the gap between Czechia's and
-   * Hungary's discs read as belonging to one of them. Outlining the country makes
-   * the referent unambiguous, and it reuses the treatment the locator already gives
-   * the United States rather than introducing a third point symbol.
-   *
-   * Drawn ON TOP of the discs. Czechia's 36-unit disc covers most of Slovakia, so
-   * underneath them only the eastern lobe showed and the outline could not do its
-   * job. A country-shaped outline is in no danger of being mistaken for a disc, and
-   * it is unfilled where it crosses one so the disc's area still reads.
-   */
-  /**
    * The active country's edges, drawn ABOVE the discs so the highlight is never
    * buried under a neighbour's mark. Active means hovered, or selected when nothing
    * is hovered, so a click leaves the outline in place after the cursor moves away.
    *
-   * Unfilled, for the same reason Slovakia's outline is: area is the quantitative
-   * channel, and tinting a country would sit on top of the disc whose area the
-   * reader is trying to judge.
+   * Unfilled: area is the quantitative channel, and tinting a country would sit on
+   * top of the disc whose area the reader is trying to judge.
    */
   function ActiveOutline({ projection, frame }: { projection: any; frame: Bubble[] }) {
     const code = tip?.b.code || selected;
-    if (!code || !geojson) return null;
+    if (!code) return null;
     if (!frame.some(b => b.code === code)) return null;
     const f = featureByCode.get(code);
     if (!f) return null;
@@ -663,13 +627,19 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
     return <path className="diaspora-active-shape" d={d} />;
   }
 
-  function OriginOutline({ projection }: { projection: any }) {
-    if (!geojson) return null;
-    const f = featureByCode.get('SVK');
-    if (!f) return null;
-    const d = geoPath(projection)(f);
-    if (!d) return null;
-    return <path className="diaspora-origin-shape" d={d} />;
+  /** Slovakia: the Cicmany diamond on its centroid. No leader, no label, no fill. */
+  function OriginDiamond({ projection, label }: { projection: any; label: string }) {
+    const p = projection(ORIGIN);
+    if (!p) return null;
+    const [x, y] = p;
+    const h = ORIGIN_R;
+    return (
+      <path
+        className="diaspora-origin-diamond"
+        d={`M ${x} ${y - h} L ${x + h} ${y} L ${x} ${y + h} L ${x - h} ${y} Z`}
+        aria-label={label}
+      />
+    );
   }
 
   const readout = (
@@ -719,12 +689,10 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
           Strip cell 1 locator + its caption + the US annotation, cell 2 readout,
           cell 3 disc scale + ring key. Source and About run full width beneath.
 
-          HEIGHT IS THE BINDING CONSTRAINT and it is in tension with a full-width
-          map. This window's aspect is 1.17, so a map spanning the 1032px content
-          column would be 881px tall and the strip below it would land near 1100 on
-          a 900px viewport, which is the below-the-fold defect again. The map is
-          therefore capped to EU_H and centred: it spans the column as a block, and
-          the drawing is as wide as the height budget allows. */}
+          ONE WIDTH. Head, map and strip are all MAP_W (900px) and centred, so they
+          share a left and right edge. The map is 900 x 520; see MAP_H for why 520
+          and not the 620 asked for, and for what the resulting horizontal slack
+          costs. */}
       <div ref={stageRef} className="diaspora-stage" onMouseLeave={clearTip}>
         <div className="diaspora-primary">
           <svg
@@ -734,16 +702,9 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
             role="img"
             aria-label={labels.title}
             preserveAspectRatio="xMidYMid meet"
-            /* Aspect and the width cap both come from the computed viewBox: the
-               frame is measured from land and discs at runtime, so there is no
-               constant to put in the stylesheet. max-width is the width the height
-               budget buys, so height never exceeds EU_H and nothing letterboxes. */
-            style={eu.box
-              ? {
-                aspectRatio: `${eu.box.w} / ${eu.box.h}`,
-                maxWidth: `${Math.round(EU_H * (eu.box.w / eu.box.h))}px`,
-              }
-              : undefined}
+            /* No inline sizing. The frame is now a fixed MAP_W x MAP_H window, so
+               the aspect ratio is a constant the stylesheet can hold, and the width
+               comes from the shared 900px figure width. */
             onMouseMove={e => handleFrameMove(e, european)}
             onClick={e => handleFrameClick(e, european)}
           >
@@ -790,8 +751,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                     ))}
                   </g>
                   <ActiveOutline projection={eu.projection} frame={european} />
-                  <OriginOutline projection={eu.projection} />
-                  <OriginLabel projection={eu.projection} label={labels.originLabel} />
+                  <OriginDiamond projection={eu.projection} label={labels.originLabel} />
                 </g>
               )}
           </svg>
@@ -835,19 +795,6 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                     );
                   })}
                 </g>
-                {/* The membership box, so the locator says where the primary
-                    figure is.
-
-                    A LineString, not a Polygon. As a Polygon this drew a dashed
-                    loop around most of the world: d3 reads ring winding to decide
-                    which side is the interior, and the wrong sense makes the box
-                    the complement of itself on the sphere. A LineString has no
-                    interior to get backwards. The edges are sampled rather than
-                    cornered because Natural Earth curves its meridians. */}
-                <path
-                  className="diaspora-window-outline"
-                  d={loc.path(windowOutline(EU_MEMBER_BOX)) || undefined}
-                />
                 <g>
                   {tail.map(b => (
                     <Disc key={b.code} b={b} projection={loc.projection} factor={locFactor} />
@@ -898,6 +845,17 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                   stroke={RING_STROKE} strokeWidth={1.8} />
               </svg>
               {labels.offBasisLabel}
+            </p>
+            {/* The origin diamond's key. It is a third mark, which cuts against the
+                two-convention rule, but Slovakia has to be identifiable and every
+                attempt at labelling it on the map read as labelling a neighbour.
+                Keyed here, the map stays uncluttered and the mark is unambiguous. */}
+            <p className="diaspora-legend-flag">
+              <svg className="diaspora-legend-mark" viewBox="0 0 20 20" aria-hidden="true">
+                <path d="M 10 3 L 17 10 L 10 17 L 3 10 Z" fill="none"
+                  stroke={RING_STROKE} strokeWidth={1.8} />
+              </svg>
+              {labels.originLabel}
             </p>
           </div>
         </div>

@@ -233,13 +233,13 @@ const en: Section3Content = {
       'The United Nations compiled this figure from foreign-citizenship data rather than place of birth, because that is what this country publishes. It is not directly comparable with the others.',
     imputedNote:
       'The United Nations produced this figure from a regional model rather than from any figure the destination published. It is the only one of the 51 on that basis.',
-    originLabel: 'Slovakia',
+    originLabel: 'Slovakia, the origin',
     locatorTitle: 'The rest of the world',
     // TRIMMED to a third-width cell: the counts and the Malta/Liechtenstein caveat
     // moved to the subtitle, so this says only what the frame itself cannot. The
     // US annotation below it is untouched. Canada is 15,511 of the 25,847, 60%.
     locatorNote:
-      'Same disc scale as the main frame. Canada, at 15,511, is 60 percent of the tail.',
+      'Same disc scale as the main frame. Canada is 15,511 of these.',
     // The absence IS the argument, so it is annotated rather than left blank.
     absentTitle: 'United States (outlined): no entry exists.',
     absentNote:

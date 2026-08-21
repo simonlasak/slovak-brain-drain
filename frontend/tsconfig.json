@@ -3,6 +3,13 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "jsxImportSource": "react",
+    // TS 6 deprecates baseUrl. Without this, tsc reports TS5101 and EXITS BEFORE
+    // TYPE-CHECKING, so `tsc --noEmit` silently passes on code that does not
+    // compile: it let a reference to a deleted constant reach the browser as a
+    // runtime ReferenceError that blanked the whole component. `paths` still needs
+    // baseUrl on this version, so the deprecation is acknowledged rather than
+    // worked around.
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
