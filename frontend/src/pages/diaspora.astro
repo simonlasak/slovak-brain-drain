@@ -111,6 +111,30 @@ import Section3App from '../components/Section3App';
     outline-offset: 2px;
   }
 
+  /* The whole country is the hit target, not just the disc. Fifteen of the
+     thirty-five discs sit at the 2.4-unit floor, so the mark alone was never a
+     realistic target. Countries with a figure get the pointer; the rest do not, so
+     the cursor itself tells you what is clickable. */
+  .diaspora-land-data { cursor: pointer; }
+
+  /* Hover and selection highlight: the active country's edges, drawn above the
+     discs so a neighbour's mark cannot bury it. Unfilled, because area is the
+     quantitative channel and a tint would sit over the disc being judged.
+
+     Tatra blue, NOT the dark stroke Slovakia's outline uses. They are different
+     claims: dark means "this is the origin, permanently", blue means "this is what
+     your cursor is on". Rendered in the same dark ink they read as one convention,
+     which is the confusion this figure has already been through once with the
+     solid and dashed rings. Blue is also what focus-visible uses here, so
+     interaction state has a single colour. */
+  .diaspora-active-shape {
+    fill: none;
+    stroke: var(--accent-secondary);
+    stroke-width: 2;
+    stroke-linejoin: round;
+    pointer-events: none;
+  }
+
   /* Slovakia: a label with a leader tick to its centroid, dropped below the
      Czechia-Austria-Hungary pile. Beside Czechia's disc it read as a label for
      that disc, which is the one reading that must not happen: Slovakia is the

@@ -453,6 +453,45 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
 
   const fmt = (n: number) => Math.round(n).toLocaleString(locale === 'sk' ? 'sk-SK' : 'en');
 
+  /** Feature by ISO3, for drawing a country's outline when it is active. */
+  const featureByCode = useMemo(() => {
+    const m = new Map<string, any>();
+    if (!geojson) return m;
+    for (const f of geojson.features) {
+      const iso = f.properties?.iso3;
+      if (iso) m.set(iso, f);
+    }
+    return m;
+  }, [geojson]);
+
+  /**
+   * What is under the pointer: read it off the event target rather than computing it.
+   *
+   * Every disc and every country path carries data-iso, so the browser's own hit
+   * testing answers the question, and it answers it against the geometry the reader
+   * can actually see. Disc-over-country priority comes free, because discs are
+   * painted above the land and so win the hit naturally.
+   *
+   * THIS REPLACED projection.invert + geoContains, which was wrong at locator scale.
+   * Exact spherical containment disagrees with the rasterised path by roughly the
+   * width of the feature: Australia's Cape York renders as a sliver of land a pixel
+   * or two wide, and a point the reader sees as inside it inverted to 142.1E 10.9S,
+   * which is the Torres Strait and correctly not in Australia. Countries were
+   * unhittable wherever they were narrower than their own rendering error. Reading
+   * the target cannot drift from the render, needs no tolerance fudge, and does no
+   * work per mousemove.
+   *
+   * The frame check matters: the locator draws every country, including European
+   * ones whose discs live in the other frame. Without it, hovering Germany on the
+   * locator would name a country with no mark under the cursor.
+   */
+  function resolveTarget(e: React.MouseEvent, frame: Bubble[]): Bubble | null {
+    const el = (e.target as Element | null)?.closest?.('[data-iso]') as Element | null;
+    const iso = el?.getAttribute('data-iso');
+    if (!iso) return null;
+    return frame.find(b => b.code === iso) || null;
+  }
+
   function showTip(e: { clientX: number; clientY: number }, b: Bubble) {
     const box = stageRef.current?.getBoundingClientRect();
     if (!box) return;
@@ -478,28 +517,23 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
    * Topmost-wins: the list is painted largest-first, so it is searched in reverse
    * to match what the reader can actually see and click.
    */
-  function handleFrameMove(
-    e: React.MouseEvent<SVGSVGElement>, frame: Bubble[], proj: any, factor = 1,
-  ) {
-    const svg = e.currentTarget;
-    const ctm = svg.getScreenCTM();
-    if (!ctm) return;
-    const pt = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
-    for (let i = frame.length - 1; i >= 0; i--) {
-      const b = frame[i];
-      const p = proj(b.lonLat);
-      if (!p) continue;
-      // Same radius the disc is drawn with, factor included, or the hit area and
-      // the mark disagree.
-      const r = radius(b.value) * factor;
-      const dx = pt.x - p[0];
-      const dy = pt.y - p[1];
-      if (dx * dx + dy * dy <= r * r) {
-        showTip(e, b);
-        return;
-      }
-    }
-    if (tip) clearTip();
+  function handleFrameMove(e: React.MouseEvent<SVGSVGElement>, frame: Bubble[]) {
+    const hit = resolveTarget(e, frame);
+    if (hit) showTip(e, hit);
+    else if (tip) clearTip();
+  }
+
+  /**
+   * Click resolves through the same function as hover, so the thing you clicked is
+   * always the thing the tooltip named. Clicking away from any country clears the
+   * selection, which makes the ocean the reset affordance.
+   *
+   * Handled at the root rather than on each disc: with both, a click on a disc would
+   * bubble and toggle twice, cancelling itself.
+   */
+  function handleFrameClick(e: React.MouseEvent<SVGSVGElement>, frame: Bubble[]) {
+    const hit = resolveTarget(e, frame);
+    setSelected(hit ? (hit.code === selected ? null : hit.code) : null);
   }
 
   // The remaining ways the cursor stops being where the tooltip says it is:
@@ -538,13 +572,24 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
         stroke={b.offBasis ? RING_STROKE : DISC_STROKE}
         strokeWidth={b.offBasis ? 1.4 : 0.6}
         className="diaspora-disc"
-        /* No onMouseMove/onMouseLeave here: the SVG root hit-tests instead, so
-           moving into ocean inside the same frame clears the tooltip. */
-        onClick={() => setSelected(b.code === selected ? null : b.code)}
+        data-iso={b.code}
+        /* No pointer handlers here. The SVG root hit-tests for both hover and click,
+           so moving into ocean inside the same frame clears the tooltip, and the
+           whole country is a target rather than just this circle. A click here still
+           bubbles to the root, which resolves it.
+
+           The disc stays the KEYBOARD affordance: a country polygon cannot carry a
+           sensible focus ring, and the discs give a predictable tab order. */
         tabIndex={0}
         role="button"
         aria-label={`${b.name}: ${fmt(b.value)} ${labels.tooltipUnit}`}
         onFocus={() => setSelected(b.code)}
+        onKeyDown={e => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setSelected(b.code === selected ? null : b.code);
+          }
+        }}
       />
     );
   }
@@ -598,9 +643,29 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
    * job. A country-shaped outline is in no danger of being mistaken for a disc, and
    * it is unfilled where it crosses one so the disc's area still reads.
    */
+  /**
+   * The active country's edges, drawn ABOVE the discs so the highlight is never
+   * buried under a neighbour's mark. Active means hovered, or selected when nothing
+   * is hovered, so a click leaves the outline in place after the cursor moves away.
+   *
+   * Unfilled, for the same reason Slovakia's outline is: area is the quantitative
+   * channel, and tinting a country would sit on top of the disc whose area the
+   * reader is trying to judge.
+   */
+  function ActiveOutline({ projection, frame }: { projection: any; frame: Bubble[] }) {
+    const code = tip?.b.code || selected;
+    if (!code || !geojson) return null;
+    if (!frame.some(b => b.code === code)) return null;
+    const f = featureByCode.get(code);
+    if (!f) return null;
+    const d = geoPath(projection)(f);
+    if (!d) return null;
+    return <path className="diaspora-active-shape" d={d} />;
+  }
+
   function OriginOutline({ projection }: { projection: any }) {
     if (!geojson) return null;
-    const f = geojson.features.find((x: any) => x.properties?.iso3 === 'SVK');
+    const f = featureByCode.get('SVK');
     if (!f) return null;
     const d = geoPath(projection)(f);
     if (!d) return null;
@@ -679,7 +744,8 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                 maxWidth: `${Math.round(EU_H * (eu.box.w / eu.box.h))}px`,
               }
               : undefined}
-            onMouseMove={e => handleFrameMove(e, european, eu.projection)}
+            onMouseMove={e => handleFrameMove(e, european)}
+            onClick={e => handleFrameClick(e, european)}
           >
               {eu.box && (
                 <>
@@ -705,6 +771,11 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                            edge. Non-members (Russia, North Africa) are expected to
                            be cut, the way any map window cuts them. */
                         data-iso={f.properties?.iso3}
+                        className={
+                          byCode.has(f.properties?.iso3)
+                            ? 'diaspora-land diaspora-land-data'
+                            : 'diaspora-land'
+                        }
                         d={eu.path(f) || undefined}
                         fill="#F4EFE3"
                         stroke="#D4A547"
@@ -718,6 +789,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                       <Disc key={b.code} b={b} projection={eu.projection} />
                     ))}
                   </g>
+                  <ActiveOutline projection={eu.projection} frame={european} />
                   <OriginOutline projection={eu.projection} />
                   <OriginLabel projection={eu.projection} label={labels.originLabel} />
                 </g>
@@ -736,7 +808,8 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                 className="diaspora-locator-svg"
                 role="img"
                 aria-label={labels.locatorTitle}
-                onMouseMove={e => handleFrameMove(e, tail, loc.projection, locFactor)}
+                onMouseMove={e => handleFrameMove(e, tail)}
+                onClick={e => handleFrameClick(e, tail)}
               >
                 <rect x={0} y={0} width={LOC_W} height={LOC_H} fill="#DCE9EE" />
                 <g>
@@ -749,6 +822,10 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                     return (
                       <path
                         key={iso || i}
+                        data-iso={iso}
+                        className={
+                          byCode.has(iso) ? 'diaspora-land diaspora-land-data' : 'diaspora-land'
+                        }
                         d={loc.path(f) || undefined}
                         fill="#F4EFE3"
                         stroke={isUS ? RING_STROKE : '#D4A547'}
@@ -776,6 +853,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                     <Disc key={b.code} b={b} projection={loc.projection} factor={locFactor} />
                   ))}
                 </g>
+                <ActiveOutline projection={loc.projection} frame={tail} />
               </svg>
               {/* HTML, not SVG text. The old version authored its line breaks by
                   hand in the content module and needed a mobile font-size
