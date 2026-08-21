@@ -85,21 +85,22 @@ import Section3App from '../components/Section3App';
     padding: 0 var(--space-6);
     display: flex;
     flex-direction: column;
-    gap: var(--space-5, 20px);
-  }
-  .diaspora-row1 {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 316px;
-    gap: var(--space-6);
-    align-items: start;
+    gap: var(--space-4);
   }
   .diaspora-primary { min-width: 0; }
   .diaspora-eu-svg {
     display: block;
     width: 100%;
     height: auto;
-    /* The viewBox is computed from the discs at runtime, so the aspect cannot be
-       hard-coded here. It is set inline from the same numbers. */
+    /* aspect-ratio and max-width are both set inline: the viewBox is measured from
+       land and discs at runtime, so neither is a constant. max-width is the width
+       the height budget buys, and margin-inline centres what is left over.
+
+       The leftover is the cost of the height cap. This window is 1.17 aspect, so a
+       map filling the 1032px column would be 881px tall and push the strip off a
+       900px viewport. Height was the binding constraint, so the map is capped and
+       centred instead. */
+    margin-inline: auto;
     background: var(--accent-secondary-light);
     border: 1px solid var(--border-subtle);
     border-radius: var(--radius-sm);
@@ -134,37 +135,54 @@ import Section3App from '../components/Section3App';
     stroke-width: 0.9;
     pointer-events: none;
   }
-  .diaspora-origin-dot {
-    fill: var(--text-primary);
+  /* Slovakia's outline: what the label actually labels. The gold country strokes
+     around it are 0.5 at 50% opacity, so 1.3 solid dark reads as deliberate
+     without becoming a third mark in the disc alphabet. Faint terracotta wash ties
+     it to the section's accent without competing with the discs' 0.72 fill. */
+  /* Unfilled: it sits above the discs, so any fill would mask the area of the disc
+     beneath it, and area is the one quantitative channel here. Stroke only. */
+  .diaspora-origin-shape {
+    fill: none;
+    stroke: var(--text-primary);
+    stroke-width: 1.4;
     pointer-events: none;
   }
 
-  /* ─── Row 2: the horizontal strip ────────────────────────────── */
-  /* Total, disc scale, ring key and About, in one band under both frames. Rules
-     between the three groups rather than boxes: this sits on cream, not over the
-     map, so it needs no surface of its own. */
+  /* ─── The strip: locator | readout | scale ───────────────────── */
+  /* Three cells directly under the map. Rules between them rather than boxes: this
+     sits on cream, not over the map, so it needs no surface of its own.
+
+     The locator cell is widest because it carries a map plus two paragraphs; the
+     readout and the scale need less. */
   .diaspora-strip {
     display: grid;
-    grid-template-columns: minmax(210px, auto) minmax(200px, auto) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.95fr) minmax(0, 0.9fr);
     align-items: start;
-    gap: var(--space-6);
+    gap: var(--space-5, 20px);
     padding-top: var(--space-4);
     border-top: 1px solid var(--border-subtle);
   }
   .diaspora-strip > * + * {
-    padding-left: var(--space-6);
+    padding-left: var(--space-5, 20px);
     border-left: 1px solid var(--border-subtle);
   }
-  .diaspora-strip-key {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-3);
-  }
 
-  /* The readout leads the strip. It is directly under the map it describes, so a
-     click has feedback within the same screen rather than a scroll away. */
+  /* The readout sits in the middle cell, directly under the map, so a click has
+     feedback on the same screen rather than a scroll away. It always renders: the
+     total when nothing is selected, the country when something is. An empty cell
+     in a three-way strip reads as broken. */
   .diaspora-readout { min-width: 0; }
+
+  /* Source and About, full width beneath the strip. */
+  .diaspora-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3) var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border-subtle);
+  }
   .diaspora-readout-eyebrow {
     font-family: var(--font-sans);
     font-size: 11px;
@@ -276,8 +294,14 @@ import Section3App from '../components/Section3App';
     display: block;
     width: 100%;
     height: auto;
-    /* Natural Earth 1's own aspect at this frame, 300/131. */
-    aspect-ratio: 300 / 131;
+    /* Natural Earth 1 cropped to lat -36..72, which is this frame's aspect. Kept
+       in sync with LOC_W / LOC_H in the component. */
+    aspect-ratio: 300 / 102;
+    /* Capped so the cell's total height clears the fold. At 330px the frame is
+       112px tall; letting it fill a 380px cell costs another 17px of the budget
+       for no legibility gain, since the tail discs are already well above their
+       floor. */
+    max-width: 330px;
     border: 1px solid var(--border-subtle);
     border-radius: 2px;
   }
@@ -289,13 +313,16 @@ import Section3App from '../components/Section3App';
     stroke-dasharray: 3 2;
     pointer-events: none;
   }
+  /* Tight leading and small margins: this cell carries a map and two paragraphs
+     inside the strip's height budget, and it is the element that decides whether
+     the strip clears the fold. */
   .diaspora-locator-note,
   .diaspora-absent {
     font-family: var(--font-sans);
     font-size: 11.5px;
-    line-height: 1.5;
+    line-height: 1.42;
     color: var(--text-tertiary);
-    margin: var(--space-2) 0 0 0;
+    margin: 6px 0 0 0;
   }
   /* HTML, not SVG text: it wraps, and it scales with the reader's type size
      rather than with the width of the frame. The old version authored its line
@@ -306,21 +333,7 @@ import Section3App from '../components/Section3App';
     color: var(--text-secondary);
   }
 
-  /* The locator column runs to the map's height: the caption, the US annotation
-     and the source line stack from the top and the source line is pushed to the
-     foot, so the column reads as a full-height sibling of the map rather than as
-     a short block floating at its top. stretch + flex is what does it; the column
-     has no background, so the extra space is simply cream. */
-  .diaspora-row1 { align-items: stretch; }
-  .diaspora-locator {
-    display: flex;
-    flex-direction: column;
-    min-width: 0;
-  }
-  .diaspora-locator .diaspora-src {
-    margin-top: auto;
-    padding-top: var(--space-4);
-  }
+  .diaspora-locator { min-width: 0; }
 
   /* Cursor-following tooltip, per 05-design.md: cream surface, subtle border,
      one floating shadow. Not the old dark panel. */
@@ -613,28 +626,35 @@ import Section3App from '../components/Section3App';
      the map, pushing the map 1038px down an 844px viewport and reintroducing the
      below-the-fold defect in a new place. */
   @media (max-width: 900px) {
-    .diaspora-row1 {
-      grid-template-columns: minmax(0, 1fr);
-      gap: var(--space-4);
-    }
+    /* One column, and the strip's cells reorder so the READOUT follows the map
+       directly: map, readout, scale, locator. Source order in the DOM is
+       locator, readout, scale, which is the desktop reading order left to right;
+       `order` re-sorts it here rather than duplicating markup.
+
+       The readout has to be adjacent to the map because it is the feedback for
+       tapping it. An earlier attempt at this breakpoint left other cells between
+       the two and pushed the map 1038px down an 844px viewport. */
     .diaspora-strip {
       grid-template-columns: minmax(0, 1fr);
       gap: var(--space-4);
     }
+    .diaspora-readout { order: 1; }
+    .diaspora-legend { order: 2; }
+    .diaspora-locator { order: 3; }
     /* Rules go horizontal when the strip stacks: a left border on a full-width
        row reads as an indent, not as a divider. */
     .diaspora-strip > * + * {
       padding-left: 0;
       border-left: none;
+    }
+    .diaspora-strip > .diaspora-legend,
+    .diaspora-strip > .diaspora-locator {
       padding-top: var(--space-4);
       border-top: 1px solid var(--border-subtle);
     }
-    .diaspora-strip-key {
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: var(--space-4);
-    }
+    /* The height cap is a desktop concern. Here the map should simply fill the
+       column, so the inline max-width is overridden. */
+    .diaspora-eu-svg { max-width: 100% !important; }
   }
 
   @media (max-width: 640px) {

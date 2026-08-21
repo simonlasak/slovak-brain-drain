@@ -27,15 +27,17 @@ import type { SourcePanel } from '../../content/internal';
  * a 2.2x squash. Greenland came out at width/height 2.67 against 1.94 on Natural
  * Earth, and the whole world at aspect 2.278 inside a 2:1 box. Lambert azimuthal
  * equal-area centred on 10E 52N is what Europe's own statistical standard
- * (EPSG:3035) uses, is equal-area without the polar squash inside this window,
- * and gives the window a natural aspect of 1.3926, which is where 760x546 comes
- * from. The locator uses Natural Earth 1 because a whole-world frame needs a
- * compromise projection and its Greenland is the less distorted of the two.
+ * (EPSG:3035) uses, and is equal-area without the polar squash inside this window.
+ * The window's aspect, 1.17, is measured from its own content, not chosen. The
+ * locator uses Natural Earth 1 because a whole-world frame needs a compromise
+ * projection and its Greenland is the less distorted of the two.
  *
- * PROJECTION DOES NOT AFFECT THE DISCS. A radius depends only on the value, so
- * the two frames share one absolute area scale and one legend serves both. Both
- * viewBoxes are authored at 1 unit = 1 CSS pixel at full size, so MAX_R means
- * the same apparent size in each. The projection affects only the land beneath.
+ * ONE DISC SCALE, MEASURED. A radius depends only on the value, so the projection
+ * never distorts a disc; but a radius is in the user units of whichever viewBox
+ * draws it, and the two viewBoxes render at different CSS widths. Equal radii are
+ * therefore NOT equal apparent size, which was a live bug once the frames stopped
+ * being the same width. `locFactor` measures both frames' pixels-per-user-unit and
+ * corrects the locator, so one legend genuinely serves both at any viewport.
  *
  * TWO SYMBOL CONVENTIONS, down from four. A disc, whose area is the count, and a
  * ring on that disc, meaning the figure is not a place-of-birth count. The ring
@@ -118,49 +120,65 @@ const EU_MEMBER_BOX: [[number, number], [number, number]] = [[-25, 34], [45, 72]
 const EU_CENTRE: [number, number] = [10, 52];
 
 /**
- * Padding in projected units between the outermost disc EDGE and the frame. The
- * viewBox is then computed from the discs' own bounding box, so the frame is the
- * smallest one that still holds all 35 with a margin. Fill ratio goes from 0.412
- * to 0.944. Edges are set by Portugal (west), Turkey (east), Iceland (north) and
- * Cyprus (south), which is why those four are the ones to check after any change
- * to MAX_R.
+ * Padding in projected units between the frame and the outermost thing it must
+ * hold. Small, because the frame is fitted to LAND as well as discs now, so the
+ * margin is breathing room rather than the only thing preventing a clip.
  */
-const EU_MARGIN = 14;
+const EU_MARGIN = 10;
 
 /**
- * Target width of the European frame in SVG user units, which must equal CSS
- * pixels at the frame's full rendered width for MAX_R and the label font size to
- * mean what they say.
+ * Target HEIGHT of the European frame in SVG user units, which equal CSS pixels
+ * at the frame's design size, so MAX_R and the label font size mean what they say.
  *
- * NOT arbitrary, and the first version of the disc-fitted frame got this wrong:
- * it fitted at a 1000-unit reference and then let the measured ink box become the
- * viewBox, which came out 1032.8 units wide but rendered at 692px. Everything
- * scaled by 0.67, so MIN_R 2.4 drew at 1.6px and the Slovakia label at 8.7px.
- * The projection scale is now solved so the finished viewBox is EU_W wide.
+ * Height rather than width, because height is the binding constraint. 435 is what
+ * is left of a 900px viewport after the head (map top lands at 214), the gap, and
+ * the strip, and it was arrived at by measuring the strip rather than by guessing:
+ * the strip needs 215px, not the 170 the budget assumed, because its locator cell
+ * holds a world map plus two paragraphs. The map gives up the difference so the
+ * whole strip clears the fold. Width follows from the window's own aspect, 1.17.
+ *
+ * An earlier version solved for width and got this wrong in a way worth keeping a
+ * note of: it fitted at a 1000-unit reference and let the measured ink box become
+ * the viewBox, which came out 1032.8 units wide but rendered at 692px, so
+ * everything scaled by 0.67 and MIN_R 2.4 drew at 1.6px.
  */
-const EU_W = 700;
+const EU_H = 435;
 
-/** World locator, sized to the rail. Aspect is Natural Earth 1's own, 2.298. */
+/**
+ * World locator, cropped in latitude to -36..72.
+ *
+ * Not the whole globe: the 14 destinations out here span -28.9 (South Africa) to
+ * 66.1 (Russia), so everything below -36 or above 72 is empty ocean and Arctic.
+ * Cropping takes the aspect from 2.316 to 2.936, which is 35px of height saved at
+ * a 380px cell width, and height is the constraint that decides whether the strip
+ * clears the fold. Both extremes keep 6 degrees of margin, and the United States
+ * (25..49) is well inside.
+ */
+const LOC_LAT: [number, number] = [-36, 72];
 const LOC_W = 300;
-const LOC_H = 131;
+const LOC_H = Math.round(LOC_W / 2.936);
 
 /** Slovakia, the origin. A text label with a leader tick, not a glyph. */
 const ORIGIN: [number, number] = [19.7, 48.73];
 
 /**
  * Offset from Slovakia's centroid to the label's anchor, in projected units:
- * below and slightly right.
+ * below and to the right.
  *
- * Both numbers come from a grid search over the RENDERED layout, checking the
- * label's measured box and the leader segment against every disc. Straight down
- * does not work: Hungary's disc sits 31 units directly below Slovakia's centroid
- * with under 1 unit of horizontal offset, so a vertical leader of any useful
- * length passes through it, and a drop long enough to clear it (76) put the label
- * in Croatia. Down-and-right at (44, 32) is the closest placement whose label box
- * and leader are both clear, and it keeps the label below the
- * Czechia-Austria-Hungary pile as intended.
+ * From a grid search over the RENDERED layout, checking the label's measured box
+ * and the leader segment against every disc. Straight down does not work: Hungary's
+ * disc sits 31 units directly below Slovakia's centroid with under 1 unit of
+ * horizontal offset, so a vertical leader of any useful length passes through it,
+ * and a drop long enough to clear it (76) put the label in Croatia.
+ *
+ * Pushed out from (44, 32) to (64, 44) after looking at the render. Geometric
+ * clearance was never the problem: at (44, 32) the label box cleared every disc and
+ * the leader cleared Hungary by 12.5 units, and it still read wrong, because the
+ * leader's origin sat almost on Czechia's ring and the label's left edge almost
+ * touched Hungary's disc. Proximity, not overlap. The extra distance plus the
+ * outlined polygon below is what makes it a country label.
  */
-const ORIGIN_OFFSET: [number, number] = [44, 32];
+const ORIGIN_OFFSET: [number, number] = [64, 44];
 
 /** Single terracotta, --accent-primary. Area is the only quantitative channel. */
 const DISC_FILL = '#B83A1F';
@@ -216,6 +234,46 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
   const [selected, setSelected] = useState<string | null>(null);
   const [tip, setTip] = useState<{ x: number; y: number; b: Bubble } | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
+  const euSvgRef = useRef<SVGSVGElement>(null);
+  const locSvgRef = useRef<SVGSVGElement>(null);
+
+  /**
+   * ONE DISC SCALE ACROSS BOTH FRAMES, MEASURED RATHER THAN ASSUMED.
+   *
+   * A radius is in the user units of whichever viewBox draws it, and the two
+   * viewBoxes are rendered at different CSS widths, so equal radii do NOT mean
+   * equal apparent size. That was a live bug: the locator's 300-unit viewBox
+   * rendered at 380px while Europe's 584-unit box rendered at 584px, so every
+   * locator disc was 27 percent larger than the same value in the main frame and
+   * the legend's "one basis" claim was false.
+   *
+   * This measures both frames' pixels-per-user-unit and gives the locator a
+   * correction factor, so a count is the same apparent size everywhere including
+   * the legend, at every viewport rather than only at the design width.
+   */
+  const [locFactor, setLocFactor] = useState(1);
+  useEffect(() => {
+    const measure = () => {
+      const e = euSvgRef.current;
+      const l = locSvgRef.current;
+      if (!e || !l) return;
+      const eBox = e.viewBox.baseVal;
+      const lBox = l.viewBox.baseVal;
+      const eW = e.getBoundingClientRect().width;
+      const lW = l.getBoundingClientRect().width;
+      if (!eBox.width || !lBox.width || !eW || !lW) return;
+      const euPerUnit = eW / eBox.width;
+      const locPerUnit = lW / lBox.width;
+      if (!locPerUnit) return;
+      const next = euPerUnit / locPerUnit;
+      setLocFactor(prev => (Math.abs(prev - next) > 0.005 ? next : prev));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (euSvgRef.current) ro.observe(euSvgRef.current);
+    if (locSvgRef.current) ro.observe(locSvgRef.current);
+    return () => ro.disconnect();
+  }, [geojson]);
 
   const byCode = useMemo(() => {
     const m = new Map<string, CountryDatum>();
@@ -235,10 +293,19 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       .catch(() => setGeojson(null));
   }, []);
 
-  // Locator: fitted to the whole feature collection.
+  // Locator: fitted to the cropped latitude band rather than to the whole feature
+  // collection, so the empty southern ocean and Arctic are not paid for in height.
   const loc = useMemo(() => {
     if (!geojson) return null;
-    const projection = geoNaturalEarth1().fitExtent([[2, 2], [LOC_W - 2, LOC_H - 2]], geojson);
+    const coordinates: [number, number][] = [];
+    for (let i = 0; i <= 90; i++) {
+      const t = i / 90;
+      coordinates.push([-180 + 360 * t, LOC_LAT[0]], [-180 + 360 * t, LOC_LAT[1]]);
+    }
+    const projection = geoNaturalEarth1().fitExtent(
+      [[2, 2], [LOC_W - 2, LOC_H - 2]],
+      { type: 'MultiPoint', coordinates } as any,
+    );
     return { projection, path: geoPath(projection) };
   }, [geojson]);
 
@@ -289,21 +356,66 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
    *
    * Depends on `european` and on the radius scale, so it has to come after them.
    */
+  /**
+   * Every member country's LAND, in lon/lat, clipped to the membership box.
+   *
+   * The clip is what makes fitting to land workable without per-country special
+   * cases. France's polygon reaches French Guiana and Reunion, and Norway's
+   * reaches Svalbard at 81N; fitted literally, either would blow the frame open.
+   * The membership box already defines what counts as European for this figure,
+   * so reusing it as the clip removes exactly the territory that is out of scope.
+   */
+  const memberLand = useMemo<[number, number][]>(() => {
+    if (!geojson || !european.length) return [];
+    const [[bw, bs], [be, bn]] = EU_MEMBER_BOX;
+    const codes = new Set(european.map(b => b.code));
+    const out: [number, number][] = [];
+    const walk = (c: any) => {
+      if (typeof c[0] === 'number') {
+        if (c[0] >= bw && c[0] <= be && c[1] >= bs && c[1] <= bn) out.push([c[0], c[1]]);
+      } else for (const n of c) walk(n);
+    };
+    for (const f of geojson.features) {
+      if (!codes.has(f.properties?.iso3)) continue;
+      walk(f.geometry.coordinates);
+    }
+    return out;
+  }, [geojson, european]);
+
+  /**
+   * Europe: LAEA on EPSG:3035's centre, with the viewBox measured from the
+   * rendered content rather than from a lon/lat box.
+   *
+   * Fitted to member LAND as well as the discs. Fitting to discs alone was tight
+   * enough to slice coastlines mid-shape, which reads as a rendering fault rather
+   * than as a map window: measured at the vertex level, Finland overshot the north
+   * edge by 51 units, Turkey the east by 138, Iceland 23, Sweden 20, Crete 17 and
+   * Portugal 10. Including the land removes all of them at a cost of only 0.07 in
+   * aspect, and it is why EU_MARGIN can come down from 14 to 10.
+   */
   const eu = useMemo(() => {
     const projection = geoAzimuthalEqualArea().rotate([-EU_CENTRE[0], -EU_CENTRE[1]]);
-    const cloud = {
+    const seed = {
       type: 'MultiPoint',
-      coordinates: european.length ? european.map(b => b.lonLat) : [[-25, 34], [45, 72]],
+      coordinates: memberLand.length
+        ? (memberLand as any[]).concat(european.map(b => b.lonLat))
+        : [EU_MEMBER_BOX[0], EU_MEMBER_BOX[1]],
     } as any;
 
     /**
-     * Measures the disc ink box at a given projection scale. The discs' radii are
-     * fixed in output units while the centroid spread scales, so the ink box is
-     * not a linear function of scale and the target width has to be solved for
-     * rather than computed in one step.
+     * The ink box: every member land vertex, plus every disc's full extent. Radii
+     * are fixed in output units while the geography scales with the projection, so
+     * the box is not a linear function of scale and the target has to be solved
+     * for rather than computed in one step.
      */
     const ink = () => {
       let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
+      for (const c of memberLand) {
+        const p = projection(c);
+        if (!p) continue;
+        x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]);
+        y0 = Math.min(y0, p[1]); y1 = Math.max(y1, p[1]);
+      }
       for (const b of european) {
         const p = projection(b.lonLat);
         if (!p) continue;
@@ -314,17 +426,17 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       return { x0, x1, y0, y1, w: x1 - x0, h: y1 - y0 };
     };
 
-    const target = EU_W - 2 * EU_MARGIN;
-    projection.fitExtent([[0, 0], [target, target]], cloud);
-    if (!european.length) {
-      return { projection, path: geoPath(projection), viewBox: `0 0 ${EU_W} ${EU_W}` };
+    const target = EU_H - 2 * EU_MARGIN;
+    projection.fitExtent([[0, 0], [target, target]], seed);
+    if (!european.length || !memberLand.length) {
+      return { projection, path: geoPath(projection), viewBox: `0 0 ${EU_H} ${EU_H}` };
     }
-    // Two Newton-ish passes on the scale converge to well under a pixel: the
-    // relationship is close to affine, since only the radii are scale-invariant.
-    for (let i = 0; i < 6; i++) {
+    // Converges to well under a pixel in a couple of passes: the relationship is
+    // close to affine, since only the radii are scale-invariant.
+    for (let i = 0; i < 8; i++) {
       const m = ink();
-      if (Math.abs(m.w - target) < 0.05) break;
-      projection.scale(projection.scale() * (target / m.w));
+      if (Math.abs(m.h - target) < 0.05) break;
+      projection.scale(projection.scale() * (target / m.h));
     }
     const m = ink();
     const vx = m.x0 - EU_MARGIN;
@@ -337,7 +449,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       viewBox: `${vx} ${vy} ${vw} ${vh}`,
       box: { x: vx, y: vy, w: vw, h: vh },
     };
-  }, [european, maxValue]);
+  }, [memberLand, european, maxValue]);
 
   const fmt = (n: number) => Math.round(n).toLocaleString(locale === 'sk' ? 'sk-SK' : 'en');
 
@@ -366,7 +478,9 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
    * Topmost-wins: the list is painted largest-first, so it is searched in reverse
    * to match what the reader can actually see and click.
    */
-  function handleFrameMove(e: React.MouseEvent<SVGSVGElement>, frame: Bubble[], proj: any) {
+  function handleFrameMove(
+    e: React.MouseEvent<SVGSVGElement>, frame: Bubble[], proj: any, factor = 1,
+  ) {
     const svg = e.currentTarget;
     const ctm = svg.getScreenCTM();
     if (!ctm) return;
@@ -375,7 +489,9 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
       const b = frame[i];
       const p = proj(b.lonLat);
       if (!p) continue;
-      const r = radius(b.value);
+      // Same radius the disc is drawn with, factor included, or the hit area and
+      // the mark disagree.
+      const r = radius(b.value) * factor;
       const dx = pt.x - p[0];
       const dy = pt.y - p[1];
       if (dx * dx + dy * dy <= r * r) {
@@ -403,11 +519,14 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
   const selectedBubble = selected ? bubbles.find(b => b.code === selected) : undefined;
   const selectedName = selectedBubble?.name || selected;
 
-  /** One disc. Identical radius scale in both frames. */
-  function Disc({ b, projection }: { b: Bubble; projection: any }) {
+  /**
+   * One disc. `factor` corrects for the frame's pixels-per-user-unit so that a
+   * given count is the same apparent size in both frames and in the legend.
+   */
+  function Disc({ b, projection, factor = 1 }: { b: Bubble; projection: any; factor?: number }) {
     const p = projection(b.lonLat);
     if (!p) return null;
-    const r = radius(b.value);
+    const r = radius(b.value) * factor;
     const isSelected = selected === b.code;
     return (
       <circle
@@ -454,16 +573,38 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
     return (
       <g aria-label={label}>
         <line
-          x1={x + ux * 3.5} y1={y + uy * 3.5}
-          x2={tx - ux * 4} y2={ty - 12}
+          x1={x + ux * 4} y1={y + uy * 4}
+          x2={tx - ux * 6} y2={ty - 12}
           className="diaspora-origin-tick"
         />
-        <circle cx={x} cy={y} r={1.7} className="diaspora-origin-dot" />
         <text className="diaspora-origin-label" x={tx} y={ty} textAnchor="middle">
           {label}
         </text>
       </g>
     );
+  }
+
+  /**
+   * Slovakia's own outline, so the label has something to label.
+   *
+   * Slovakia is the one country in this frame with no disc, being the origin rather
+   * than a destination, and a label floating in the gap between Czechia's and
+   * Hungary's discs read as belonging to one of them. Outlining the country makes
+   * the referent unambiguous, and it reuses the treatment the locator already gives
+   * the United States rather than introducing a third point symbol.
+   *
+   * Drawn ON TOP of the discs. Czechia's 36-unit disc covers most of Slovakia, so
+   * underneath them only the eastern lobe showed and the outline could not do its
+   * job. A country-shaped outline is in no danger of being mistaken for a disc, and
+   * it is unfilled where it crosses one so the disc's area still reads.
+   */
+  function OriginOutline({ projection }: { projection: any }) {
+    if (!geojson) return null;
+    const f = geojson.features.find((x: any) => x.properties?.iso3 === 'SVK');
+    if (!f) return null;
+    const d = geoPath(projection)(f);
+    if (!d) return null;
+    return <path className="diaspora-origin-shape" d={d} />;
   }
 
   const readout = (
@@ -509,27 +650,37 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
         <p className="diaspora-subtitle">{labels.subtitle}</p>
       </figcaption>
 
-      {/* TWO ROWS.
-          Row 1: Europe left, locator column right (caption, US annotation, source).
-          Row 2: a full-width strip carrying readout, disc scale, ring key, About.
+      {/* Map, then a three-cell strip, then a full-width footer.
+          Strip cell 1 locator + its caption + the US annotation, cell 2 readout,
+          cell 3 disc scale + ring key. Source and About run full width beneath.
 
-          The strip is below both, so nothing in it competes with the map for
-          horizontal space and the map gets the width it needs to be legible. */}
+          HEIGHT IS THE BINDING CONSTRAINT and it is in tension with a full-width
+          map. This window's aspect is 1.17, so a map spanning the 1032px content
+          column would be 881px tall and the strip below it would land near 1100 on
+          a 900px viewport, which is the below-the-fold defect again. The map is
+          therefore capped to EU_H and centred: it spans the column as a block, and
+          the drawing is as wide as the height budget allows. */}
       <div ref={stageRef} className="diaspora-stage" onMouseLeave={clearTip}>
-        <div className="diaspora-row1">
-          <div className="diaspora-primary">
-            <svg
-              className="diaspora-eu-svg"
-              viewBox={eu.viewBox}
-              role="img"
-              aria-label={labels.title}
-              preserveAspectRatio="xMidYMid meet"
-              /* Aspect comes from the computed viewBox, not from CSS: the frame is
-                 measured from the discs at runtime, so there is no constant to
-                 put in the stylesheet. */
-              style={eu.box ? { aspectRatio: `${eu.box.w} / ${eu.box.h}` } : undefined}
-              onMouseMove={e => handleFrameMove(e, european, eu.projection)}
-            >
+        <div className="diaspora-primary">
+          <svg
+            ref={euSvgRef}
+            className="diaspora-eu-svg"
+            viewBox={eu.viewBox}
+            role="img"
+            aria-label={labels.title}
+            preserveAspectRatio="xMidYMid meet"
+            /* Aspect and the width cap both come from the computed viewBox: the
+               frame is measured from land and discs at runtime, so there is no
+               constant to put in the stylesheet. max-width is the width the height
+               budget buys, so height never exceeds EU_H and nothing letterboxes. */
+            style={eu.box
+              ? {
+                aspectRatio: `${eu.box.w} / ${eu.box.h}`,
+                maxWidth: `${Math.round(EU_H * (eu.box.w / eu.box.h))}px`,
+              }
+              : undefined}
+            onMouseMove={e => handleFrameMove(e, european, eu.projection)}
+          >
               {eu.box && (
                 <>
                   <defs>
@@ -549,6 +700,11 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                     {geojson.features.map((f: any, i: number) => (
                       <path
                         key={f.properties?.iso3 || i}
+                        /* data-iso so the frame-edge assertion is checkable against
+                           the render: no MEMBER destination's land may cross an
+                           edge. Non-members (Russia, North Africa) are expected to
+                           be cut, the way any map window cuts them. */
+                        data-iso={f.properties?.iso3}
                         d={eu.path(f) || undefined}
                         fill="#F4EFE3"
                         stroke="#D4A547"
@@ -562,21 +718,25 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                       <Disc key={b.code} b={b} projection={eu.projection} />
                     ))}
                   </g>
+                  <OriginOutline projection={eu.projection} />
                   <OriginLabel projection={eu.projection} label={labels.originLabel} />
                 </g>
               )}
-            </svg>
-          </div>
+          </svg>
+        </div>
 
+        {/* THE STRIP: locator | readout | scale + ring key. */}
+        <div className="diaspora-strip">
           {loc && geojson && (
             <div className="diaspora-locator">
               <p className="diaspora-locator-title">{labels.locatorTitle}</p>
               <svg
+                ref={locSvgRef}
                 viewBox={`0 0 ${LOC_W} ${LOC_H}`}
                 className="diaspora-locator-svg"
                 role="img"
                 aria-label={labels.locatorTitle}
-                onMouseMove={e => handleFrameMove(e, tail, loc.projection)}
+                onMouseMove={e => handleFrameMove(e, tail, loc.projection, locFactor)}
               >
                 <rect x={0} y={0} width={LOC_W} height={LOC_H} fill="#DCE9EE" />
                 <g>
@@ -613,7 +773,7 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                 />
                 <g>
                   {tail.map(b => (
-                    <Disc key={b.code} b={b} projection={loc.projection} />
+                    <Disc key={b.code} b={b} projection={loc.projection} factor={locFactor} />
                   ))}
                 </g>
               </svg>
@@ -626,13 +786,9 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                 <span className="diaspora-absent-title">{labels.absentTitle}</span>{' '}
                 {labels.absentNote}
               </p>
-              <p className="diaspora-src">{labels.srcLine}</p>
             </div>
           )}
-        </div>
 
-        {/* Row 2: one horizontal strip, full width under both frames. */}
-        <div className="diaspora-strip">
           {readout}
 
           <div className="diaspora-legend">
@@ -656,9 +812,6 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
                 );
               })}
             </div>
-          </div>
-
-          <div className="diaspora-strip-key">
             {/* Swatch is inline SVG, drawn the way the map draws it. A CSS border
                 on a circle this small does not survive. */}
             <p className="diaspora-legend-flag">
@@ -668,8 +821,13 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
               </svg>
               {labels.offBasisLabel}
             </p>
-            <AboutData label={aboutLabel} panel={sourcePanel} />
           </div>
+        </div>
+
+        {/* Source and About, full width beneath the strip. */}
+        <div className="diaspora-foot">
+          <p className="diaspora-src">{labels.srcLine}</p>
+          <AboutData label={aboutLabel} panel={sourcePanel} />
         </div>
 
         {tip && (

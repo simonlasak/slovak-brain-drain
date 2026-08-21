@@ -213,29 +213,33 @@ const en: Section3Content = {
     // bridge 1 gives the reader "47 birth, 1 imputed, 3 citizenship" and a
     // subtitle saying only "4 are not" reads as a different claim. One ring, two
     // reasons, both named.
+    // SIXTH FIX, and it now carries the destination split rather than the ring
+    // split, which has moved to the key in the strip. One line, because the fold
+    // budget depends on it: at 1032px and 14px this is about 145 characters.
+    // 51 = 35 + 14 + 2 and 419,651 = 393,444 + 25,847 + 360, both verified.
     subtitle:
-      'One disc per destination, area proportional to the count. Ringed: the 3 counted as foreign citizens and the 1 modelled, not by birthplace.',
+      '51 destinations: 35 here (393,444), 14 on the locator (25,847), Malta and Liechtenstein (360) on neither, lacking polygons at this resolution.',
     year: '2020',
     totalLabel: 'Total counted across 51 destinations',
     tooltipUnit: 'people',
     resetLabel: 'Clear selection',
     noData: 'No figure recorded for this country',
     legendTitle: 'Disc area = people counted',
-    offBasisLabel: 'Not a place-of-birth count',
+    // Carries the 3 + 1 split, which used to sit in the subtitle. Naming both
+    // reasons here is what stops the one-ring simplification from appearing to
+    // contradict bridge 1's "47 birth, 1 imputed, 3 citizenship".
+    offBasisLabel: 'Not a place-of-birth count: 3 counted as foreign citizens, 1 modelled',
     citizenBasisNote:
       'The United Nations compiled this figure from foreign-citizenship data rather than place of birth, because that is what this country publishes. It is not directly comparable with the others.',
     imputedNote:
       'The United Nations produced this figure from a regional model rather than from any figure the destination published. It is the only one of the 51 on that basis.',
     originLabel: 'Slovakia',
     locatorTitle: 'The rest of the world',
-    // CORRECTED. The previous note said "the 16 destinations outside the European
-    // frame", which was wrong twice: Malta (305) and Liechtenstein (55) are inside
-    // the European box, and they are missing from BOTH frames because neither has a
-    // polygon at this boundary resolution, not because they are outside Europe.
-    // 51 = 35 drawn in Europe + 14 drawn here + 2 drawn nowhere.
-    // 419,651 = 393,444 + 25,847 + 360. Canada is 15,511, 60 percent of this frame.
+    // TRIMMED to a third-width cell: the counts and the Malta/Liechtenstein caveat
+    // moved to the subtitle, so this says only what the frame itself cannot. The
+    // US annotation below it is untouched. Canada is 15,511 of the 25,847, 60%.
     locatorNote:
-      'The main frame holds 35 destinations and 93.8 percent of the counted total. The 14 drawn here hold 25,847 people, 6.2 percent, of which Canada is 15,511. Same disc scale as the main frame. Malta and Liechtenstein have data but no polygon at this resolution, so they appear on neither frame.',
+      'Same disc scale as the main frame. Canada, at 15,511, is 60 percent of the tail.',
     // The absence IS the argument, so it is annotated rather than left blank.
     absentTitle: 'United States (outlined): no entry exists.',
     absentNote:
