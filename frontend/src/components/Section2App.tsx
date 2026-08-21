@@ -54,7 +54,7 @@ function Section2App() {
             AND source = 'csu_CIZ003T003'
             AND metric = 'stock'
           ORDER BY year, cz_geo_code
-        `) as RegionRow[];
+        `) as unknown as RegionRow[];
         setRegionData(regionRows);
 
         const years = [...new Set(regionRows.map(r => r.year))].sort((a, b) => a - b);
@@ -72,7 +72,7 @@ function Section2App() {
               OR (pathway = 'student' AND field_or_sector = 'ED5-8' AND metric = 'students_enrolled')
             )
           ORDER BY year, pathway
-        `) as StockRow[];
+        `) as unknown as StockRow[];
 
         // The only SUM in this section, so it is the only query where an
         // unconstrained dimension could double-count. age_bracket and education
@@ -91,7 +91,7 @@ function Section2App() {
             AND age_bracket = 'all'
             AND education = 'all'
             AND employment_status IN ('employed', 'self_employed')
-        `) as StockRow[];
+        `) as unknown as StockRow[];
 
         const hasLabour2024 = stockRows.some(r => r.pathway === 'labour' && r.year === 2024);
         const allStock = hasLabour2024
@@ -108,7 +108,7 @@ function Section2App() {
             AND field_or_sector IN ('ED6', 'ED7', 'ED8')
             AND year BETWEEN 2013 AND 2024
           ORDER BY year, level
-        `) as StudentRow[];
+        `) as unknown as StudentRow[];
         setStudentData(studentRows);
 
       } catch (e: any) {

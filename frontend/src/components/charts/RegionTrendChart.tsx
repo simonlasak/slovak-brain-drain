@@ -251,7 +251,7 @@ export function RegionTrendChart({ animated = true }: { animated?: boolean }) {
           AND education = 'all'
           AND sex = 'all'
         ORDER BY year
-      `)) as Row[];
+      `)) as unknown as Row[];
 
       const baselines: Record<string, number> = {};
       for (const r of REGIONS) {

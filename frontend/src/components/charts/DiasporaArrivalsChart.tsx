@@ -192,6 +192,14 @@ function Chart({ series, labels, width, locale }: Props & { width: number; local
           );
         })}
 
+        {/* Axis label. The ticks read "5k", "10k", which needs a unit somewhere;
+            horizontal at the top of the axis rather than rotated, because a rotated
+            label costs more left margin than the words are worth. */}
+        <text x={0} y={-1} textAnchor="start" fontSize={10}
+          fontFamily="var(--font-sans)" fill="var(--text-tertiary)">
+          {labels.yAxis}
+        </text>
+
         <AxisLeft
           scale={yScale}
           numTicks={4}

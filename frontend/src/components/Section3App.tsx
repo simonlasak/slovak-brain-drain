@@ -3,6 +3,8 @@ import { query, registerParquet } from '../lib/db';
 import { DiasporaMap } from './charts/DiasporaMap';
 import { DiasporaRankedChart } from './charts/DiasporaRankedChart';
 import { DiasporaArrivalsChart } from './charts/DiasporaArrivalsChart';
+import { DiasporaBasisChart } from './charts/DiasporaBasisChart';
+import type { BasisRow } from './charts/DiasporaBasisChart';
 import type { ArrivalsSeries } from './charts/DiasporaArrivalsChart';
 import { SectionEyebrow } from './charts/SectionEyebrow';
 import { StatCallout } from './charts/StatCallout';
@@ -30,6 +32,9 @@ const FLOW_Y0 = 2008;
 const FLOW_Y1 = 2023;
 const FLOW_CODES = ['DEU', 'CZE', 'AUT'];
 
+/** The two stock bases compared under sub2, both on the 2020 snapshot. */
+const CITIZEN_SOURCE = 'eurostat_migr_pop1ctz';
+
 interface StockRow { code: string; year: number; value: number; data_type: string }
 
 function Section3App() {
@@ -44,6 +49,7 @@ function Section3App() {
   >([]);
   const [total, setTotal] = useState(0);
   const [arrivals, setArrivals] = useState<ArrivalsSeries[]>([]);
+  const [basis, setBasis] = useState<BasisRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -117,6 +123,36 @@ function Section3App() {
             };
           })
         );
+        // Born against citizen, 2020: two different QUANTITIES on the same snapshot,
+        // inner-joined so only destinations reporting both appear. Never summed with
+        // each other for the same reason the arrivals series is kept apart.
+        const citizenRows = await query(`
+          SELECT destination_iso3 AS code, value
+          FROM 's3.parquet'
+          WHERE metric = 'stock'
+            AND source = '${CITIZEN_SOURCE}'
+            AND slovak_def = 'citizen'
+            AND sex = 'all'
+            AND age_bracket = 'all'
+            AND education = 'all'
+            AND year = ${SNAPSHOT_YEAR}
+        `) as unknown as { code: string; value: number }[];
+
+        const citizenByCode = new Map<string, number>();
+        for (const r of citizenRows) citizenByCode.set(r.code, Number(r.value));
+
+        setBasis(
+          snapshot
+            .filter(d => citizenByCode.has(d.code))
+            .map(d => ({
+              code: d.code,
+              name: countryName(d.code, locale),
+              born: d.value,
+              citizen: citizenByCode.get(d.code)!,
+            }))
+            .sort((a, b) => b.born - a.born)
+        );
+
         // Annual arrivals: a FLOW on the citizenship definition. Queried
         // separately and never joined to the stock rows, because adding or netting
         // the two would mix definitions.
@@ -209,6 +245,23 @@ function Section3App() {
           )}
         </AnimateOnScroll>
 
+        {/* The growth view sits with the absolute one rather than under sub2. They
+            are two modes of the same twelve destinations, which is why the component
+            takes a mode prop, and the growth panel's own caveat says to read it
+            against the absolute figures. Under sub2 it was answering a heading about
+            counting the same people twice, which it does not do. */}
+        <AnimateOnScroll>
+          {() => (
+            <div className="section3-chart-wide">
+              <DiasporaRankedChart data={ranked} mode="growth" />
+              <div className="chart-caption-row">
+                <p className="section3-caption">{c.captionGrowth}</p>
+                <AboutData label={c.aboutLabel} panel={c.sources.growth} />
+              </div>
+            </div>
+          )}
+        </AnimateOnScroll>
+
         <div className="section3-prose">
           {c.bridge1.map((p, i) => <p key={i}>{p}</p>)}
         </div>
@@ -220,10 +273,10 @@ function Section3App() {
         <AnimateOnScroll>
           {() => (
             <div className="section3-chart-wide">
-              <DiasporaRankedChart data={ranked} mode="growth" />
+              <DiasporaBasisChart rows={basis} labels={c.basis} />
               <div className="chart-caption-row">
                 <p className="section3-caption">{c.caption2}</p>
-                <AboutData label={c.aboutLabel} panel={c.sources.growth} />
+                <AboutData label={c.aboutLabel} panel={c.sources.basis} />
               </div>
             </div>
           )}

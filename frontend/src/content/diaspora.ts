@@ -32,9 +32,20 @@ export interface Section3Content {
   bridge1: string[];
   callout2: { value: string; label: string };
 
+  /** Caption for the 1990-2020 growth chart, which sits with the absolute one. */
+  captionGrowth: string;
+
   sub2: string;
   caption2: string;
   bridge2: string[];
+  /** Labels rendered inside the born-against-citizen chart. */
+  basis: {
+    bornLabel: string;
+    citizenLabel: string;
+    divergenceLabel: string;
+    tableToggle: string;
+    tableCountry: string;
+  };
 
   /** The annual-arrivals chart: a FLOW, and on the citizenship definition. */
   subFlows: string;
@@ -92,6 +103,7 @@ export interface Section3Content {
     map: SourcePanel;
     ranked: SourcePanel;
     growth: SourcePanel;
+    basis: SourcePanel;
     trend: SourcePanel;
   };
 
@@ -151,14 +163,27 @@ const en: Section3Content = {
   callout2: { value: '25', label: 'Destinations reporting both a Slovak-born and a Slovak-citizen count for 2020' },
 
   sub2: 'The same people, counted twice',
-  // CORRECTED. This read "Slovak-born against Slovak citizens, 2020, for the 25
-  // destinations reporting both", sourced to UN DESA plus Eurostat. That describes a
-  // chart this section does not contain: the figure underneath is percent change
-  // 1990 to 2020 for 12 destinations, from UN DESA alone, which is what the About
-  // panel beside it has always said. The born-against-citizen comparison the old
-  // caption promised is still unbuilt; bridge 1 and bridge 2 carry it in prose.
+  basis: {
+    bornLabel: 'Born in Slovakia',
+    citizenLabel: 'Slovak citizens',
+    divergenceLabel: 'Divergence',
+    tableToggle: 'Show the figures as a table',
+    tableCountry: 'Destination',
+  },
+  // This caption used to sit under the growth chart while describing a
+  // born-against-citizen chart that did not exist. The chart now exists, so the two
+  // are separate: captionGrowth belongs to the growth chart, which has moved up beside
+  // the absolute one it is meant to be read against, and caption2 describes the figure
+  // sub2's heading has always promised.
+  captionGrowth:
+    'The same 12 destinations, as percent change 1990 to 2020. Log axis: the range runs from +62 percent to +62,883 percent, so a linear one would render every bar but Norway’s as a hairline. src: UN DESA bilateral migrant stock, 2020 revision.',
+  // Verified against the parquet: 25 destinations report both for 2020; born 305,669
+  // against citizen 297,234; excluding Czechia born exceeds citizen by 15,954 while
+  // Czechia runs 7,519 the other way; Netherlands 4.1x, Hungary 0.50x, Lithuania 0.28x.
+  // Divergence is a share of the BORN figure, the denominator bridge 1 uses for both
+  // its 6.6 percent and its eight percent.
   caption2:
-    'Percent change in each destination’s Slovak-born population, 1990 to 2020, for the 12 largest by 2020 size. Log axis: the range runs from +62 percent to +62,883 percent. src: UN DESA bilateral migrant stock, 2020 revision.',
+    'Slovak-born residents against Slovak citizens, 2020, for the 25 destinations that report both. Log axis, so the length of each rule is the ratio between the two counts rather than their difference; the figure at the right is the divergence as a share of the birthplace count. The totals differ by under three percent, 305,669 against 297,234, and that is a net of country-level gaps running both ways. src: UN DESA bilateral migrant stock, 2020 revision; Eurostat migr_pop1ctz.',
   // APPROVED 2026-07-31 after the Hungary residence fork was resolved. Windows:
   // FR series starts 2004, HU 2002, both accumulated to end-2019 against a
   // 1 Jan 2020 stock. FR 1,248/1,561 = 80%. HU 3,441/10,399 = 33%, residue
@@ -311,6 +336,14 @@ const en: Section3Content = {
         'Percent change in each destination’s Slovak-born population between 1990 and 2020: 100 * (stock_2020 - stock_1990) / stock_1990. Shown for the 12 largest destinations by 2020 size.',
       caveat:
         'Percentages from small bases are dramatic by construction. Norway’s +62,883 percent is a rise from 6 people to 3,779, which is real but says more about the 1990 baseline than about Norway. Read the growth panel alongside the absolute one.',
+    },
+    basis: {
+      title: 'Born in Slovakia against Slovak citizens',
+      source: 'UN DESA, International Migrant Stock 2020 revision, Table 1 (place of birth). Eurostat migr_pop1ctz (foreign citizenship). Both for 2020.',
+      derivation:
+        'The 25 destinations carrying a 2020 figure in both sources, sorted by the birthplace count. Each row shows the two counts as dots joined by a rule; on a log axis that rule’s length is the ratio between them. The divergence printed at the right is (citizens minus born) / born as a percentage. The denominator matters: Czechia’s 6.6 percent is 7,519/113,773 and the eight percent quoted for the 24 destinations excluding Czechia is 15,954/191,896. Measured against the citizen figure instead, those same gaps are 6.2 and 9.1 percent.',
+      caveat:
+        'Two different quantities, not two estimates of one. Someone born in Slovakia who has taken the local passport is in the first count and not the second; a child born abroad to Slovak parents is in the second and not the first. A gap is therefore not automatically an error, and the totals agreeing to under three percent is not agreement: excluding Czechia the birthplace count exceeds the citizen count by 15,954 while Czechia alone runs 7,519 the other way, and the two partly cancel. Both compilers also draw on the same national statistical offices, so where they agree one register may simply have been reported twice. The smallest rows carry the least weight: among the 16 destinations holding under 3,000 Slovak-born residents the two sources differ by 31 percent at the median, against 11 percent among the seven above 10,000.',
     },
     trend: {
       title: 'Annual arrivals of Slovak citizens',

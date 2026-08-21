@@ -41,9 +41,15 @@ TIDY = {
 
 # Present in the diaspora data but absent from the 110m boundaries: too small to
 # be drawn at that resolution, so no polygon carries their name.
+#
+# Keyed by BOTH code systems. These were M49-only, which stopped matching when the
+# parquet moved to ISO3 on the UN DESA rows, so the generator warned "unnamed
+# ['LIE', 'MLT']" and the two rendered as raw codes wherever a chart named them.
 EXTRA = {
     "438": "Liechtenstein",
     "470": "Malta",
+    "LIE": "Liechtenstein",
+    "MLT": "Malta",
 }
 
 HEADER = """import type { Locale } from '../lib/locale';
@@ -56,10 +62,9 @@ HEADER = """import type { Locale } from '../lib/locale';
  *   .venv/bin/python -m pipeline.transform.diaspora_names
  * to regenerate from the boundaries file plus the parquet's distinct codes.
  *
- * The data mixes two code systems: UN M49 numeric (UN DESA rows) and ISO3 alpha
- * (OECD rows), so both appear as keys here. Malta and Liechtenstein are carried
- * explicitly because they have diaspora data but no polygon in the 110m
- * boundaries.
+ * Keys follow whatever code system the parquet uses for destination_iso3. Malta and
+ * Liechtenstein are carried explicitly because they have diaspora data but no
+ * polygon in the 110m boundaries, so no feature supplies their name.
  *
  * Slovak exonyms are pending the single Slovak authoring pass; until then the
  * English names render for both locales.
