@@ -4,8 +4,320 @@ import Section4App from '../components/Section4App';
 ---
 
 <Base title="Notable Departures - Slovak Brain Drain" lang="en">
-  <h1>Section 4: Notable Departures</h1>
-  <p>Individual stories that illustrate the structural patterns of Slovak emigration.</p>
-
   <Section4App client:load />
 </Base>
+
+<style is:global>
+  /* ─── Section 4 ──────────────────────────────────────────────────
+     Rebuilt 2026-08 onto the design system. The previous page put a bare <h1> and
+     a lede paragraph in the .astro file, above a component that styled itself with
+     inline hex (#e5e5e5, #666, #555, #888) and rem sizes off the type scale. The
+     heading and lede now come from the content module with the rest of the prose,
+     so there is one source for §4's copy and a Slovak stub alongside it. */
+
+  main {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .section4 {
+    max-width: var(--max-content);
+    margin: 0 auto;
+    padding: var(--space-12) var(--space-6) var(--space-24);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-12);
+  }
+
+  .section4-notice {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    padding: var(--space-3) var(--space-4);
+    background: var(--accent-tertiary-light);
+    border-left: 3px solid var(--accent-tertiary);
+    border-radius: var(--radius-sm);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  .section4-head { max-width: var(--max-prose); margin: 0 auto; }
+  .section4-h1 {
+    font-family: var(--font-serif);
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .section4-h2 {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 1.25;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-4) 0;
+  }
+  .section4-h2-standalone {
+    max-width: var(--max-prose);
+    margin-inline: auto;
+    text-align: center;
+  }
+
+  .section4-prose { max-width: var(--max-prose); margin: 0 auto; }
+  .section4-prose p {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text-primary);
+    margin: 0 0 1.25rem 0;
+  }
+  .section4-prose p:last-child { margin-bottom: 0; }
+
+  .section4-figure { margin: 0; }
+  .section4-figure-head { max-width: var(--max-prose); margin: 0 auto var(--space-4); }
+  .section4-caption {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.5;
+    color: var(--text-tertiary);
+    margin-top: var(--space-2);
+  }
+  .section4-error {
+    max-width: var(--max-prose);
+    margin: var(--space-12) auto;
+    font-family: var(--font-sans);
+    color: var(--state-error);
+  }
+
+  /* ─── The age strip ──────────────────────────────────────────── */
+  .people-age-chart { width: 100%; }
+  .people-age-point { cursor: pointer; }
+  .people-age-point:focus-visible {
+    outline: 2px solid var(--accent-secondary);
+    outline-offset: 2px;
+  }
+  /* The returner ring, as a legend swatch: a hollow circle rather than a filled dot,
+     matching how the chart draws it. */
+  .people-ring-swatch {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1.2px solid var(--text-primary);
+    flex: 0 0 auto;
+  }
+
+  /* ─── The timeline ───────────────────────────────────────────────
+     A centre spine with cards alternating either side, per 04-spec.md. The spine is
+     a gradient rather than a flat rule so it fades at both ends instead of stopping
+     abruptly above the first card and below the last. */
+  .people-timeline {
+    position: relative;
+    list-style: none;
+    margin: 0 auto;
+    padding: 0;
+    max-width: var(--max-content);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8);
+  }
+  .people-timeline::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    transform: translateX(-0.5px);
+    background: linear-gradient(
+      to bottom,
+      transparent,
+      var(--border-subtle) 6%,
+      var(--border-subtle) 94%,
+      transparent
+    );
+  }
+
+  .people-item {
+    position: relative;
+    display: grid;
+    align-items: start;
+    /* Two half-columns with a gutter for the spine. */
+    grid-template-columns: 1fr 64px 1fr;
+  }
+  .people-item-left .people-card { grid-column: 1; }
+  .people-item-left .people-year { grid-column: 3; justify-self: start; }
+  .people-item-right .people-card { grid-column: 3; }
+  .people-item-right .people-year { grid-column: 1; justify-self: end; }
+
+  /* The node sits on the spine, vertically aligned with the card's first line. */
+  .people-node {
+    position: absolute;
+    left: 50%;
+    top: 14px;
+    width: 9px;
+    height: 9px;
+    margin-left: -4.5px;
+    background: var(--accent-primary);
+    /* Cicmany diamond, the one motif the design system allows. */
+    transform: rotate(45deg);
+  }
+  .people-year {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin: 8px 0 0 0;
+    padding: 0 var(--space-4);
+  }
+
+  .people-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    padding: var(--space-4) var(--space-6);
+    transition: border-color var(--duration-fast) var(--easing-default);
+  }
+  .people-card.is-open { border-color: var(--border-emphasis); }
+  .people-card-head { display: flex; flex-direction: column; gap: 4px; }
+  .people-name {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 500;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .people-meta {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin: 0;
+  }
+  .people-returned {
+    display: inline-block;
+    margin-left: var(--space-2);
+    padding: 1px 7px;
+    border: 1px solid var(--accent-secondary);
+    border-radius: var(--radius-sm);
+    background: var(--accent-secondary-light);
+    color: var(--accent-secondary-hover);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .people-sub {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin: 0;
+  }
+
+  .people-toggle {
+    margin-top: var(--space-3);
+    padding: 0;
+    background: none;
+    border: none;
+    border-bottom: 1px solid currentColor;
+    font-family: var(--font-sans);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--accent-primary);
+    cursor: pointer;
+  }
+  .people-toggle:hover { color: var(--accent-primary-hover); }
+
+  .people-detail {
+    margin-top: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .people-narrative {
+    font-family: var(--font-serif);
+    font-size: 15px;
+    line-height: 1.55;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-4) 0;
+  }
+  /* Definition list, because these are labelled facts rather than prose. */
+  .people-facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 13px;
+  }
+  .people-facts dt {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding-top: 1px;
+  }
+  .people-facts dd {
+    margin: 0;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+  .people-facts a { color: var(--accent-primary); }
+  .people-facts a:hover { color: var(--accent-primary-hover); }
+
+  .section4-caveats {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    padding-top: var(--space-6);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .section4-caveats-title {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin: 0 0 var(--space-3) 0;
+  }
+  .section4-caveats p {
+    font-family: var(--font-sans);
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text-tertiary);
+    margin: 0 0 var(--space-3) 0;
+  }
+  .section4-caveats p:last-child { margin-bottom: 0; }
+
+  /* ─── Narrow: the spine moves to the left edge ────────────────────
+     A centre spine needs two usable half-columns. Below 720px each half is under
+     330px, which is not enough for a card, so the spine goes to the left and every
+     card takes the full width beside it. */
+  @media (max-width: 720px) {
+    .section4 { padding: var(--space-8) var(--space-4) var(--space-16); gap: var(--space-8); }
+    .section4-h1 { font-size: 32px; }
+    .section4-prose p { font-size: 16px; }
+    .section4-h2 { font-size: 20px; }
+    .section4-h2-standalone { text-align: left; }
+
+    .people-timeline { gap: var(--space-6); }
+    .people-timeline::before { left: 4px; }
+    .people-item,
+    .people-item-left,
+    .people-item-right {
+      grid-template-columns: 1fr;
+      padding-left: var(--space-6);
+    }
+    .people-item-left .people-card,
+    .people-item-right .people-card { grid-column: 1; }
+    .people-item-left .people-year,
+    .people-item-right .people-year {
+      grid-column: 1;
+      justify-self: start;
+      order: -1;
+      padding: 0 0 var(--space-2) 0;
+      margin: 0;
+    }
+    .people-node { left: 4px; top: 6px; }
+    .people-card { padding: var(--space-4); }
+    .people-facts { grid-template-columns: 1fr; gap: 2px var(--space-4); }
+    .people-facts dd { margin-bottom: var(--space-2); }
+  }
+</style>

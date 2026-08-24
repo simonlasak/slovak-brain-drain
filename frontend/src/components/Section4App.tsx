@@ -1,4 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { PeopleAgeChart } from './charts/PeopleAgeChart';
+import type { AgePerson } from './charts/PeopleAgeChart';
+import { AboutData } from './charts/AboutData';
+import { AnimateOnScroll } from './charts/AnimateOnScroll';
+import { useLocale } from '../lib/locale';
+import { getSection4Content } from '../content/people';
+
+/**
+ * Section 4: nine named departures, on the design system.
+ *
+ * REPLACES a pre-design-system component: inline hex (#e5e5e5, #666, #555, #888),
+ * rem font sizes off the type scale, a bare <h1> outside the layout, no content
+ * module, no Slovak stub, no source panel, and a seven-bucket histogram over nine
+ * people with four empty buckets. It also computed an `emigrants` array and never
+ * used it.
+ *
+ * NO FILTER BAR, which 04-spec.md asks for (by field, by destination region). There
+ * are nine cards. A filter over nine items is friction pretending to be an
+ * affordance: every option either shows almost everything or almost nothing, and the
+ * reader can see the whole set without scrolling far. The shared filter bar was
+ * dropped site-wide at Checkpoint 5 for the same reason the scroll narrative won.
+ *
+ * THE TIMELINE IS ORDERED BY DEPARTURE YEAR and alternates sides, per spec. Sides
+ * alternate by index rather than by year so the visual rhythm survives the two pairs
+ * that share a year (1993 twice).
+ */
 
 interface Person {
   id: string;
@@ -23,108 +49,206 @@ interface PeopleData {
   people: Person[];
 }
 
-function PersonCard({ person }: { person: Person }) {
-  const [expanded, setExpanded] = useState(false);
+/**
+ * Display name, preferring the Slovak orthography.
+ *
+ * name_sk currently EQUALS name for all nine records, both stripped of diacritics,
+ * so this renders the ASCII form today: "Juraj Slafkovsky", "Andrej Babis", "Jan
+ * Tkac". That is a data gap rather than a rendering one — the historical file shows
+ * the intent, carrying 'Ján Vilček' in the same field — and it is not fixed here
+ * because these are nine real people's names in a hand-curated research file, and
+ * proposing spellings is not the same as being entitled to write them into it.
+ * Preferring name_sk means the page is correct the moment the field is filled.
+ */
+const displayName = (p: Person) => p.name_sk || p.name;
 
-  return (
-    <div
-      style={{
-        border: '1px solid #e5e5e5',
-        borderRadius: '6px',
-        padding: '1rem',
-        marginBottom: '1rem',
-        cursor: 'pointer',
-      }}
-      onClick={() => setExpanded(!expanded)}
-    >
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-        <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{person.name}</h3>
-        <span style={{ fontSize: '0.8rem', color: '#666' }}>
-          left {person.left_year}, age {person.age_at_leaving}
-        </span>
-      </div>
-      <p style={{ margin: '0.25rem 0', fontSize: '0.9rem', color: '#555' }}>
-        {person.field} - {person.current_location}
-      </p>
-      {expanded && (
-        <div style={{ marginTop: '0.75rem', fontSize: '0.9rem' }}>
-          <p><strong>Trigger:</strong> {person.trigger}</p>
-          <p style={{ marginTop: '0.5rem' }}>{person.narrative}</p>
-          <p style={{ marginTop: '0.5rem' }}><strong>Impact:</strong> {person.impact}</p>
-          <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: '#888' }}>
-            Path: {person.destination_path.join(' → ')}
-          </p>
-        </div>
-      )}
-    </div>
-  );
+/** A source entry is either a bare wikipedia:Slug token or a full URL. */
+function sourceHref(s: string): string | null {
+  if (/^https?:\/\//.test(s)) return s;
+  const wiki = s.match(/^wikipedia:(.+)$/);
+  if (wiki) return `https://en.wikipedia.org/wiki/${encodeURIComponent(wiki[1])}`;
+  return null;
 }
 
-function AgeHistogram({ people }: { people: Person[] }) {
-  const buckets: Record<string, number> = { '0-14': 0, '15-19': 0, '20-24': 0, '25-29': 0, '30-34': 0, '35-39': 0, '40+': 0 };
-  for (const p of people) {
-    const age = p.age_at_leaving;
-    if (age < 15) buckets['0-14']++;
-    else if (age < 20) buckets['15-19']++;
-    else if (age < 25) buckets['20-24']++;
-    else if (age < 30) buckets['25-29']++;
-    else if (age < 35) buckets['30-34']++;
-    else if (age < 40) buckets['35-39']++;
-    else buckets['40+']++;
+function sourceLabel(s: string): string {
+  if (/^https?:\/\//.test(s)) {
+    try { return new URL(s).hostname.replace(/^www\./, ''); } catch { return s; }
   }
-  const max = Math.max(...Object.values(buckets));
+  return s.replace(/^wikipedia:/, '').replace(/_/g, ' ');
+}
 
+function PersonCard({
+  person, side, labels, expanded, onToggle, cardRef,
+}: {
+  person: Person;
+  side: 'left' | 'right';
+  labels: ReturnType<typeof getSection4Content>['labels'];
+  expanded: boolean;
+  onToggle: () => void;
+  cardRef: (el: HTMLDivElement | null) => void;
+}) {
+  const returned = person.current_location.endsWith('SK');
   return (
-    <div style={{ marginBottom: '2rem' }}>
-      <h3>Age at Leaving</h3>
-      <div style={{ display: 'flex', gap: '4px', alignItems: 'end', height: '80px' }}>
-        {Object.entries(buckets).map(([label, count]) => (
-          <div key={label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flex: 1 }}>
-            <div style={{
-              width: '100%',
-              height: `${(count / max) * 60}px`,
-              background: count > 0 ? 'var(--accent-primary)' : '#eee',
-              borderRadius: '2px 2px 0 0',
-              minHeight: '2px',
-            }} />
-            <span style={{ fontSize: '0.7rem', marginTop: '4px' }}>{label}</span>
-            {count > 0 && <span style={{ fontSize: '0.7rem', fontWeight: 600 }}>{count}</span>}
+    <li className={`people-item people-item-${side}`}>
+      {/* The dot sits on the spine and carries the year, so the timeline reads as a
+          chronology rather than as a list that happens to be sorted. */}
+      <span className="people-node" aria-hidden="true" />
+      <p className="people-year">{person.left_year}</p>
+
+      <div ref={cardRef} className={`people-card${expanded ? ' is-open' : ''}`}>
+        <div className="people-card-head">
+          <h3 className="people-name">{displayName(person)}</h3>
+          <p className="people-meta">
+            {person.field} · {person.current_location}
+            {returned && <span className="people-returned">{labels.returned}</span>}
+          </p>
+          <p className="people-sub">
+            {labels.leftIn} {person.left_year} {labels.aged} {person.age_at_leaving}
+            {' · '}
+            {person.slovak_education_completed === 'tertiary'
+              ? labels.tertiary
+              : labels.primaryOnly}
+          </p>
+        </div>
+
+        <button type="button" className="people-toggle" onClick={onToggle}
+          aria-expanded={expanded}>
+          {expanded ? labels.collapse : labels.expand}
+        </button>
+
+        {expanded && (
+          <div className="people-detail">
+            <p className="people-narrative">{person.narrative}</p>
+            <dl className="people-facts">
+              <dt>{labels.trigger}</dt>
+              <dd>{person.trigger}</dd>
+              <dt>{labels.impact}</dt>
+              <dd>{person.impact}</dd>
+              <dt>{labels.path}</dt>
+              <dd>{[person.birth_place, ...person.destination_path].join(' → ')}</dd>
+              <dt>{labels.sources}</dt>
+              <dd>
+                {person.sources.map((s, i) => {
+                  const href = sourceHref(s);
+                  return (
+                    <React.Fragment key={s}>
+                      {i > 0 && ', '}
+                      {href
+                        ? <a href={href} target="_blank" rel="noopener noreferrer">{sourceLabel(s)}</a>
+                        : sourceLabel(s)}
+                    </React.Fragment>
+                  );
+                })}
+              </dd>
+            </dl>
           </div>
-        ))}
+        )}
       </div>
-    </div>
+    </li>
   );
 }
 
 function Section4() {
+  const locale = useLocale();
+  const c = getSection4Content(locale);
   const [data, setData] = useState<PeopleData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const cardEls = useRef<Record<string, HTMLDivElement | null>>({});
 
   useEffect(() => {
     fetch('/data/notable_people.json')
       .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
+      .then(setData)
+      .catch(e => setError(String(e)));
   }, []);
 
-  if (loading) return <p>Loading...</p>;
-  if (!data) return <p>Failed to load notable people data.</p>;
+  /** Chronological, which is what makes it a timeline. */
+  const ordered = useMemo(
+    () => (data ? [...data.people].sort((a, b) => a.left_year - b.left_year) : []),
+    [data],
+  );
 
-  const emigrants = data.people.filter(p => p.current_location !== 'Bratislava, SK');
+  const agePeople = useMemo<AgePerson[]>(
+    () => ordered.map(p => ({
+      id: p.id,
+      name: displayName(p),
+      ageAtLeaving: p.age_at_leaving,
+      tertiary: p.slovak_education_completed === 'tertiary',
+      returned: p.current_location.endsWith('SK'),
+    })),
+    [ordered],
+  );
+
+  /** Clicking a point in the chart opens that person's card and scrolls to it. */
+  function reveal(id: string) {
+    setOpenId(id);
+    requestAnimationFrame(() => {
+      cardEls.current[id]?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+    });
+  }
+
+  if (error) return <p className="section4-error">Error: {error}</p>;
+  if (!data) return null;
 
   return (
-    <div>
-      <AgeHistogram people={data.people} />
+    <div className="section4">
+      {!c.reviewed && c.translationNotice && (
+        <p className="section4-notice">{c.translationNotice}</p>
+      )}
 
-      <h2>People</h2>
-      {data.people.map(person => (
-        <PersonCard key={person.id} person={person} />
-      ))}
+      <header className="section4-head">
+        <p className="section-eyebrow">{c.eyebrow}</p>
+        <h1 className="section4-h1">{c.h1}</h1>
+      </header>
 
-      <details style={{ marginTop: '2rem', fontSize: '0.85rem', color: '#555' }}>
-        <summary>Section methodology note</summary>
-        <p style={{ marginTop: '0.5rem' }}>{data.section_caveats}</p>
-      </details>
+      <div className="section4-prose">
+        {c.intro.map((p, i) => <p key={i}>{p}</p>)}
+      </div>
+
+      <AnimateOnScroll>
+        {() => (
+          <figure className="section4-figure">
+            <figcaption className="section4-figure-head">
+              <h2 className="section4-h2">{c.chartTitle}</h2>
+            </figcaption>
+            <PeopleAgeChart people={agePeople} labels={c.labels} onSelect={reveal} />
+            <div className="chart-caption-row">
+              <p className="section4-caption">{c.chartCaption}</p>
+              <AboutData label={c.aboutLabel} panel={c.sources.ages} />
+            </div>
+          </figure>
+        )}
+      </AnimateOnScroll>
+
+      <h2 className="section4-h2 section4-h2-standalone">{c.cardsTitle}</h2>
+
+      <ol className="people-timeline">
+        {ordered.map((p, i) => (
+          <PersonCard
+            key={p.id}
+            person={p}
+            side={i % 2 === 0 ? 'left' : 'right'}
+            labels={c.labels}
+            expanded={openId === p.id}
+            onToggle={() => setOpenId(openId === p.id ? null : p.id)}
+            cardRef={el => { cardEls.current[p.id] = el; }}
+          />
+        ))}
+      </ol>
+
+      <div className="section4-prose">
+        {c.closing.map((p, i) => <p key={i}>{p}</p>)}
+      </div>
+
+      {/* The selection rule and the search-bias correction. Open by default: a
+          hand-curated list has to disclose how it was curated, and putting that
+          behind a summary is how it gets missed. */}
+      <section className="section4-caveats">
+        <h2 className="section4-caveats-title">{c.caveatsTitle}</h2>
+        <p>{c.criteriaNote}</p>
+        <p>{data.section_caveats}</p>
+      </section>
     </div>
   );
 }

@@ -8,6 +8,7 @@ interface Props {
 // A raw /src/ path resolves in dev but 404s in the built site, which silently
 // dropped every design token in production.
 import '../styles/tokens.css';
+import '../styles/charts.css';
 
 const { title, lang = 'sk' } = Astro.props;
 const currentPath = Astro.url.pathname;
