@@ -59,12 +59,12 @@ interface PeopleData {
  * Košecká, Tkáč. Two are correct as ASCII and were left alone, Karpathy and
  * Valko.
  *
- * TWO REMAIN ASCII ON PURPOSE, awaiting Simon:
- *   - Cahojova. Her own company site writes "Kristina Cahojova", but two
- *     diacritic-preserving sources give Čahojová. C against Č changes the
- *     pronunciation rather than decorating it, so it was not guessed.
- *   - Simkova. No authoritative source found at all. "Šimková" would be
- *     pattern-transliteration, which is how a wrong name gets published.
+ * The last two were not guessable from any source we could reach: kegg.tech
+ * writes "Kristina Cahojova", and no authoritative source for Simkova was found
+ * at all. Simon confirmed both surnames directly on 26 August 2026, so they are
+ * now Čahojová and Šimková. Their given names are still stored as Kristina and
+ * Katarina, because he confirmed the surnames only and turning those into
+ * Kristína and Katarína would be the same pattern-transliteration this avoided.
  *
  * Preferring name_sk keeps this correct the moment either field is filled.
  */
