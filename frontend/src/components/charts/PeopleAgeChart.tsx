@@ -61,7 +61,20 @@ const PRIMARY_COLOR = 'var(--accent-secondary)';
 /** Surname only: full names would collide at nine points across 25 years of age. */
 const surname = (name: string) => name.split(' ').slice(-1)[0];
 
-function Chart({ people, labels, onSelect, width }: Props & { width: number }) {
+/**
+ * Entrance. Points travel in along the age axis from just off its left end and fade
+ * up, which is the dot idiom §1's cohort chart uses.
+ *
+ * The stagger is the 60ms bar cadence rather than the cohort chart's 8ms, because
+ * that 8ms exists to get several hundred districts on screen at once. Nine people
+ * staggered 8ms apart would be indistinguishable from no stagger at all, and the
+ * whole argument of this figure is that these are nine individuals rather than a
+ * distribution, so they should arrive as nine.
+ */
+const POINT_ENTRY_X = -10;
+const POINT_STAGGER = 60;
+
+function Chart({ people, labels, onSelect, width, animated }: Props & { width: number; animated: boolean }) {
   const [hot, setHot] = useState<string | null>(null);
 
   const compact = width < 520;
@@ -103,10 +116,17 @@ function Chart({ people, labels, onSelect, width }: Props & { width: number }) {
     <svg width={width} height={height} role="img"
       aria-label="Age at which each of the nine left Slovakia">
       <Group left={margin.left} top={margin.top}>
-        {placed.map(({ p, px, lane }) => {
+        {placed.map(({ p, px, lane }, i) => {
           const cy = lane * laneH + laneH / 2;
           const isHot = hot === p.id;
           const color = p.tertiary ? TERTIARY_COLOR : PRIMARY_COLOR;
+          const delay = i * POINT_STAGGER;
+          // Only the marks move. The group keeps its class, tabindex and handlers
+          // untouched so a point stays clickable and focusable throughout, including
+          // before it has arrived.
+          const dotTransition = animated
+            ? `cx 0.4s cubic-bezier(0.2, 0, 0, 1) ${delay}ms, opacity 0.4s ease ${delay}ms, r 0.15s ease`
+            : 'r 0.15s ease';
           return (
             <g key={p.id}
               className="people-age-point"
@@ -119,20 +139,32 @@ function Chart({ people, labels, onSelect, width }: Props & { width: number }) {
               onKeyDown={e => {
                 if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect?.(p.id); }
               }}>
-              {/* Drop line to the axis, so the age is readable without the tick. */}
+              {/* Drop line to the axis, so the age is readable without the tick. Its
+                  endpoints are geometry attributes CSS cannot transition, so it fades
+                  in behind the dot rather than sliding with it. */}
               <line x1={px} x2={px} y1={cy} y2={innerH}
-                stroke="var(--border-subtle)" strokeWidth={1} />
-              <circle cx={px} cy={cy} r={isHot ? 7 : 5.5} fill={color}
-                stroke="var(--bg-page)" strokeWidth={1.5} />
+                stroke="var(--border-subtle)" strokeWidth={1}
+                opacity={animated ? 1 : 0}
+                style={{ transition: animated ? `opacity 0.4s ease ${delay + 200}ms` : 'none' }} />
+              <circle cx={animated ? px : POINT_ENTRY_X} cy={cy} r={isHot ? 7 : 5.5} fill={color}
+                stroke="var(--bg-page)" strokeWidth={1.5}
+                opacity={animated ? 1 : 0}
+                style={{ transition: dotTransition }} />
               {/* A returner gets a ring, the one non-colour mark here, because
                   "came back" is a different kind of fact from "was educated here". */}
               {p.returned && (
-                <circle cx={px} cy={cy} r={isHot ? 11 : 9.5} fill="none"
-                  stroke="var(--text-primary)" strokeWidth={1.2} />
+                <circle cx={animated ? px : POINT_ENTRY_X} cy={cy} r={isHot ? 11 : 9.5} fill="none"
+                  stroke="var(--text-primary)" strokeWidth={1.2}
+                  opacity={animated ? 1 : 0}
+                  style={{ transition: dotTransition }} />
               )}
+              {/* The label is pinned to the resting position so the surname does not
+                  slide across the plot behind its dot. */}
               <text x={px + (p.returned ? 13 : 9)} y={cy} dominantBaseline="middle"
                 fontSize={compact ? 10 : 11} fontFamily="var(--font-sans)"
-                fill={isHot ? 'var(--text-primary)' : 'var(--text-secondary)'}>
+                fill={isHot ? 'var(--text-primary)' : 'var(--text-secondary)'}
+                opacity={animated ? 1 : 0}
+                style={{ transition: animated ? `opacity 0.4s ease ${delay + 200}ms` : 'none' }}>
                 {surname(p.name)}
               </text>
             </g>
@@ -160,7 +192,9 @@ function Chart({ people, labels, onSelect, width }: Props & { width: number }) {
   );
 }
 
-export function PeopleAgeChart({ people, labels, onSelect }: Props) {
+// `animated` defaults to true: a caller that does not wrap this in AnimateOnScroll
+// should see all nine points, not an empty axis.
+export function PeopleAgeChart({ people, labels, onSelect, animated = true }: Props & { animated?: boolean }) {
   const anyReturned = people.some(p => p.returned);
   return (
     <div className="people-age-chart">
@@ -173,7 +207,7 @@ export function PeopleAgeChart({ people, labels, onSelect }: Props) {
       </ul>
       <ParentSize>
         {({ width }) => (
-          <Chart people={people} labels={labels} onSelect={onSelect} width={width} />
+          <Chart people={people} labels={labels} onSelect={onSelect} width={width} animated={animated} />
         )}
       </ParentSize>
     </div>

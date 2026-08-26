@@ -3,7 +3,6 @@ import { query, registerParquet } from '../lib/db';
 import { CorridorMap } from './charts/CorridorMap';
 import { StockTrendChart } from './charts/StockTrendChart';
 import { StudentBreakdownChart } from './charts/StudentBreakdownChart';
-import { SectionEyebrow } from './charts/SectionEyebrow';
 import { StatCallout } from './charts/StatCallout';
 import { AnimateOnScroll } from './charts/AnimateOnScroll';
 import { StayLeaveChart } from './charts/StayLeaveChart';
@@ -140,7 +139,6 @@ function Section2App() {
         )}
 
         <header className="section2-header">
-          <SectionEyebrow>{c.eyebrow}</SectionEyebrow>
           <h1 className="section2-h1">{c.h1}</h1>
         </header>
 

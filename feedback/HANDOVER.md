@@ -67,17 +67,33 @@ offices, no enforcement). Its positive sign is an artefact. Never show it.
   growth ratio divides two modelled quantities. Absolute levels survive with a
   caveat; ratios do not.
 - "~21k immigrants/yr" in `03-methodology.md:29` is marked `verified` and is
-  WRONG. The national figure is 6,287/yr. **Re-mark this when copy work is
-  authorised.**
+  WRONG. The national figure is 6,287/yr. **DONE 2026-08-26**:
+  `03-methodology.md:37` now carries 6,287/yr marked `verified` with its SQL, and
+  line 39 records why the old figure and its own verification were both wrong.
+  Nothing left to re-mark here.
 
-**The 2.5 mirror comparison (built, not yet written up in `docs/`).**
-Constant 15-country Eurostat `migr_pop1ctz` panel (AT BE CZ DE FI HU IS IT LT LV
-NL NO RO SE SI), 2013-2025. Implied departures = change in destination-reported
-Slovak citizens + naturalisations in those countries. Result: **111,256 implied
-against 45,621 ŠÚ SR registered, a ratio of 2.4x**. Robust 2.1x to 3.9x across
-five specifications. The panel omits the UK, Ireland, Spain, Switzerland and
-France while ŠÚ SR's denominator covers all destinations, so **2.4x is a floor**.
-This replaces the dead 23-38% entry in `06-sources-page.md`.
+**The 2.5 mirror comparison.**
+
+> **SUPERSEDED 2026-08-26. Do not quote the figures in this block.** They were
+> written before the comparison was specified in `docs/06-sources-page.md` §4a,
+> and that spec deliberately did not reproduce them: the three windows quoted
+> below do not match each other, and 45,621 is ŠÚ SR over 2014-2025 rather than
+> over the panel's own window. The authoritative figures are the 11-country
+> `migr_pop1ctz` panel over **2004-2024**: **222,321 implied against 59,935
+> registered, 3.71x**, falling to 2.15x with Czechia removed. They live in
+> `headline_figures.json` under `mirror_implied_departures_2004_2024`,
+> `mirror_registered_departures_2004_2024` and `mirror_panel_countries`, and
+> those keys are what the landing page and `/methodology` render. 59,935 and the
+> hero's 64,855 reconcile exactly: 59,935 + 4,920 for 2025 alone.
+
+Original text, kept for the record: constant 15-country Eurostat `migr_pop1ctz`
+panel (AT BE CZ DE FI HU IS IT LT LV NL NO RO SE SI), 2013-2025. Implied
+departures = change in destination-reported Slovak citizens + naturalisations in
+those countries. Result: 111,256 implied against 45,621 ŠÚ SR registered, a ratio
+of 2.4x. Robust 2.1x to 3.9x across five specifications. The panel omits the UK,
+Ireland, Spain, Switzerland and France while ŠÚ SR's denominator covers all
+destinations, so 2.4x is a floor. This replaces the dead 23-38% entry in
+`06-sources-page.md`.
 
 ---
 

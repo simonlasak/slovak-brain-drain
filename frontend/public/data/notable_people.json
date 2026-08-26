@@ -39,8 +39,8 @@
   },
   {
     "id": "babis",
-    "name": "Andrej Babis",
-    "name_sk": "Andrej Babis",
+    "name": "Andrej Babiš",
+    "name_sk": "Andrej Babiš",
     "birth_year": 1954,
     "birth_place": "Bratislava",
     "left_year": 1993,
@@ -57,8 +57,8 @@
   },
   {
     "id": "slafkovsky",
-    "name": "Juraj Slafkovsky",
-    "name_sk": "Juraj Slafkovsky",
+    "name": "Juraj Slafkovský",
+    "name_sk": "Juraj Slafkovský",
     "birth_year": 2004,
     "birth_place": "Kosice",
     "left_year": 2019,
@@ -93,8 +93,8 @@
   },
   {
     "id": "kudlicka",
-    "name": "Boris Kudlicka",
-    "name_sk": "Boris Kudlicka",
+    "name": "Boris Kudlička",
+    "name_sk": "Boris Kudlička",
     "birth_year": 1972,
     "birth_place": "Ruzomberok",
     "left_year": 1996,
@@ -129,8 +129,8 @@
   },
   {
     "id": "kosecka",
-    "name": "Jana Kosecka",
-    "name_sk": "Jana Kosecka",
+    "name": "Jana Košecká",
+    "name_sk": "Jana Košecká",
     "birth_year": 1965,
     "birth_place": "Slovakia",
     "left_year": 1993,
@@ -147,8 +147,8 @@
   },
   {
     "id": "tkac",
-    "name": "Jan Tkac",
-    "name_sk": "Jan Tkac",
+    "name": "Ján Tkáč",
+    "name_sk": "Ján Tkáč",
     "birth_year": 1977,
     "birth_place": "Bratislava",
     "left_year": 2002,
@@ -158,9 +158,9 @@
     "current_location": "Bratislava, SK",
     "field": "biochemistry / nanotechnology",
     "trigger": "research opportunity, then returned",
-    "narrative": "Left for postdoc in Sweden, then returned to Slovakia with an ERC Starting Grant in 2014. Built a glycomics research group at the Slovak Academy of Sciences. One of the rare cases of a top researcher choosing to return.",
-    "impact": "The contrast case. Proves return is possible with the right funding, but highlights how exceptional the circumstances must be. His ERC grant brought over 1.5M EUR to Slovak science.",
-    "sources": ["ERC Starting Grant 2014", "Slovak Academy of Sciences"],
+    "narrative": "Left at 25 for postdoctoral work, with stays at Linkoping and Lund in Sweden and at Oxford; the source register gives no dates or order for them. Has worked at the Institute of Chemistry of the Slovak Academy of Sciences since 2009. Won an ERC Starting Grant (ELENA, 2012 call) four years after returning, running 2013 to 2017, and built a glycomics research group there.",
+    "impact": "The contrast case, though not the one it first appeared to be: the grant followed the return rather than causing it. ELENA brought an EU contribution of 1,155,970 EUR to the Institute of Chemistry SAV over 2013 to 2017.",
+    "sources": ["https://cordis.europa.eu/project/id/311532", "https://vedanadosah.cvtisr.sk/register-vedcov/ing-jan-tkac-drsc/"],
     "photo_url": null
   }
   ]

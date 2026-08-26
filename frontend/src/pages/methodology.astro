@@ -3,6 +3,11 @@ import Base from '../layouts/Base.astro';
 // Derived by pipeline/analysis/headline_figures.py from the parquets themselves.
 // The counts below previously counted files in data/raw/, which overstated them:
 // 13 SUSR cubes are fetched but only 4 feed a rendered metric.
+//
+// Every number rendered on this page comes from a figures.* key below. Nothing
+// numeric is typed in as a literal, with one deliberate exception: the file
+// sizes in the downloads list, which are properties of the served assets rather
+// than measurements of migration, and are measured from frontend/public/data/.
 import figures from '../data/headline_figures.json';
 
 const departuresFull = figures.registered_departures_2004_2025.value;
@@ -13,98 +18,535 @@ const oecdSets = figures.oecd_datasets_used.value;
 const mirrorImplied = figures.mirror_implied_departures_2004_2024.value;
 const mirrorRegistered = figures.mirror_registered_departures_2004_2024.value;
 const mirrorPanel = figures.mirror_panel_countries.value;
+const czResidents = figures.slovaks_in_cz_residents_2025.value;
+const czLabour = figures.slovaks_in_cz_labour_2024.value;
+const desaDestinations = figures.diaspora_destinations_un_desa_2020.value;
+const defPanel = figures.def_panel_countries.value;
+const defBorn = figures.def_panel_born.value;
+const defCitizen = figures.def_panel_citizen.value;
 const fmt = (n: number) => n.toLocaleString('en');
+
+// Rendered as the table of contents. The ids must match the h2 ids below.
+const contents = [
+  { id: 'sources', label: 'Data sources and confidence ratings' },
+  { id: 'registration-gap', label: 'The registration gap' },
+  { id: 'cohort-retention', label: 'How cohort retention is derived' },
+  { id: 'cannot-tell', label: 'What this data cannot tell you' },
+  { id: 'discrepancies', label: 'Known discrepancies' },
+  { id: 'validation', label: 'Validation report' },
+  { id: 'downloads', label: 'Download the data' },
+];
+
+// Sizes measured from frontend/public/data/ with ls -l, rounded to three
+// significant figures. These are static assets, so the served file is the file.
+const downloads = [
+  {
+    href: '/data/section1_internal.parquet',
+    name: 'section1_internal.parquet',
+    size: '363 KB',
+    section: '§1 Internal Slovakia',
+    what:
+      'Population, live births, deaths, registered migration in and out, net and total change, average wages, and the derived cohort-retention series. Held at national, oblast, kraj and okres level, with the geographic level carried on every row.',
+  },
+  {
+    href: '/data/section2_corridor.parquet',
+    name: 'section2_corridor.parquet',
+    size: '9.1 KB',
+    section: '§2 The Czech Corridor',
+    what:
+      'Slovaks in Czechia on two bases, residence registration and labour-market participation, plus Slovak students enrolled in Czech universities and an age-structure proxy that is flagged as a proxy on the row.',
+  },
+  {
+    href: '/data/section3_diaspora.parquet',
+    name: 'section3_diaspora.parquet',
+    size: '22 KB',
+    section: '§3 Global Diaspora',
+    what:
+      'Slovak stocks abroad by destination, 1990 onward, on the born and citizen definitions, with naturalisation and flow series. Each row carries its source, its definition, and the UN DESA data_type so a citizenship-based row is never read as a birthplace-based one.',
+  },
+  {
+    href: '/data/notable_people.json',
+    name: 'notable_people.json',
+    size: '9.9 KB',
+    section: '§4 Notable Departures',
+    what:
+      'The card data behind the notable-departures section: name, field, destination, and the per-person sources cited on each card.',
+  },
+];
 ---
 
 <Base
   title="Methodology - Slovak Brain Drain"
   lang="en"
-  description="Full data provenance, source quality ratings and known limitations, including the registration gap and how cohort retention is derived."
+  description="Full data provenance, source quality ratings and known limitations, including the registration gap, how cohort retention is derived, and what this data cannot tell you."
 >
-  <h1>Methodology and Sources</h1>
-  <p>Full data provenance, source quality ratings, and known limitations.</p>
+  <div class="methodology">
+    <p class="eyebrow">Audit trail</p>
+    <h1>Methodology and Sources</h1>
+    <p class="lede">
+      Slovak emigration is systematically undercounted by Slovak official
+      sources, because leaving is recorded through a municipal deregistration
+      that most people who leave never file. This site therefore triangulates
+      across Slovak, Czech, Eurostat, OECD and UN sources, and this page is
+      where the triangulation is shown working and where it is shown failing.
+      Every figure on the site traces back to a query recorded here.
+    </p>
+    <p class="lede">
+      Confidence ratings on this page mean four specific things.
+      <strong>High</strong>: two sources that do not share an upstream compiler
+      report the same quantity and agree. <strong>Medium</strong>: one
+      authoritative source, spot-checked against a different indicator from the
+      same publisher. <strong>Low</strong>: one source, no cross-check, and the
+      gap is flagged. <strong>Estimated</strong>: derived by interpolation or
+      extrapolation rather than counted. The first of those is the hard one,
+      because being two datasets is not the same as being independent. UN DESA,
+      Eurostat and OECD all compile from the same national statistical offices,
+      so two of them agreeing about Slovaks in Germany is one German register
+      reported twice. Before anything is called High, the collecting authority
+      on each side is named and checked to differ.
+    </p>
 
-  <section class="methodology-content">
-    <h2>Data sources</h2>
-    <p class="note">Counts are of sources that feed a figure rendered on this
-    site, read from the output files themselves. More data is fetched than is
-    used, and unused sources are not counted here. For ŠÚ SR specifically: 13 cube
-    directories exist, 12 hold data, and {susrCubes} are attributed by the
-    published figures.</p>
-    <table>
-      <thead>
-        <tr><th>Source</th><th>Coverage</th><th>Confidence</th></tr>
-      </thead>
-      <tbody>
-        <tr><td>ŠÚ SR DataCube</td><td>{susrCubes} cubes, 2004-2025</td><td>Very high</td></tr>
-        <tr><td>Eurostat</td><td>Citizenship stock, naturalisations, student mobility</td><td>High</td></tr>
-        <tr><td>ČSÚ (Czech)</td><td>{csuTables} tables, 2004-2025</td><td>High</td></tr>
-        <tr><td>OECD</td><td>{oecdSets} migration extracts</td><td>Medium-high</td></tr>
-        <tr><td>UN DESA</td><td>Bilateral stock, 2020 revision</td><td>Medium, all reference years modelled</td></tr>
-      </tbody>
-    </table>
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        {contents.map(item => (
+          <li><a href={`#${item.id}`}>{item.label}</a></li>
+        ))}
+      </ol>
+    </nav>
 
-    <h2>The registration gap</h2>
-    <p>Slovak emigration is recorded through municipal deregistration, which
-    carries no penalty for skipping it. Over 2004-2024 Slovak authorities
-    recorded {fmt(mirrorRegistered)} departures. Over the same period the
-    {mirrorPanel} destination countries that have counted Slovak citizens
-    throughout imply at least {fmt(mirrorImplied)} departures. That second figure
-    is not a count of recorded arrivals: it is derived, as the rise in those
-    countries' own reported Slovak-citizen populations plus the Slovaks who
-    naturalised there, since naturalising leaves the count without leaving the
-    country. Those countries do not include the United Kingdom, Ireland, Spain,
-    Switzerland or France, so the gap is a floor rather than an estimate.</p>
-    <p>Both figures stop at 2024 so that they share a window. A destination
-    population counted on 1 January 2025 can only reflect arrivals through the
-    end of 2024, so the comparison cannot extend further. ŠÚ SR's own series runs
-    one year longer: across 2004-2025 it records {fmt(departuresFull)} departures
-    in total. That is the fuller Slovak figure, but no destination-side number
-    exists to set beside it yet.</p>
-    <p>The full derivation, including seven specifications and the sensitivity
-    check that removes Czechia, is in <code>docs/06-sources-page.md</code> and
-    reproducible with <code>pipeline/analysis/mirror_comparison.py</code>.</p>
+    <section class="methodology-content">
+      <h2 id="sources">Data sources and confidence ratings</h2>
+      <p class="note">Counts are of sources that feed a figure rendered on this
+      site, read from the output files themselves. More data is fetched than is
+      used, and unused sources are not counted here. For ŠÚ SR specifically, more
+      cube directories are fetched than hold data, and fewer still are attributed
+      by a published figure: {susrCubes} are.</p>
+      <table>
+        <thead>
+          <tr><th>Source</th><th>Coverage</th><th>Confidence, and why</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>ŠÚ SR DataCube<br /><span class="cell-sub">Štatistický úrad SR</span></td>
+            <td>{susrCubes} cubes, 2004-2025</td>
+            <td>
+              <strong>High</strong> for population and vital statistics: every
+              territorial level sums to the national total, and the population
+              series reconciles against its own recorded components.
+              <span class="cell-sub">Its emigration series is a separate matter and is a floor, not a count.</span>
+            </td>
+          </tr>
+          <tr>
+            <td>Eurostat</td>
+            <td>Citizenship stock, naturalisations, student mobility</td>
+            <td>
+              <strong>Medium</strong>. Eurostat does not collect migration data;
+              member states file it, so its Slovak emigration series is ŠÚ SR's
+              own filing redistributed and cannot corroborate it.
+              <span class="cell-sub">The destination-side citizenship stock is different in kind and is genuinely independent of ŠÚ SR.</span>
+            </td>
+          </tr>
+          <tr>
+            <td>ČSÚ<br /><span class="cell-sub">Český statistický úřad</span></td>
+            <td>{csuTables} tables, 2004-2025</td>
+            <td>
+              <strong>High</strong>. A Czech register with enforcement behind
+              registration, collected by an authority that is not ŠÚ SR, which
+              is what makes the corridor comparison informative.
+            </td>
+          </tr>
+          <tr>
+            <td>OECD</td>
+            <td>{oecdSets} migration extracts</td>
+            <td>
+              <strong>Medium</strong>. Compiles from the same national offices
+              as Eurostat and UN DESA. Useful as a check on our handling, not as
+              a second measurement.
+            </td>
+          </tr>
+          <tr>
+            <td>UN DESA</td>
+            <td>Bilateral stock, 2020 revision, {desaDestinations} destinations</td>
+            <td>
+              <strong>Estimated</strong>. Every reference year in the revision is
+              interpolated or extrapolated rather than counted.
+              <span class="cell-sub">Absolute levels are usable with that caveat. Growth between two reference years is not, and none is published on this site.</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
-    <h2>How cohort retention is derived</h2>
-    <p>For each of the 79 districts, cohort retention is the number of 35-to-39
-    year olds living there in 2024 as a percentage of the number of 15-to-19 year
-    olds living there in 2004. The median district scores {cohortMedian}%.</p>
-    <p>ŠÚ SR publishes two population counts per year for each age band, one
-    mid-year and one at 31 December, and they are different numbers. Both the
-    numerator and the denominator here average the two. The choice is not neutral
-    and we report its size: on the mid-year figures alone the median is 88.8%, on
-    the year-end figures alone 88.5%, so the indicator choice moves the result by
-    roughly 0.2 to 0.3 percentage points. Figures on this site are given to one
-    decimal place, which is finer than that spread. Read the decimal as a
-    consistent convention rather than as a claim of accuracy to a tenth of a
-    percent: the district ranking is robust, the last digit is not.</p>
-    <p>This is a synthetic cohort, not the same people tracked over twenty years.
-    It cannot separate those who moved away from those who died, though at these
-    ages mortality is small relative to migration.</p>
+      <h2 id="registration-gap">The registration gap</h2>
+      <p>Slovak emigration is recorded through municipal deregistration, which
+      carries no penalty for skipping it. Over 2004-2024 Slovak authorities
+      recorded {fmt(mirrorRegistered)} departures. Over the same period the
+      {mirrorPanel} destination countries that have counted Slovak citizens
+      throughout imply at least {fmt(mirrorImplied)} departures. That second figure
+      is not a count of recorded arrivals: it is derived, as the rise in those
+      countries' own reported Slovak-citizen populations plus the Slovaks who
+      naturalised there, since naturalising leaves the count without leaving the
+      country. Those countries do not include the United Kingdom, Ireland, Spain,
+      Switzerland or France, so the gap is a floor rather than an estimate.</p>
+      <p>Both figures stop at 2024 so that they share a window. A destination
+      population counted on 1 January 2025 can only reflect arrivals through the
+      end of 2024, so the comparison cannot extend further. ŠÚ SR's own series runs
+      one year longer: across 2004-2025 it records {fmt(departuresFull)} departures
+      in total. That is the fuller Slovak figure, but no destination-side number
+      exists to set beside it yet.</p>
+      <p>The site states both figures and leaves the arithmetic to the reader
+      rather than printing a single multiplier, because a multiplier invites
+      treating one specification as the answer when the honest result is a range
+      with a floor. Two further effects mean the gap is understated rather than
+      overstated: the missing destinations are absent only from the
+      destination-side figure, while the Slovak figure counts departures to
+      everywhere, and a rise in reported stock has already netted out deaths and
+      onward moves.</p>
+      <p>The full derivation, including seven specifications and the sensitivity
+      check that removes Czechia, is in <code>docs/06-sources-page.md</code> and
+      reproducible with <code>pipeline/analysis/mirror_comparison.py</code>.</p>
+      <p class="note">A second line of evidence was sought and rejected.
+      Slovakia's census residuals look like a Slovak-only lower bound on
+      unrecorded emigration, and they share no source with the comparison above,
+      but a residual jointly absorbs unrecorded emigration, census undercount,
+      late vital registration and stale addresses, and nothing published splits
+      them. The two census rounds also behave inconsistently against the
+      recorded flow. Dropped rather than softened; the reasoning is on the
+      record in <code>docs/06-sources-page.md</code>.</p>
 
-    <h2>Known discrepancies</h2>
-    <ul>
-      <li>ČSÚ reports about 12% more Slovaks in CZ than OECD/DESA. Different counting: residence registration against census-based "born in Slovakia".</li>
-      <li>The 2011 and 2021 censuses each re-anchor the population series without restating the flow components, so population change and recorded flows cannot reconcile across those two years. The residuals are the census corrections themselves, -42,827 and -10,511.</li>
-      <li>ŠÚ SR migration figures mean different things at different geographic levels. Only the national level is international migration; below it, the same series counts moves across that district's own boundary, internal moves included.</li>
-      <li>OECD uses ISO3 country codes, UN DESA uses UN M49 numeric codes.</li>
-    </ul>
+      <h2 id="cohort-retention">How cohort retention is derived</h2>
+      <p>For each Slovak district, cohort retention is the number of 35-to-39
+      year olds living there in 2024 as a percentage of the number of 15-to-19
+      year olds living there in 2004. The median district scores {cohortMedian}%.</p>
+      <p>ŠÚ SR publishes two population counts per year for each age band, one
+      mid-year and one at 31 December, and they are different numbers. Both the
+      numerator and the denominator here average the two. The choice is not neutral
+      and its size is worth stating: computing the median on the mid-year
+      indicators alone and on the year-end indicators alone gives answers that
+      differ in the first decimal place. Figures on this site are given to one
+      decimal place, which is finer than that spread. Read the decimal as a
+      consistent convention rather than as a claim of accuracy to a tenth of a
+      percent: the district ranking is robust, the last digit is not.</p>
+      <p>This is a synthetic cohort, not the same people tracked over twenty years.
+      It cannot separate those who moved away from those who died, though at these
+      ages mortality is small relative to migration.</p>
 
-    <h2>Validation report</h2>
-    <p>Nine cross-source checks run on every pipeline build. The report is
-    written to <code>pipeline/validate/report.html</code> in the repository, with
-    each check's severity and the observations behind it.</p>
-  </section>
+      <h2 id="cannot-tell">What this data cannot tell you</h2>
+      <p>These are limits of the sources, not of the effort spent on them. None
+      is closed by better handling of what is held.</p>
+      <ul>
+        <li><strong>How many Slovaks have actually left.</strong> Departure is
+        recorded by a municipal deregistration nobody is obliged to file, so
+        every Slovak-side emigration figure on this site is a floor. The
+        destination-side comparison above bounds how far below the truth it sits;
+        it does not replace it with a count.</li>
+        <li><strong>International migration for any district, kraj or oblast.</strong>
+        Only the national level of the ŠÚ SR migration series is international.
+        Below it, the same series counts every move across that unit's own
+        boundary, moves to other Slovak districts included, so the sub-national
+        figures run many times the national one. There is no version of this
+        series that gives international migration for a district, and none is
+        derived here.</li>
+        <li><strong>Net international migration at all.</strong> The net series
+        is identical at every geographic level, because internal moves cancel,
+        which is the proof that it is total net migration rather than
+        international. It is also the difference between a near-complete inflow
+        register and a severely incomplete outflow register, so its sign is an
+        artefact of that asymmetry. It is never presented on this site.</li>
+        <li><strong>How the diaspora grew.</strong> Every reference year in the
+        UN DESA revision is interpolated or extrapolated rather than counted, so
+        a growth ratio between two of them divides one modelled quantity by
+        another. Absolute levels survive with a modelled-estimate caveat.
+        No growth percentage or growth ratio is published anywhere on this
+        site.</li>
+        <li><strong>What emigrants studied.</strong> No source held carries a
+        field-of-study dimension for Slovaks abroad. Student figures are
+        reported by level of education only, and the one education file obtained
+        covers immigrants into Slovakia, which is the wrong direction.</li>
+        <li><strong>Whether people in the Czech corridor stayed or returned.</strong>
+        The flow and stock accounting for §2 does not reconcile: the flow and
+        stock series are not a matched pair, births to Slovak parents in Czechia
+        are not held, and the age profile available is a European proxy. Any
+        persistence or return rate computed across them would carry error of the
+        same order as the quantity itself, so no persistence rate and no return
+        rate is published.</li>
+        <li><strong>How many municipalities Slovakia has.</strong> Three
+        different official values are in circulation and the authoritative
+        register was unreachable, so no one of them is picked here. Nothing on
+        this site is expressed per municipality.</li>
+        <li><strong>How many Slovaks are in the United Kingdom.</strong> Slovak
+        citizens are absent from the Eurostat citizenship series after Brexit,
+        and the UK is one of the largest destinations. That absence is the single
+        biggest gap in the destination-side evidence on this page.</li>
+      </ul>
+
+      <h2 id="discrepancies">Known discrepancies</h2>
+      <p>Where two sources measure something that looks like the same thing and
+      do not agree, both are named here and the reason is given.</p>
+      <ul>
+        <li><strong>Slovaks in Czechia, twice.</strong> ČSÚ residence
+        registration puts {fmt(czResidents)} Slovak citizens in Czechia, while
+        the Czech labour figures count {fmt(czLabour)} Slovaks in employment or
+        holding a trade licence. The larger number is not a larger population:
+        it counts employment relationships, including cross-border commuters who
+        live in Slovakia. Neither is wrong and they are not alternatives.</li>
+        <li><strong>Czech registration against birthplace-based estimates.</strong>
+        ČSÚ reports materially more Slovaks in Czechia than the OECD and UN DESA
+        estimates do. The bases differ: residence registration of Slovak
+        citizens against a census-derived count of people born in Slovakia.</li>
+        <li><strong>Born against citizen.</strong> On the {defPanel} destinations
+        that report both, UN DESA counts {fmt(defBorn)} Slovak-born and Eurostat
+        counts {fmt(defCitizen)} Slovak citizens. The closeness of the two totals
+        is not corroboration of either: both compile from the same national
+        statistical offices, so it is one set of registers reported twice on two
+        definitions. It is a definitional contrast, and per country the two
+        diverge sharply.</li>
+        <li><strong>Census re-anchoring.</strong> The 2011 and 2021 censuses each
+        re-anchor the population series without restating the flow components, so
+        population change and recorded flows cannot reconcile across those two
+        years. The residuals are the census corrections themselves, and in both
+        rounds the correction is downward.</li>
+        <li><strong>Geographic level changes the meaning.</strong> ŠÚ SR migration
+        figures mean different things at different geographic levels. Only the
+        national level is international migration; below it, the same series
+        counts moves across that district's own boundary, internal moves
+        included.</li>
+        <li><strong>Country codes.</strong> OECD uses ISO3 country codes, UN DESA
+        uses UN M49 numeric codes. Unmapped codes are logged and dropped or
+        raise; they never pass through silently. That rule is what caught the
+        United Kingdom missing from the M49 map, which would otherwise have
+        dropped one of the largest destinations.</li>
+      </ul>
+
+      <h2 id="validation">Validation report</h2>
+      <p>Nine cross-source checks run on every pipeline build, defined in
+      <code>pipeline/validate/invariants.py</code>. The report is written to
+      <code>pipeline/validate/report.html</code> in the repository, with each
+      check's severity and the observations behind it. An assertion that cannot
+      fail is not a check, so each of these ties a metric to a different
+      geographic level, a different indicator, or a different publisher.</p>
+      <ul>
+        <li><strong>Territorial tiling.</strong> Every territorial level must sum
+        to the national total, every year. This is the most important check on
+        the list: it is what caught an aggregate row labelled as a district and
+        summed alongside its own five components, a double-count that had already
+        reached production.</li>
+        <li><strong>Population consistency.</strong> District populations sum to
+        their region, regions sum to the national total.</li>
+        <li><strong>Population reconciliation.</strong> The change between two 1
+        January population counts must equal that year's recorded components.
+        Exact for every year except the two census re-anchorings, which are
+        reported with the size of the correction.</li>
+        <li><strong>Metric definitions.</strong> Each named metric is pinned to a
+        quantity derived from a different indicator rather than to its own
+        siblings, including the assertion that sub-national migration must
+        <em>not</em> tile to the national figure. If it ever did, the series would
+        have silently become something else.</li>
+        <li><strong>No ambiguous keys.</strong> No output file may hold two rows
+        with the same key and different values, which is the signature of a
+        source dimension dropped rather than selected from.</li>
+        <li><strong>Subtotal double-counting.</strong> For every dimension that
+        carries a total alongside its parts, the report states how badly an
+        unfiltered sum would overstate. Advisory rather than blocking: the files
+        are correct and the fix is to constrain the query.</li>
+        <li><strong>Czech corridor cross-check.</strong> Slovaks in Czechia per
+        ČSÚ against the Slovak emigration series.</li>
+        <li><strong>UN DESA against OECD.</strong> Slovak stock abroad for the
+        same reference year, from two compilers.</li>
+        <li><strong>Eurostat against ŠÚ SR.</strong> A transcription check on our
+        own parse of the cube, not corroboration, because that Eurostat series is
+        ŠÚ SR's own filing.</li>
+      </ul>
+
+      <h2 id="downloads">Download the data</h2>
+      <p>The processed outputs the site queries are served as static files, so
+      they are downloadable directly. These are the derived tables, not the raw
+      sources: dimensions are named, geographic levels are labelled, and the
+      caveats above travel with the columns rather than being lost on the way
+      out.</p>
+      <ul class="downloads">
+        {downloads.map(f => (
+          <li>
+            <p class="download-head">
+              <a href={f.href} download><code>{f.name}</code></a>
+              <span class="download-meta">{f.size} &middot; {f.section}</span>
+            </p>
+            <p class="download-what">{f.what}</p>
+          </li>
+        ))}
+      </ul>
+      <p class="note">Licence: the processed data is available under
+      <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener">CC BY 4.0</a>,
+      recorded in <code>LICENSE-DATA</code> at the repository root. Share and
+      adapt it, including commercially, with credit and a link to the licence.
+      The raw sources are not redistributed here and carry their own terms and
+      their own attribution requirements: ŠÚ SR, Eurostat, ČSÚ, OECD and UN DESA
+      must each be checked and credited independently where an output derives
+      from them. The code in the repository is under a separate licence.</p>
+    </section>
+  </div>
 </Base>
 
 <style>
-  .methodology-content { max-width: 780px; }
-  .methodology-content h2 { font-family: var(--font-serif); margin-top: 2rem; margin-bottom: 0.5rem; }
-  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
-  th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #e5e5e5; }
-  th { font-weight: 600; background: #f8f9fa; }
-  ul { padding-left: 1.25rem; }
-  li { margin-bottom: 0.5rem; font-size: 0.95rem; }
-  .note { font-size: 0.85rem; color: var(--text-tertiary); margin-bottom: 0.5rem; }
+  .methodology {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    padding: var(--space-8) 0 var(--space-24);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    margin-bottom: var(--space-3);
+  }
+  .methodology h1 {
+    font-family: var(--font-serif);
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-6);
+  }
+  .lede {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+  .lede strong { font-weight: 600; color: var(--text-primary); }
+
+  .toc {
+    margin: var(--space-12) 0;
+    padding: var(--space-6);
+    background: var(--bg-nested);
+    border-radius: var(--radius-md);
+  }
+  .toc-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-3);
+  }
+  .toc ol {
+    margin: 0;
+    padding-left: var(--space-6);
+  }
+  .toc li {
+    font-size: 15px;
+    margin-bottom: var(--space-1);
+  }
+  .toc a {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+  .toc a:hover { color: var(--accent-primary); }
+
+  .methodology-content h2 {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text-primary);
+    margin-top: var(--space-12);
+    margin-bottom: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    scroll-margin-top: var(--space-24);
+  }
+  .methodology-content p {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+  .methodology-content ul {
+    padding-left: var(--space-6);
+    margin-bottom: var(--space-4);
+  }
+  .methodology-content li {
+    font-size: 15px;
+    line-height: 1.7;
+    margin-bottom: var(--space-3);
+  }
+  .methodology-content strong { font-weight: 600; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--space-4) 0 var(--space-6);
+    font-size: 14px;
+  }
+  th, td {
+    padding: var(--space-3);
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  th {
+    font-weight: 600;
+    background: var(--bg-nested);
+    font-family: var(--font-sans);
+  }
+  .cell-sub {
+    display: block;
+    margin-top: var(--space-1);
+    font-size: 13px;
+    color: var(--text-tertiary);
+  }
+
+  .downloads {
+    list-style: none;
+    padding-left: 0 !important;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .downloads li {
+    padding: var(--space-4) 0;
+    margin-bottom: 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .download-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2) !important;
+  }
+  .download-head a {
+    color: var(--accent-primary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-emphasis);
+  }
+  .download-head a:hover { color: var(--accent-primary-hover); }
+  .download-meta {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .download-what {
+    font-size: 14px !important;
+    color: var(--text-secondary);
+    margin-bottom: 0 !important;
+  }
+
+  .note {
+    font-size: 14px !important;
+    line-height: 1.65;
+    color: var(--text-tertiary) !important;
+  }
+  .note a { color: var(--accent-primary); }
   code { font-family: var(--font-mono); font-size: 0.85em; }
+
+  @media (max-width: 640px) {
+    .methodology { padding: var(--space-6) 0 var(--space-16); }
+    .methodology h1 { font-size: 32px; }
+    .lede { font-size: 16px; }
+    .methodology-content h2 { font-size: 20px; }
+    table { font-size: 13px; }
+    th, td { padding: var(--space-2); }
+  }
 </style>

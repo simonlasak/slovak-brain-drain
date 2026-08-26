@@ -83,8 +83,9 @@ only. Fetchers also exist for the 2021 census, the IZ Bratislava unemployment pa
 US Census, but none of those currently feed a rendered figure.
 
 The three processed Parquet files the site queries are committed to the repo under
-`frontend/public/data/`, so the site builds and runs without re-running the pipeline. Raw
-sources are not redistributed here. There are no packaged download links on the site.
+`frontend/public/data/`, so the site builds and runs without re-running the pipeline, and
+`/methodology` links each one for download with its size and contents. Raw sources are not
+redistributed here and carry their own terms.
 
 ---
 

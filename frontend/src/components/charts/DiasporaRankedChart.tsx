@@ -21,11 +21,12 @@ type Mode = 'absolute' | 'growth';
  * separate mode rather than a separate chart because the comparison the prose
  * makes is between the two orderings of the same list.
  */
-function Chart({ data, width, mode, locale }: {
+function Chart({ data, width, mode, locale, animated }: {
   data: Row[];
   width: number;
   mode: Mode;
   locale: string;
+  animated: boolean;
 }) {
   const [hovered, setHovered] = useState<string | null>(null);
   const rowH = 26;
@@ -67,10 +68,14 @@ function Chart({ data, width, mode, locale }: {
       }
     >
       <Group left={margin.left} top={margin.top}>
-        {data.map(d => {
+        {data.map((d, i) => {
           const v = mode === 'absolute' ? d.value : d.growth;
           const y = yScale(d.code) ?? 0;
           const isHot = hovered === d.code;
+          // Bars grow from the axis in reading order, one row every 60ms, the same
+          // cadence §1's wage bars use. Both modes of this chart mount separately, so
+          // each gets its own run of the stagger rather than sharing one clock.
+          const delay = i * 60;
           if (v === null) {
             return (
               <text
@@ -81,11 +86,14 @@ function Chart({ data, width, mode, locale }: {
                 fontSize={10}
                 fontFamily="var(--font-sans)"
                 fill="var(--text-tertiary)"
+                opacity={animated ? 1 : 0}
+                style={{ transition: animated ? `opacity 0.4s ease ${delay + 400}ms` : 'none' }}
               >
                 no 1990 baseline
               </text>
             );
           }
+          const finalW = Math.max(1, barLen(v));
           return (
             <g
               key={d.code}
@@ -106,19 +114,29 @@ function Chart({ data, width, mode, locale }: {
               <rect
                 x={0}
                 y={y}
-                width={Math.max(1, barLen(v))}
+                width={animated ? finalW : 0}
                 height={yScale.bandwidth()}
                 rx={2}
                 fill={mode === 'absolute' ? 'var(--accent-secondary)' : 'var(--accent-primary)'}
                 opacity={isHot ? 1 : 0.82}
+                style={{
+                  transition: animated
+                    ? `width 0.5s cubic-bezier(0.2, 0, 0, 1) ${delay}ms`
+                    : 'none',
+                }}
               />
+              {/* The value label is anchored to the FINAL bar length, not the animating
+                  one, so it does not travel across the plot. It fades in once its bar
+                  has arrived. */}
               <text
-                x={Math.max(1, barLen(v)) + 6}
+                x={finalW + 6}
                 y={y + yScale.bandwidth() / 2}
                 dominantBaseline="middle"
                 fontSize={10.5}
                 fontFamily="var(--font-mono)"
                 fill="var(--text-secondary)"
+                opacity={animated ? 1 : 0}
+                style={{ transition: animated ? `opacity 0.4s ease ${delay + 400}ms` : 'none' }}
               >
                 {fmt(v)}
               </text>
@@ -148,12 +166,14 @@ function Chart({ data, width, mode, locale }: {
   );
 }
 
-export function DiasporaRankedChart({ data, mode }: { data: Row[]; mode: Mode }) {
+// `animated` defaults to true so that any caller which does not wrap this in
+// AnimateOnScroll still gets the finished chart rather than an empty frame.
+export function DiasporaRankedChart({ data, mode, animated = true }: { data: Row[]; mode: Mode; animated?: boolean }) {
   const locale = useLocale();
   return (
     <div style={{ width: '100%' }}>
       <ParentSize>
-        {({ width }) => <Chart data={data} width={width} mode={mode} locale={locale} />}
+        {({ width }) => <Chart data={data} width={width} mode={mode} locale={locale} animated={animated} />}
       </ParentSize>
     </div>
   );

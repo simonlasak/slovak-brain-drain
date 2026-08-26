@@ -29,7 +29,7 @@ import type { SourcePanel } from './internal';
  *   age_at_leaving   15, 15, 24, 24, 24, 25, 25, 28, 39 (median 24)
  *   tertiary in SK   7 of 9; the two who left at 15 completed primary only
  *   left at 24 or 25 5 of 9
- *   returned         1 of 9, Jan Tkac, Bratislava
+ *   returned         1 of 9, Ján Tkáč, Bratislava
  *   destinations     San Francisco 2, London 2, Prague, Montreal, Warsaw, Fairfax,
  *                    Bratislava
  */
@@ -38,7 +38,6 @@ export interface Section4Content {
   reviewed: boolean;
   translationNotice: string;
 
-  eyebrow: string;
   h1: string;
 
   intro: string[];
@@ -77,7 +76,6 @@ const en: Section4Content = {
   reviewed: true,
   translationNotice: '',
 
-  eyebrow: '§4 · Notable departures',
   h1: 'Nine people, and what they cost',
 
   // FIRST DRAFT, mine not Simon's. Every figure verified against the JSON.
@@ -106,8 +104,8 @@ const en: Section4Content = {
   closing: [
     'Three of the nine explain more than the other six, because each one fails differently.',
     'Juraj Slafkovský left at fifteen for a Finnish club because Slovak junior hockey could not develop him further, and became the first Slovak taken first overall in an NHL draft. He has said so publicly, which is the part that matters: his departure was not an opportunity he took but a development system he had to leave. Andrej Karpathy also left at fifteen, and for no Slovak reason at all: his family emigrated to Canada, he did every degree abroad, and he ended up a founding member of OpenAI. Slovakia neither trained nor lost him in any sense it could have influenced.',
-    'Ján Tkáč is the only one who came back. He left for a postdoc in Sweden at twenty-five and returned in 2014 with a European Research Council starting grant, bringing over 1.5 million euros to the Slovak Academy of Sciences and building a glycomics group there. He is the case for optimism and the case against it at once: return is demonstrably possible, and it took an ERC grant to make it happen.',
-    'That is the shape of the thing. One left because a system failed him, one left for reasons Slovakia never controlled, and one returned only because an external funder paid for it. The other six finished their Slovak degrees and went.',
+    'Ján Tkáč is the only one who came back, and his record says close to the opposite of what this site first claimed about it. He left at twenty-five for postdoctoral work that ran through Linköping and Lund in Sweden and through Oxford, and he has worked at the Institute of Chemistry of the Slovak Academy of Sciences since 2009. The European Research Council starting grant came four years after that: ELENA, from the 2012 call, an EU contribution of 1,155,970 euros running from 2013 to 2017, which built a glycomics group around him. He came home first, on ordinary terms, and the money followed once he was in place and competitive.',
+    'That is the shape of the thing. One left because a system failed him, one left for reasons Slovakia never controlled, and one came home on ordinary terms and won a large grant four years later. The other six finished their Slovak degrees and went.',
   ],
 
   labels: {

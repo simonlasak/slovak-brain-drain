@@ -52,13 +52,21 @@ interface PeopleData {
 /**
  * Display name, preferring the Slovak orthography.
  *
- * name_sk currently EQUALS name for all nine records, both stripped of diacritics,
- * so this renders the ASCII form today: "Juraj Slafkovsky", "Andrej Babis", "Jan
- * Tkac". That is a data gap rather than a rendering one (the historical file shows
- * the intent, carrying 'Ján Vilček' in the same field) and it is not fixed here
- * because these are nine real people's names in a hand-curated research file, and
- * proposing spellings is not the same as being entitled to write them into it.
- * Preferring name_sk means the page is correct the moment the field is filled.
+ * FILLED 2026-08-26. Every name in notable_people.json was stored ASCII-folded,
+ * so this rendered "Juraj Slafkovsky" and "Jan Tkac" on a page whose own prose
+ * spelled them correctly. Five were corrected against a named authoritative
+ * source each, in both `name` and `name_sk`: Babiš, Slafkovský, Kudlička,
+ * Košecká, Tkáč. Two are correct as ASCII and were left alone, Karpathy and
+ * Valko.
+ *
+ * TWO REMAIN ASCII ON PURPOSE, awaiting Simon:
+ *   - Cahojova. Her own company site writes "Kristina Cahojova", but two
+ *     diacritic-preserving sources give Čahojová. C against Č changes the
+ *     pronunciation rather than decorating it, so it was not guessed.
+ *   - Simkova. No authoritative source found at all. "Šimková" would be
+ *     pattern-transliteration, which is how a wrong name gets published.
+ *
+ * Preferring name_sk keeps this correct the moment either field is filled.
  */
 const displayName = (p: Person) => p.name_sk || p.name;
 
@@ -198,7 +206,6 @@ function Section4() {
       )}
 
       <header className="section4-head">
-        <p className="section-eyebrow">{c.eyebrow}</p>
         <h1 className="section4-h1">{c.h1}</h1>
       </header>
 
@@ -207,12 +214,12 @@ function Section4() {
       </div>
 
       <AnimateOnScroll>
-        {() => (
+        {animated => (
           <figure className="section4-figure">
             <figcaption className="section4-figure-head">
               <h2 className="section4-h2">{c.chartTitle}</h2>
             </figcaption>
-            <PeopleAgeChart people={agePeople} labels={c.labels} onSelect={reveal} />
+            <PeopleAgeChart people={agePeople} labels={c.labels} onSelect={reveal} animated={animated} />
             <div className="chart-caption-row">
               <p className="section4-caption">{c.chartCaption}</p>
               <AboutData label={c.aboutLabel} panel={c.sources.ages} />

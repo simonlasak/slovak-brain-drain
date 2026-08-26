@@ -1,6 +1,5 @@
 import React from 'react';
 import MapVariantA from './MapVariantA';
-import { SectionEyebrow } from './charts/SectionEyebrow';
 import { StatCallout } from './charts/StatCallout';
 import { AnimateOnScroll } from './charts/AnimateOnScroll';
 import { AboutData } from './charts/AboutData';
@@ -26,7 +25,6 @@ function Section1App() {
         )}
 
         <header className="section1-header">
-          <SectionEyebrow>{c.eyebrow}</SectionEyebrow>
           <h1 className="section1-h1">{c.h1}</h1>
         </header>
 

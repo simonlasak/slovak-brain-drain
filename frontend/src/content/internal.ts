@@ -37,7 +37,6 @@ export interface Section1Content {
   /** Shown as a slim banner when an unreviewed locale is active. */
   translationNotice: string;
 
-  eyebrow: string;
   h1: string;
 
   intro: string[];
@@ -81,7 +80,6 @@ const en: Section1Content = {
   reviewed: true,
   translationNotice: '',
 
-  eyebrow: '§1 · Internal Slovakia',
   h1: 'Where the country went',
 
   intro: [

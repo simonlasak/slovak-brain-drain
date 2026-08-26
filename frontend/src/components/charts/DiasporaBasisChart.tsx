@@ -66,7 +66,14 @@ interface Props {
 const BORN_COLOR = 'var(--accent-primary)';
 const CITIZEN_COLOR = 'var(--accent-secondary)';
 
-function Chart({ rows, labels, width, locale }: Props & { width: number; locale: string }) {
+/**
+ * Where the two dots start from on entrance: just off the left edge of the plot, so
+ * they travel in along the axis they are measured on. Wider than the resting radius
+ * so nothing is clipped mid-flight.
+ */
+const DOT_ENTRY_X = -8;
+
+function Chart({ rows, labels, width, locale, animated }: Props & { width: number; locale: string; animated: boolean }) {
   const [hot, setHot] = useState<string | null>(null);
 
   const compact = width < 560;
@@ -109,6 +116,9 @@ function Chart({ rows, labels, width, locale }: Props & { width: number; locale:
           const isHot = hot === r.code;
           const bx = x(Math.max(r.born, 10));
           const cx = x(Math.max(r.citizen, 10));
+          // 8ms a row, so all twenty-five pairs are in within a fifth of a second:
+          // the point of this chart is the pattern down the column, not each row.
+          const delay = i * 8;
           return (
             <g key={r.code}
               onMouseEnter={() => setHot(r.code)}
@@ -125,17 +135,39 @@ function Chart({ rows, labels, width, locale }: Props & { width: number; locale:
                 {r.name}
               </text>
               {/* The rule IS the divergence, so it is neutral: the two dots carry
-                  which measurement is which. */}
+                  which measurement is which.
+
+                  Its endpoints are geometry attributes that CSS cannot transition, so
+                  the rule fades rather than stretches, and it fades LATE enough to
+                  overlap the second half of the dots' travel. A rule at full length
+                  before its dots have landed would state a gap that is not on the page
+                  yet, which is the one thing this encoding must not do. */}
               <line x1={bx} x2={cx} y1={cy} y2={cy}
-                stroke="var(--text-tertiary)" strokeWidth={isHot ? 2 : 1.4} strokeOpacity={0.55} />
-              <circle cx={bx} cy={cy} r={isHot ? 5 : 4} fill={BORN_COLOR}
-                stroke="var(--bg-page)" strokeWidth={1} />
-              <circle cx={cx} cy={cy} r={isHot ? 5 : 4} fill={CITIZEN_COLOR}
-                stroke="var(--bg-page)" strokeWidth={1} />
+                stroke="var(--text-tertiary)" strokeWidth={isHot ? 2 : 1.4}
+                strokeOpacity={animated ? 0.55 : 0}
+                style={{ transition: animated ? `stroke-opacity 0.4s ease ${delay + 200}ms` : 'none' }} />
+              <circle cx={animated ? bx : DOT_ENTRY_X} cy={cy} r={isHot ? 5 : 4} fill={BORN_COLOR}
+                stroke="var(--bg-page)" strokeWidth={1}
+                opacity={animated ? 1 : 0}
+                style={{
+                  transition: animated
+                    ? `cx 0.4s cubic-bezier(0.2, 0, 0, 1) ${delay}ms, opacity 0.4s ease ${delay}ms, r 0.15s ease`
+                    : 'r 0.15s ease',
+                }} />
+              <circle cx={animated ? cx : DOT_ENTRY_X} cy={cy} r={isHot ? 5 : 4} fill={CITIZEN_COLOR}
+                stroke="var(--bg-page)" strokeWidth={1}
+                opacity={animated ? 1 : 0}
+                style={{
+                  transition: animated
+                    ? `cx 0.4s cubic-bezier(0.2, 0, 0, 1) ${delay}ms, opacity 0.4s ease ${delay}ms, r 0.15s ease`
+                    : 'r 0.15s ease',
+                }} />
               {!compact && (
                 <text x={innerW + 8} y={cy} dominantBaseline="middle" fontSize={10}
                   fontFamily="var(--font-mono)"
-                  fill={isHot ? 'var(--text-primary)' : 'var(--text-tertiary)'}>
+                  fill={isHot ? 'var(--text-primary)' : 'var(--text-tertiary)'}
+                  opacity={animated ? 1 : 0}
+                  style={{ transition: animated ? `opacity 0.4s ease ${delay + 400}ms` : 'none' }}>
                   {pctText(r)}
                 </text>
               )}
@@ -197,7 +229,9 @@ function Chart({ rows, labels, width, locale }: Props & { width: number; locale:
   );
 }
 
-export function DiasporaBasisChart({ rows, labels }: Props) {
+// `animated` defaults to true: a caller that does not wrap this in AnimateOnScroll
+// should see the finished dumbbells, not an empty grid.
+export function DiasporaBasisChart({ rows, labels, animated = true }: Props & { animated?: boolean }) {
   const locale = useLocale();
   const fmt = (v: number) => Math.round(v).toLocaleString(locale);
   const pctText = (r: BasisRow) => {
@@ -214,7 +248,7 @@ export function DiasporaBasisChart({ rows, labels }: Props) {
       </ul>
 
       <ParentSize>
-        {({ width }) => <Chart rows={rows} labels={labels} width={width} locale={locale} />}
+        {({ width }) => <Chart rows={rows} labels={labels} width={width} locale={locale} animated={animated} />}
       </ParentSize>
 
       <details className="arrivals-table">

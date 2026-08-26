@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { scaleLinear } from '@visx/scale';
 import { LinePath } from '@visx/shape';
 import { AxisBottom, AxisLeft } from '@visx/axis';
@@ -66,6 +66,56 @@ interface Props {
 }
 
 /**
+ * A line that draws itself in, by measuring its own path length and running the
+ * dash offset down to zero. Same helper as §1's region trend chart, kept local
+ * rather than shared because the two charts have different series shapes and the
+ * only thing they have in common is the six lines below.
+ *
+ * The path length can only be read after the path is in the document, hence the
+ * effect. When `animated` is false the offset is pinned at zero so the line is
+ * simply present, which is the state a reader who has not scrolled here yet, or a
+ * reader with reduced motion, should see.
+ */
+function AnimatedLine({ points, x, y, color, animated, delay }: {
+  points: { year: number; value: number }[];
+  x: (p: { year: number; value: number }) => number;
+  y: (p: { year: number; value: number }) => number;
+  color: string;
+  animated: boolean;
+  delay: number;
+}) {
+  const ref = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    const length = ref.current.getTotalLength();
+    ref.current.style.setProperty('--dash-length', String(length));
+    ref.current.style.strokeDasharray = String(length);
+    if (!animated) {
+      ref.current.style.strokeDashoffset = '0';
+    }
+  }, [points, animated]);
+
+  return (
+    <LinePath
+      innerRef={ref}
+      data={points}
+      x={x}
+      y={y}
+      stroke={color}
+      strokeWidth={2}
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      className={animated ? 'arrivals-line-animated' : ''}
+      style={animated ? {
+        animation: `arrivalsDrawLine 1100ms cubic-bezier(0, 0, 0.2, 1) ${delay}ms forwards`,
+        strokeDashoffset: 'var(--dash-length)',
+      } : undefined}
+    />
+  );
+}
+
+/**
  * Locked design tokens, in fixed assignment order.
  *
  * These are `--accent-primary`, `--accent-secondary` and `--accent-tertiary-hover`
@@ -84,7 +134,7 @@ const SERIES_COLORS = [
   'var(--accent-tertiary-hover)',
 ];
 
-function Chart({ series, labels, width, locale }: Props & { width: number; locale: string }) {
+function Chart({ series, labels, width, locale, animated }: Props & { width: number; locale: string; animated: boolean }) {
   const [hoverYear, setHoverYear] = useState<number | null>(null);
 
   /**
@@ -135,6 +185,18 @@ function Chart({ series, labels, width, locale }: Props & { width: number; local
   return (
     <svg width={width} height={height} role="img"
       aria-label="Annual recorded arrivals of Slovak citizens by destination, 2008 to 2023">
+      {/* Keyframes run on first paint whatever the flag says, unlike transitions, so
+          the reduced-motion override is not optional here: without it a reader who has
+          asked for no motion would still watch three lines draw. */}
+      <style>{`
+        @keyframes arrivalsDrawLine {
+          from { stroke-dashoffset: var(--dash-length); }
+          to { stroke-dashoffset: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .arrivals-line-animated { animation: none !important; stroke-dashoffset: 0 !important; }
+        }
+      `}</style>
       <Group left={margin.left} top={margin.top}>
         {/* Grid drawn from the scale's own ticks rather than pulling in @visx/grid
             for four lines. Recessive, and behind every mark. */}
@@ -149,16 +211,17 @@ function Chart({ series, labels, width, locale }: Props & { width: number; local
             stroke="var(--text-tertiary)" strokeWidth={1} strokeDasharray="3 3" />
         )}
 
+        {/* Series draw in their fixed volume order, 150ms apart, so the reader can
+            follow one line at a time rather than watching three race. */}
         {series.map((s, i) => (
-          <LinePath
+          <AnimatedLine
             key={s.code}
-            data={s.points}
+            points={s.points}
             x={p => xScale(p.year)}
             y={p => yScale(p.value)}
-            stroke={SERIES_COLORS[i % SERIES_COLORS.length]}
-            strokeWidth={2}
-            strokeLinejoin="round"
-            strokeLinecap="round"
+            color={SERIES_COLORS[i % SERIES_COLORS.length]}
+            animated={animated}
+            delay={i * 150}
           />
         ))}
 
@@ -178,7 +241,12 @@ function Chart({ series, labels, width, locale }: Props & { width: number; local
           const last = s.points[s.points.length - 1];
           if (!last) return null;
           return (
-            <g key={s.code} transform={`translate(${innerW + 10},${yScale(last.value)})`}>
+            <g
+              key={s.code}
+              transform={`translate(${innerW + 10},${yScale(last.value)})`}
+              opacity={animated ? 1 : 0}
+              style={{ transition: animated ? `opacity 0.4s ease ${i * 150 + 900}ms` : 'none' }}
+            >
               <circle cx={0} cy={0} r={3.5} fill={SERIES_COLORS[i % SERIES_COLORS.length]} />
               <text x={9} y={0} dominantBaseline="middle" fontSize={11}
                 fontFamily="var(--font-sans)" fill="var(--text-secondary)">
@@ -259,7 +327,9 @@ function Chart({ series, labels, width, locale }: Props & { width: number; local
   );
 }
 
-export function DiasporaArrivalsChart({ series, labels }: Props) {
+// `animated` defaults to true: a caller that does not wrap this in AnimateOnScroll
+// should see the finished chart, not three invisible lines.
+export function DiasporaArrivalsChart({ series, labels, animated = true }: Props & { animated?: boolean }) {
   const locale = useLocale();
   const years = Array.from(new Set(series.flatMap(s => s.points.map(p => p.year))))
     .sort((a, b) => a - b);
@@ -281,7 +351,7 @@ export function DiasporaArrivalsChart({ series, labels }: Props) {
 
       <ParentSize>
         {({ width }) => (
-          <Chart series={series} labels={labels} width={width} locale={locale} />
+          <Chart series={series} labels={labels} width={width} locale={locale} animated={animated} />
         )}
       </ParentSize>
 

@@ -1,40 +1,637 @@
 ---
 import Base from '../layouts/Base.astro';
+
+// Verification log for this page, kept next to the copy on purpose.
+//
+// Every external href below was fetched and returned HTTP 200 before it was
+// written in, on 26 August 2026. Where an organisation states a figure about
+// itself, that figure is attributed to the organisation in the copy rather than
+// asserted as a finding of this site. Nothing numeric here is typed in from
+// memory.
+//
+// Four claims from the earlier version of this page failed that test and are
+// gone from the copy. They were briefly listed on the page itself; Simon asked
+// for that section to come off, so the record lives here instead:
+//   1. "90+ Slovak AI professionals" on slovaks.ai. No source states any count.
+//      The public directory returned 128 profiles counted on 26 August 2026.
+//   2. "Nominate a researcher for the ESET Science Award." Not an action a
+//      reader can take: nomination is restricted to the researcher, their
+//      employer, the Alumni klub or Učená spoločnosť Slovenska.
+//   3. "These companies chose to build from Bratislava, proving world-class tech
+//      does not require emigration." Untrue of the list (Innovatrics dates its
+//      own founding to a French university) and "proving" is a conclusion six
+//      companies cannot carry.
+//   4. The Ján Tkáč sentence, below.
+//
+// INVALIDATING FINDING, recorded here because it reaches beyond this file.
+// The site stated that Ján Tkáč returned from Sweden in 2014 with an ERC
+// Starting Grant worth over 1.5M EUR. Two elements are wrong and the third is
+// unsupported. CORDIS project 311532 (fetched 200) gives the grant as ELENA,
+// FP7, call ERC-2012-StG, 1 January 2013 to 31 December 2017, EU contribution
+// 1,155,970 EUR: so not over 1.5 million, and not 2014. CVTI SR's researcher
+// register (200) has him at the Institute of Chemistry SAV "od roku 2009", four
+// years before the grant, so the grant followed the return rather than causing
+// it.
+//
+// On "from Sweden": that is not established either way. The register lists
+// postdocs at the SAV Institute of Chemistry, Linköping, Lund and Oxford with no
+// years and no order, so which country he came home from is not recoverable from
+// it. An earlier draft of this note asserted Oxford; that overread the source.
+// The corrected copy therefore names the countries without ordering them.
+//
+// Corrected here, in src/content/people.ts, and in notable_people.json on
+// 26 August 2026.
+
+const contents = [
+  { id: 'coming-back', label: 'Coming back' },
+  { id: 'networks', label: 'Diaspora networks' },
+  { id: 'built-at-home', label: 'Built at home' },
+  { id: 'what-you-can-do', label: 'What you can do' },
+];
+
+type Entry = {
+  name: string;
+  kind: string;
+  href: string;
+  hrefLabel: string;
+  what: string[];
+  quote?: { sk: string; gloss: string };
+  also?: { href: string; label: string }[];
+};
+
+const comingBack: Entry[] = [
+  {
+    name: 'Slovak Professionals Abroad Program',
+    kind: 'LEAF, občianske združenie',
+    href: 'https://www.leaf.sk/pre-slovakov-v-zahranici/',
+    hrefLabel: 'leaf.sk/pre-slovakov-v-zahranici',
+    what: [
+      'LEAF is a Slovak občianske združenie, a registered civic association, seated in Piešťany and operating out of Bratislava, and this is its programme for Slovaks living abroad. It belongs above the diaspora networks further down this page because it commits to the move itself rather than only to keeping people in touch. The page is addressed to Slovaks with a career already underway abroad or studying at a foreign university, and it says plainly: "Ak sa rozhodneš vrátiť domov, pomôžeme ti s návratom." If you decide to come home, we will help you with the return.',
+      'What that amounts to is narrower than the sentence sounds, and the programme is upfront about it. Two things are offered to someone weighing a return: job openings it brokers, and practical information about the move. The openings are senior ones. Nothing on the page covers housing, tax or schooling, so read this as a route into a job rather than a relocation service.',
+      'The programme now runs through GROWNi, LEAF\'s platform, and the older spap.leaf.sk address redirects there. That page displays "2 000+ členov SPAP" as its membership, which is the platform\'s own count of its own members and is reproduced here as its claim.',
+    ],
+    quote: {
+      sk: 'Ak zvažuješ návrat na Slovensko, dokážeme ti sprostredkovať zaujímavé pracovné príležitosti a poskytnúť užitočné informácie, ktoré ti uľahčia návrat. Hľadáme najmä skúsených kandidátov na seniorské pozície na Slovensku.',
+      gloss:
+        'If you are considering a return to Slovakia, we can broker interesting job opportunities for you and provide useful information to make your return easier. We are looking above all for experienced candidates for senior positions in Slovakia.',
+    },
+    also: [{ href: 'https://growni.sk/slovaci-v-zahranici', label: 'growni.sk/slovaci-v-zahranici' }],
+  },
+  {
+    name: 'IMPULZ',
+    kind: 'Slovak Academy of Sciences, grant scheme',
+    href: 'https://impulz.sav.sk/en',
+    hrefLabel: 'impulz.sav.sk',
+    what: [
+      'The one entry on this page with substantial public money behind it. IMPULZ describes itself as "the flagship grant scheme of the Slovak Academy of Sciences (SAS)". It funds a researcher to build and lead a team at a SAS institute at up to EUR 160,000 a year for five years, with a mid-term review that looks in part at whether the holder is going after an ERC grant or something comparable.',
+      'Its stated purpose is recruiting "internationally recognized scientists and highly talented young researchers who come from abroad or do not leave for abroad", which puts return and retention in one sentence. Eligibility is framed by where you have worked rather than by nationality: a PhD, demonstrable international research experience, international recognition in your field, and for early-career applicants, independence from your dissertation supervisor.',
+      'The 2026 call was announced on 1 June 2026 and closes on 1 September 2026 at 09:00 CET, with projects expected to start in June 2027. Applications are in English and require a support statement from a host SAS institution.',
+    ],
+  },
+];
+
+// Three return instruments that existed and stopped. All figures below are
+// quoted from the programmes' own pages or their own final reports, each
+// fetched at 200. This is the strongest material on the page: the pattern is
+// not that Slovakia never tried, it is that each attempt was allowed to lapse.
+const lapsed: Entry[] = [
+  {
+    name: 'Podporná schéma na návrat odborníkov zo zahraničia',
+    kind: 'Government, 2015 to 2019',
+    href: 'https://www.minedu.sk/podporna-schema-na-navrat-odbornikov-zo-zahranicia/',
+    hrefLabel: 'minedu.sk',
+    what: [
+      'A state return scheme, approved by government resolution 368/2015 on 8 July 2015 and administered by CVTI SR. The ministry page states its aim as "znižovať bariéry pre návrat odborníkov zo zahraničia a podporiť ich návrat do slovenského akademického prostredia, prípadne do verejného sektora", to lower the barriers to experts returning from abroad and support their return into Slovak academia or the public sector. It paid a returning "mladý odborník" up to EUR 10,000 and an "expert" up to EUR 50,000, in two instalments.',
+      'Its own final report gives the result: "Celkovo sa v rámci Podpornej schémy na návrat odborníkov zo zahraničia vrátilo 26 jednotlivcov, z toho 10 mladých odborníkov a 16 expertov". Twenty-six people, ten of them junior. The same report tabulates total money drawn across 2015 to 2019 as EUR 2,071,520.64.',
+      'It no longer runs. The administering agency\'s page says no calls are being issued, "nie sú momentálne vyhlasované žiadne výzvy na predkladanie pozícií do schémy", because the scheme was time-limited by the resolution that created it. Its own final report notes that nothing equivalent exists in Slovakia: "v Slovenskej republike zároveň neexistuje podobný program podpory s rovnakým zámerom, ktorým je snaha o dlhodobý, resp. trvalý návrat odborníkov do domácej krajiny".',
+    ],
+    also: [
+      { href: 'https://www.vedatechnika.sk/sk/podporna-schema-navraty/o-scheme-navraty/', label: 'vedatechnika.sk' },
+      { href: 'https://www.vedatechnika.sk/files/sk/podporna-schema-navraty/dokumenty/zaverecna-sprava-navraty.pdf', label: 'final report, PDF' },
+    ],
+  },
+  {
+    name: 'MoRePro',
+    kind: 'Slovak Academy of Sciences, one call',
+    href: 'https://www.sav.sk/?lang=sk&doc=educ-morepro',
+    hrefLabel: 'sav.sk, MoRePro',
+    what: [
+      'SAV\'s "mobilitný a reintegračný program", aimed at attracting top domestic and foreign scientists to its institutes, with eligibility turning on a stay abroad of at least three years. Fellows also committed to applying for an ERC grant within their first two years.',
+      'It ran once. The first call opened on 3 June 2019 and closed on 6 September 2019; the page records 14 applications, 4 projects approved, and then, across 2020 and 2021, "postupne nastúpili na ústavy SAV 3 štipendisti". Three people arrived. No second call is announced on the page.',
+    ],
+  },
+  {
+    name: 'SASPRO 2',
+    kind: 'SAV, STU and Comenius University, closed 2025',
+    href: 'https://saspro2.sav.sk/',
+    hrefLabel: 'saspro2.sav.sk',
+    what: [
+      'A fellowship programme run jointly by the Slovak Academy of Sciences, the Slovak University of Technology in Bratislava and Comenius University, funded through Marie Skłodowska-Curie COFUND, and the only scheme found for this page with a purpose-built return stream: it ran an explicit Reintegrácia scheme alongside an Incoming one. Its page says the programme "pomáha povzbudiť miestnych vedcov, aby sa vrátili pracovať na slovenské inštitúcie", that it helps encourage local scientists to come back and work at Slovak institutions.',
+      'Across three calls it offered 47 fellowships of twelve to thirty-six months and 39 were taken up. It is closed: the selection process reads "Výberový proces UKONČENÝ" and the project ended on 30 September 2025. Its published pages do not split the 39 between the Reintegrácia and Incoming streams, so no number of returning Slovaks is claimed here.',
+    ],
+  },
+];
+
+const networks: Entry[] = [
+  {
+    name: 'slovaks.ai',
+    kind: 'KInIT, project',
+    href: 'https://slovaks.ai/',
+    hrefLabel: 'slovaks.ai',
+    what: [
+      'A map of Slovak professionals working in artificial intelligence, run by KInIT, the Kempelen Institute of Intelligent Technologies in Bratislava, with Mária Bieliková as principal investigator. KInIT\'s own project page describes it as a network project running from January 2025 to June 2026, funded through NextGenerationEU and Slovakia\'s Recovery and Resilience Plan, with the first version of the map built together with Wezeo and the GROWNi portal, and covering 17 categories of AI and more than 200 topics.',
+      'It is unusual among diaspora directories in naming the reason it exists. KInIT\'s project description points at Slovakia\'s long-running brain drain in IT and a shortage of AI professionals, and treats the diaspora as the resource that closes the gap. This is a counter-current institution that says so in writing.',
+      'The site\'s public directory returned 128 profiles when it was counted on 26 August 2026. All but one give a location outside Slovakia, most often Czechia, the United Kingdom or the United States. That is the count on that date rather than a standing figure, because the directory grows. Anyone can propose a profile, including their own.',
+    ],
+    also: [{ href: 'https://slovaks.ai/expert-form', label: 'slovaks.ai/expert-form' }],
+  },
+  {
+    name: 'Slovak PRO',
+    kind: 'Non-profit, North America',
+    href: 'https://www.slovakpro.org/',
+    hrefLabel: 'slovakpro.org',
+    what: [
+      'A diaspora professional network, described on its own site as a "community-based non-profit 501(c)(3) organization" that traces back "to 2001 as the Young Slovak Professionals Network and was later reborn as Slovak PRO". It runs chapters across North America, including Boston, New York, San Francisco, Seattle, Chicago, Toronto and Vancouver, plus one in Munich, and organises summits and a Slovak Tech Conference in San Francisco. Its page states "an engaged community of 3,000+ members", which is its own figure.',
+      'Nothing on it addresses moving back, and it is listed on those terms. It is one of KInIT\'s named collaborators on slovaks.ai, and it is the largest network of Slovak professionals in North America that could be verified from a live page for this list.',
+    ],
+  },
+  {
+    name: 'Žijem vedu',
+    kind: 'Občianske združenie, Bratislava',
+    href: 'https://zijemvedu.sk/',
+    hrefLabel: 'zijemvedu.sk',
+    what: [
+      'A Slovak researchers\' association, formed out of what its site calls an informal group of scientists and registered as an občianske združenie on 2 August 2018. Its recurring line is "Spájame slovenské vedkyne a vedcov doma aj v zahraničí", we connect Slovak scientists at home and abroad, and that is the whole design: a networking platform, podcasts and writing, and events including the Žijem vedu naživo series.',
+      'Like Slovak PRO it is a network rather than a return scheme, and its pages make no claim otherwise. Its usefulness against the drain is that it refuses the distinction the data forces on this site, treating a Slovak scientist in Lisbon and one in Bratislava as one community.',
+    ],
+  },
+];
+
+type Company = {
+  name: string;
+  href: string;
+  hrefLabel: string;
+  what: string;
+};
+
+// Each entry states only what the company's own pages state, quoted from the
+// page named in href. Founding is asserted only where the company asserts it:
+// only Pixel Federation and Slido do. ESET and Sygic name no founder and no
+// founding year on these pages; Vacuumlabs gives a year but no country;
+// Innovatrics dates its founding to its founder's student years in France.
+// The Eurowag parent registration is from eurowag.com (200).
+const builtAtHome: Company[] = [
+  {
+    name: 'ESET',
+    href: 'https://www.eset.com/int/about/',
+    hrefLabel: 'eset.com/int/about',
+    what:
+      'Security software. Its own site gives its global headquarters as "ESET, spol. s r.o., Bratislava, Slovak Republic", and its copyright line runs from 1992, which makes the company older than the independent state it is headquartered in. Neither the founding city nor the founders are named on that page, so neither is claimed here.',
+  },
+  {
+    name: 'Sygic',
+    href: 'https://www.sygic.com/company/contact',
+    hrefLabel: 'sygic.com/company/contact',
+    what:
+      'Navigation software. Its own contact page gives the operating company as "Sygic a.s. Twin City C, Mlynské Nivy 16, 821 09 Bratislava Slovak republic", "Registered in the Commercial Register of the City Court Bratislava III, section: Sa, File No. 4893/B". It is also the clearest case on this list of a company that stayed Slovak in operations and stopped being Slovak in ownership: its about page states "Sygic is proud to be part of the Eurowag Group", and Eurowag records its own parent, W.A.G. payment solutions, a.s., as registered at the Municipal Court in Prague. No founding year or founder is stated on either page, so neither is claimed here.',
+  },
+  {
+    name: 'Pixel Federation',
+    href: 'https://portal.pixelfederation.com/en/about',
+    hrefLabel: 'pixelfederation.com',
+    what:
+      'Games. The cleanest case on the list: its own about page says "We are Pixel Federation, founded by 4 game enthusiasts in 2007", and the footer imprint gives PIXEL FEDERATION, s.r.o., Einsteinova 19, Bratislava. The four founders are not named on the page, so they are not named here.',
+  },
+  {
+    name: 'Slido',
+    href: 'https://www.slido.com/about',
+    hrefLabel: 'slido.com/about',
+    what:
+      'Audience interaction for meetings. Its about page says the company was "Born in Slovakia out of a simple idea to get feedback from students at universities" and has "turned into a global company with over 260 teammates in 26 countries". Its contact page still lists "Bratislava | HQ", at Vajnorska 100/A. Its terms page records that "Slido was acquired by Cisco Systems, Inc. on May 2, 2021", and names the contracting entity as sli.do s. r. o., Vajnorská 100/A, Bratislava. Bought, and still run from the address it was bought at.',
+  },
+  {
+    name: 'Vacuumlabs',
+    href: 'https://vacuumlabs.com/contacts/',
+    hrefLabel: 'vacuumlabs.com/contacts',
+    what:
+      'Fintech product development. Bratislava is the first office listed on its contacts page, at Bottova 2622/2, ahead of Prague, Brno and Budapest, and the Czech and Hungarian entities are named there as subsidiaries of the Slovak one. Its about page dates the company to 2012 but states neither where it was founded nor by whom, and it never uses the word headquarters. So this entry claims a Slovak parent company and a Bratislava office, and stops there.',
+  },
+  {
+    name: 'Innovatrics',
+    href: 'https://www.innovatrics.com/contact/',
+    hrefLabel: 'innovatrics.com/contact',
+    what:
+      'Biometrics. Headquartered in Bratislava, in a building of its own: the contact page reads "Headquarters Innovatrics, s.r.o. Biometrics House Jurská 19 831 02 Bratislava, Slovakia". But its own timeline resists the tidy version of this story. In 2003 "Jan Lunter begins to work on a new fingerprint algorithm during his studies of Image Processing in France", and then "Jan founds the company together with his French professor and friend". A Slovak founder, a founding that happened around a French university, and a Bratislava headquarters that came later. The page does not say where the company was first registered, so this entry does not either. It is a more honest shape for this page than a company that never left.',
+  },
+];
+
+const actions = [
+  {
+    label: 'If you are a Slovak abroad with a career underway',
+    href: 'https://growni.sk/slovaci-v-zahranici',
+    hrefLabel: 'growni.sk/slovaci-v-zahranici',
+    what:
+      'Register with GROWNi as a Slovak abroad. You can take work, mentoring or expert volunteering from where you are, and it is the same door as LEAF\'s return support if you get that far.',
+    external: true,
+  },
+  {
+    label: 'If you work in AI or machine learning outside Slovakia',
+    href: 'https://slovaks.ai/expert-form',
+    hrefLabel: 'slovaks.ai/expert-form',
+    what:
+      'Put yourself on the slovaks.ai map. It is the only Slovak diaspora directory found for this page that is both public and open to submissions, and at 128 profiles it is small enough that one more measurably changes it.',
+    external: true,
+  },
+  {
+    label: 'If you are a researcher with international experience',
+    href: 'https://impulz.sav.sk/en',
+    hrefLabel: 'impulz.sav.sk',
+    what:
+      'Read the IMPULZ call. EUR 160,000 a year for five years to build your own group at a SAS institute is the largest instrument found for this page aimed at moving researchers into Slovakia rather than out of it. The 2026 call closes on 1 September 2026 at 09:00 CET.',
+    external: true,
+  },
+  {
+    label: 'If you want to argue with this site',
+    href: '/methodology#downloads',
+    hrefLabel: 'methodology and downloads',
+    what:
+      'The processed data is downloadable and licensed CC BY 4.0. The methodology page names every source, its confidence rating, and the things this data cannot tell you. Recomputing a figure here and finding it wrong is the most useful thing anyone can do with this site.',
+    external: false,
+  },
+];
+
 ---
 
 <Base
   title="Resources - Slovak Brain Drain"
   lang="en"
-  description="The data shows real loss, but the picture is not uniformly grim. Diaspora networks, Slovak tech built at home, return cases, and what you can do."
+  description="The data shows real loss, but the picture is not uniformly grim. Return programmes, diaspora networks, Slovak companies built at home, and what you can actually do, with every link checked."
 >
-  <h1>Resources and Counter-currents</h1>
-  <p>The data shows real loss, but the picture is not uniformly grim. These are the people and institutions working against the drain.</p>
+  <div class="resources">
+    <p class="eyebrow">Counter-currents</p>
+    <h1>Resources and Counter-currents</h1>
+    <p class="lede">
+      The rest of this site measures loss. It does not measure everything. There
+      are institutions in Slovakia whose stated purpose is to work against the
+      drain, one of them with real public money behind it, and there are Slovak
+      companies that built products used worldwide from a Slovak address. This
+      page lists the ones that could be checked.
+    </p>
+    <p class="lede">
+      Checked means something specific here. Every external link was fetched
+      before it was written in, and everything said about an organisation comes
+      from a page on that organisation's own site. Where an organisation states a
+      figure about itself, the figure is attributed to it rather than restated as
+      a finding of ours, and the original Slovak is quoted so you can read the
+      offer in the words the organisation chose.
+    </p>
 
-  <section class="resources-content">
-    <h2>Diaspora maps and networks</h2>
-    <ul>
-      <li><a href="https://slovaks.ai" target="_blank">slovaks.ai</a> - Curated database of 90+ Slovak AI professionals working abroad, maintained by KInIT.</li>
-    </ul>
+    <nav class="toc" aria-label="On this page">
+      <p class="toc-title">On this page</p>
+      <ol>
+        {contents.map(item => (
+          <li><a href={`#${item.id}`}>{item.label}</a></li>
+        ))}
+      </ol>
+    </nav>
 
-    <h2>Slovak tech built at home</h2>
-    <p>ESET, Sygic, Innovatrics, Pixel Federation, Vacuumlabs, Slido (Cisco). These companies chose to build from Bratislava, proving world-class tech does not require emigration.</p>
+    <section class="resources-content">
+      <h2 id="coming-back">Coming back</h2>
+      <p>Two organisations were found that go past networking and address the
+      return itself. Both are listed with what they concretely offer, which in
+      each case is narrower than the framing around it. The narrowness is worth
+      noticing, and it is an observation rather than a measurement: against the
+      outflow the rest of this site documents, everything that could be verified
+      for this page comes to two programmes, one of which is a job board with
+      help attached.</p>
 
-    <h2>Return cases</h2>
-    <p>Jan Tkac returned from Sweden with an ERC Starting Grant in 2014, bringing 1.5M EUR to the Slovak Academy of Sciences. Exceptional, but proof that return is possible with the right institutional support.</p>
+      <ul class="entries">
+        {comingBack.map(e => (
+          <li>
+            <p class="entry-head">
+              <a href={e.href} target="_blank" rel="noopener">{e.name}</a>
+              <span class="entry-kind">{e.kind}</span>
+            </p>
+            <p class="entry-url">
+              <a href={e.href} target="_blank" rel="noopener">{e.hrefLabel}</a>
+              {e.also && e.also.map(a => (
+                <span> &middot; <a href={a.href} target="_blank" rel="noopener">{a.label}</a></span>
+              ))}
+            </p>
+            {e.what.map(par => <p class="entry-what">{par}</p>)}
+            {e.quote && (
+              <blockquote>
+                <p lang="sk">{e.quote.sk}</p>
+                <p class="gloss">{e.quote.gloss}</p>
+              </blockquote>
+            )}
+          </li>
+        ))}
+      </ul>
 
-    <h2>What you can do</h2>
-    <ul>
-      <li>Nominate a researcher for the <a href="https://www.esetscienceaward.sk" target="_blank">ESET Science Award</a></li>
-      <li>Suggest an addition to <a href="https://slovaks.ai" target="_blank">slovaks.ai</a></li>
-      <li>The data on this site is CC-BY 4.0. Use it.</li>
-    </ul>
-  </section>
+      <h3>What has been tried, and stopped</h3>
+      <p>The two programmes above are what a reader can act on today. They are
+      not the whole history, and the rest of it is the more useful part. Three
+      further return instruments were found, all of them real, all of them
+      funded, and all of them finished. Slovakia has not failed to try. It has
+      repeatedly built something and then let it lapse.</p>
+
+      <ul class="entries">
+        {lapsed.map(e => (
+          <li>
+            <p class="entry-head">
+              <a href={e.href} target="_blank" rel="noopener">{e.name}</a>
+              <span class="entry-kind">{e.kind}</span>
+            </p>
+            <p class="entry-url">
+              <a href={e.href} target="_blank" rel="noopener">{e.hrefLabel}</a>
+              {e.also && e.also.map(a => (
+                <span> &middot; <a href={a.href} target="_blank" rel="noopener">{a.label}</a></span>
+              ))}
+            </p>
+            {e.what.map(par => <p class="entry-what">{par}</p>)}
+          </li>
+        ))}
+      </ul>
+
+      <h3>What a return has actually looked like</h3>
+      <p>Ján Tkáč is the one person among the nine in this site's
+      notable-departures dataset who came back, and checking his record for this
+      page turned up an error in this site's own data. The corrected version is
+      the more interesting one.</p>
+      <p>The grant is real: ELENA, grant agreement 311532, an FP7 ERC Starting
+      Grant from the 2012 call, hosted at the Institute of Chemistry of the
+      Slovak Academy of Sciences, running from 1 January 2013 to 31 December 2017.
+      The EU contribution was EUR 1,155,970. But it did not bring him home,
+      because he was already home. His postdoctoral years ran through Linköping and
+      Lund in Sweden and through Oxford, in an order the register does not record,
+      and he has worked at the Institute of Chemistry since 2009. The grant
+      arrived four years after the return. What it bought was not a homecoming but
+      a research group.</p>
+      <p>Which inverts the moral. The comforting reading is that a big enough
+      grant pulls people back. The record says the opposite: he came back first,
+      on ordinary terms, and the money followed once he was in place and
+      competitive. Every lapsed scheme above was built on the comforting reading.</p>
+      <p class="note">Sources, each fetched at 200:
+      <a href="https://cordis.europa.eu/project/id/311532?format=json" target="_blank" rel="noopener">CORDIS
+      project 311532</a> for the grant, call, dates, host and EUR 1,155,970, and
+      <a href="https://vedanadosah.cvtisr.sk/register-vedcov/ing-jan-tkac-drsc/" target="_blank" rel="noopener">CVTI
+      SR's researcher register</a> for the postdoc sequence and "Od roku 2009
+      pracuje v Chemickom ústave SAV". Until 26 August 2026 the
+      <a href="/people">people page</a> and <code>notable_people.json</code> both
+      said he returned from Sweden in 2014 with over 1.5 million euros. The amount
+      and the year were wrong and are now corrected in both. The country is not
+      wrong so much as unknowable from the register, which lists Sweden and Oxford
+      without dating either, so no version of this site now names one.</p>
+
+      <h2 id="networks">Diaspora networks</h2>
+      <p>These connect Slovaks abroad to each other and to Slovakia. None of them
+      is a return programme, and none of them claims to be. They are kept
+      separate for that reason.</p>
+
+      <ul class="entries">
+        {networks.map(e => (
+          <li>
+            <p class="entry-head">
+              <a href={e.href} target="_blank" rel="noopener">{e.name}</a>
+              <span class="entry-kind">{e.kind}</span>
+            </p>
+            <p class="entry-url">
+              <a href={e.href} target="_blank" rel="noopener">{e.hrefLabel}</a>
+              {e.also && e.also.map(a => (
+                <span> &middot; <a href={a.href} target="_blank" rel="noopener">{a.label}</a></span>
+              ))}
+            </p>
+            {e.what.map(par => <p class="entry-what">{par}</p>)}
+          </li>
+        ))}
+      </ul>
+
+      <h2 id="built-at-home">Built at home</h2>
+      <p>Slovak technology companies whose Slovak base could be confirmed from
+      their own pages. The test was deliberately dull: an address, an imprint, a
+      founding line, on a page belonging to the company. Six passed, and two of
+      them passed with a correction attached, which is why they are described
+      individually rather than listed as a row of logos.</p>
+
+      <ul class="entries companies">
+        {builtAtHome.map(c => (
+          <li>
+            <p class="entry-head">
+              <a href={c.href} target="_blank" rel="noopener">{c.name}</a>
+              <span class="entry-kind">{c.hrefLabel}</span>
+            </p>
+            <p class="entry-what">{c.what}</p>
+          </li>
+        ))}
+      </ul>
+
+      <p class="note">From the same corner of that ecosystem, and named here
+      because the earlier version of this page described it wrongly: the
+      <a href="https://www.esetscienceaward.sk/sk" target="_blank" rel="noopener">ESET
+      Science Award</a>, which its own page describes as "ocenenie pre výnimočné
+      osobnosti vedy na Slovensku", awarded annually by Nadácia ESET since 2019
+      in three categories, one of them reserved for researchers under 35. It is
+      not open to public nomination, and the current call is closed. Its rules
+      require the nominee to work at an organisation doing science and research
+      in Slovakia, which is what earns it a place here: it is the mirror image of
+      everything else on this page, aimed at the people who stayed.</p>
+
+      <h2 id="what-you-can-do">What you can do</h2>
+      <p>Four things, each of which resolves to a working form or a live call
+      rather than to a sentiment.</p>
+      <ul class="entries actions">
+        {actions.map(a => (
+          <li>
+            <p class="entry-head">
+              <span class="action-label">{a.label}</span>
+            </p>
+            <p class="entry-what">{a.what}</p>
+            <p class="entry-url">
+              {a.external
+                ? <a href={a.href} target="_blank" rel="noopener">{a.hrefLabel}</a>
+                : <a href={a.href}>{a.hrefLabel}</a>}
+            </p>
+          </li>
+        ))}
+      </ul>
+
+      <p class="note">This page is a work in progress and it is the thinnest
+      page on the site, which is partly a property of the subject. If you know of
+      a Slovak organisation that concretely supports return and has a page that
+      says so, it belongs here.</p>
+    </section>
+  </div>
 </Base>
 
 <style>
-  .resources-content { max-width: 680px; }
-  .resources-content h2 { font-family: var(--font-serif); margin-top: 2rem; margin-bottom: 0.5rem; font-size: 1.2rem; }
-  .resources-content ul { padding-left: 1.25rem; margin-bottom: 1rem; }
-  .resources-content li { margin-bottom: 0.5rem; font-size: 0.95rem; }
-  .resources-content a { color: var(--accent-primary); }
+  .resources {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    padding: var(--space-8) 0 var(--space-24);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent-primary);
+    margin-bottom: var(--space-3);
+  }
+  .resources h1 {
+    font-family: var(--font-serif);
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0 0 var(--space-6);
+  }
+  .lede {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--text-secondary);
+    margin-bottom: var(--space-4);
+  }
+
+  .toc {
+    margin: var(--space-12) 0;
+    padding: var(--space-6);
+    background: var(--bg-nested);
+    border-radius: var(--radius-md);
+  }
+  .toc-title {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: var(--space-3);
+  }
+  .toc ol { margin: 0; padding-left: var(--space-6); }
+  .toc li { font-size: 15px; margin-bottom: var(--space-1); }
+  .toc a { color: var(--text-primary); text-decoration: none; }
+  .toc a:hover { color: var(--accent-primary); }
+
+  .resources-content h2 {
+    font-family: var(--font-serif);
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text-primary);
+    margin-top: var(--space-12);
+    margin-bottom: var(--space-4);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--border-subtle);
+    scroll-margin-top: var(--space-24);
+  }
+  .resources-content h3 {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: var(--space-8);
+    margin-bottom: var(--space-3);
+  }
+  .resources-content p {
+    font-size: 16px;
+    line-height: 1.7;
+    color: var(--text-primary);
+    margin-bottom: var(--space-4);
+  }
+
+  .entries {
+    list-style: none;
+    padding-left: 0;
+    margin: var(--space-6) 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .entries > li {
+    padding: var(--space-6) 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .entry-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: var(--space-3);
+    margin-bottom: var(--space-1) !important;
+  }
+  .entry-head a {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-emphasis);
+  }
+  .entry-head a:hover { color: var(--accent-primary); }
+  .action-label {
+    font-family: var(--font-serif);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .entry-kind {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .entry-url {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    margin-bottom: var(--space-3) !important;
+    color: var(--text-tertiary);
+  }
+  .entry-url a { color: var(--accent-primary); text-decoration: none; }
+  .entry-url a:hover { text-decoration: underline; }
+  .entry-what {
+    font-size: 15px !important;
+    line-height: 1.7;
+    color: var(--text-primary);
+    margin-bottom: var(--space-3) !important;
+  }
+  .entries > li > .entry-what:last-child { margin-bottom: 0 !important; }
+  .actions .entry-url { margin-bottom: 0 !important; }
+
+  blockquote {
+    margin: var(--space-4) 0 0;
+    padding: var(--space-4) var(--space-6);
+    background: var(--bg-nested);
+    border-left: 3px solid var(--border-emphasis);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  blockquote p {
+    font-family: var(--font-serif);
+    font-size: 15px !important;
+    line-height: 1.65;
+    color: var(--text-primary);
+    margin-bottom: var(--space-2) !important;
+  }
+  blockquote .gloss {
+    font-family: var(--font-sans);
+    font-size: 14px !important;
+    color: var(--text-tertiary);
+    margin-bottom: 0 !important;
+  }
+
+
+  .note {
+    font-size: 14px !important;
+    line-height: 1.65;
+    color: var(--text-tertiary) !important;
+  }
+  .note a { color: var(--accent-primary); }
+  code { font-family: var(--font-mono); font-size: 0.85em; }
+
+  @media (max-width: 640px) {
+    .resources { padding: var(--space-6) 0 var(--space-16); }
+    .resources h1 { font-size: 32px; }
+    .lede { font-size: 16px; }
+    .resources-content h2 { font-size: 20px; }
+    .entry-head a, .action-label { font-size: 17px; }
+    blockquote { padding: var(--space-3) var(--space-4); }
+  }
 </style>

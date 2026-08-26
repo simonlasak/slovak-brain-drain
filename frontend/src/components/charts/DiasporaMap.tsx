@@ -68,7 +68,6 @@ interface CountryDatum {
 }
 
 interface DiasporaMapLabels {
-  eyebrow: string;
   title: string;
   subtitle: string;
   year: string;
@@ -680,7 +679,6 @@ export function DiasporaMap({ data, total, labels, aboutLabel, sourcePanel }: Di
   return (
     <figure className="diaspora-figure">
       <figcaption className="diaspora-head">
-        <p className="diaspora-eyebrow">{labels.eyebrow}</p>
         <h2 className="diaspora-title">{labels.title}</h2>
         <p className="diaspora-subtitle">{labels.subtitle}</p>
       </figcaption>

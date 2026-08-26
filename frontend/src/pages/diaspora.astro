@@ -35,19 +35,13 @@ import Section3App from '../components/Section3App';
   /* ONE WIDTH for the whole figure: head, map and strip all 900px, centred, so
      they share a left and right edge. A 400px map under a 1080px strip was the
      main visual failure of the previous arrangement. */
+  /* The top padding replaces the section eyebrow that used to sit above this
+     title and carried the clearance from the nav. Without it the title landed
+     35px under the navbar where every other page starts around 100px. */
   .diaspora-head {
     max-width: 900px;
     margin: 0 auto var(--space-3);
-    padding: var(--space-2) 0 0;
-  }
-  .diaspora-eyebrow {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--text-secondary);
-    margin: 0 0 var(--space-3) 0;
+    padding: var(--space-12) 0 0;
   }
   .diaspora-title {
     font-family: var(--font-serif);
@@ -449,15 +443,6 @@ import Section3App from '../components/Section3App';
     font-size: 13px;
     line-height: 1.55;
     color: var(--text-tertiary);
-  }
-  .section-eyebrow {
-    font-family: var(--font-sans);
-    font-size: 11px;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--text-tertiary);
-    margin: 0 0 var(--space-6) 0;
   }
   .stat-callout {
     max-width: var(--max-prose);

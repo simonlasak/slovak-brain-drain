@@ -21,7 +21,6 @@ export interface Section3Content {
   reviewed: boolean;
   translationNotice: string;
 
-  eyebrow: string;
   h1: string;
 
   intro: string[];
@@ -68,7 +67,6 @@ export interface Section3Content {
 
   /** Labels rendered inside the world map and its European inset. */
   map: {
-    eyebrow: string;
     /** Chart title, rendered above the map. */
     title: string;
     subtitle: string;
@@ -116,7 +114,6 @@ const en: Section3Content = {
   reviewed: true,
   translationNotice: '',
 
-  eyebrow: '§3 · Global Diaspora',
   h1: 'Three questions, three answers',
 
   // APPROVED 2026-07-31 (draft 3). Replaces prose built on growth ratios, which
@@ -264,7 +261,6 @@ const en: Section3Content = {
   ],
 
   map: {
-    eyebrow: '§3 · Global diaspora',
     // NOT "Slovak-born residents by country": four of the 51 figures are not
     // birth-derived, and one of those four is the largest number on the map.
     title: 'Slovaks counted abroad, 2020',

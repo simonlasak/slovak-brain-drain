@@ -6,7 +6,6 @@ import { DiasporaArrivalsChart } from './charts/DiasporaArrivalsChart';
 import { DiasporaBasisChart } from './charts/DiasporaBasisChart';
 import type { BasisRow } from './charts/DiasporaBasisChart';
 import type { ArrivalsSeries } from './charts/DiasporaArrivalsChart';
-import { SectionEyebrow } from './charts/SectionEyebrow';
 import { StatCallout } from './charts/StatCallout';
 import { AnimateOnScroll } from './charts/AnimateOnScroll';
 import { AboutData } from './charts/AboutData';
@@ -234,9 +233,9 @@ function Section3App() {
         <h3 className="section3-h3">{c.sub1}</h3>
 
         <AnimateOnScroll>
-          {() => (
+          {animated => (
             <div className="section3-chart-wide">
-              <DiasporaRankedChart data={ranked} mode="absolute" />
+              <DiasporaRankedChart data={ranked} mode="absolute" animated={animated} />
               <div className="chart-caption-row">
                 <p className="section3-caption">{c.caption1}</p>
                 <AboutData label={c.aboutLabel} panel={c.sources.ranked} />
@@ -251,9 +250,9 @@ function Section3App() {
             against the absolute figures. Under sub2 it was answering a heading about
             counting the same people twice, which it does not do. */}
         <AnimateOnScroll>
-          {() => (
+          {animated => (
             <div className="section3-chart-wide">
-              <DiasporaRankedChart data={ranked} mode="growth" />
+              <DiasporaRankedChart data={ranked} mode="growth" animated={animated} />
               <div className="chart-caption-row">
                 <p className="section3-caption">{c.captionGrowth}</p>
                 <AboutData label={c.aboutLabel} panel={c.sources.growth} />
@@ -271,9 +270,9 @@ function Section3App() {
         <h3 className="section3-h3">{c.sub2}</h3>
 
         <AnimateOnScroll>
-          {() => (
+          {animated => (
             <div className="section3-chart-wide">
-              <DiasporaBasisChart rows={basis} labels={c.basis} />
+              <DiasporaBasisChart rows={basis} labels={c.basis} animated={animated} />
               <div className="chart-caption-row">
                 <p className="section3-caption">{c.caption2}</p>
                 <AboutData label={c.aboutLabel} panel={c.sources.basis} />
@@ -293,9 +292,9 @@ function Section3App() {
         </div>
 
         <AnimateOnScroll>
-          {() => (
+          {animated => (
             <div className="section3-chart-wide">
-              <DiasporaArrivalsChart series={arrivals} labels={c.arrivals} />
+              <DiasporaArrivalsChart series={arrivals} labels={c.arrivals} animated={animated} />
               <div className="chart-caption-row">
                 <p className="section3-caption">{c.captionFlows}</p>
                 <AboutData label={c.aboutLabel} panel={c.sources.trend} />
