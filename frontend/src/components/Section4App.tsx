@@ -61,10 +61,8 @@ interface PeopleData {
  *
  * The last two were not guessable from any source we could reach: kegg.tech
  * writes "Kristina Cahojova", and no authoritative source for Simkova was found
- * at all. Simon confirmed both surnames directly on 26 August 2026, so they are
- * now Čahojová and Šimková. Their given names are still stored as Kristina and
- * Katarina, because he confirmed the surnames only and turning those into
- * Kristína and Katarína would be the same pattern-transliteration this avoided.
+ * at all. Simon confirmed both in full directly on 26 August 2026: Kristína
+ * Čahojová and Katarína Šimková. All nine names are now settled.
  *
  * Preferring name_sk keeps this correct the moment either field is filled.
  */

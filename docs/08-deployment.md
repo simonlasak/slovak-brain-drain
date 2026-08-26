@@ -88,6 +88,26 @@ duckdb-wasm's own documentation prescribes for CDN delivery.
 `frontend/public/duckdb/` was deleted from the working tree. It remains in git
 history and in `node_modules`, so nothing is lost.
 
+### Known risk this introduces
+
+Every chart on the site now has a hard runtime dependency on jsDelivr. If that CDN
+is unreachable, DuckDB never instantiates and the chart islands render an empty
+frame rather than a message, because no component has a load-failure state.
+
+The site already depended on one third party at runtime, Google Fonts in
+`Base.astro`, but that one degrades gracefully to a fallback typeface. This one
+does not degrade: it removes the data.
+
+Observed for real while finishing the WIP. A sandboxed browser with no external
+egress failed identically on both hosts, `fonts.googleapis.com` and
+`cdn.jsdelivr.net`, while every same-origin asset still served 200. The fonts
+merely fell back; the charts went blank.
+
+Two mitigations, neither done:
+- Cheap: give the chart islands a visible failure state, so an unreachable CDN
+  reads as "could not load the data" rather than as an empty chart.
+- Real: precompute the JSON, per the section below, and the dependency is gone.
+
 ### This is a workaround, not the right answer
 
 Every visitor still downloads a 34 MiB database engine, roughly 8 MiB over the

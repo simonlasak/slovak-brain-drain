@@ -58,9 +58,15 @@ clicking a point opens that person's card on a timeline ordered by departure yea
 carries its own sources. An always-open note explains how the list was assembled and why it
 is not a sample.
 
-**`/methodology`** documents the sources, the registration gap, the cohort-retention
-derivation and its sensitivity, and the known discrepancies between sources.
-**`/resources`** covers diaspora networks and Slovak companies built at home.
+**`/methodology`** is the audit trail. Every source with a confidence rating and the basis
+for that rating, the registration gap, the cohort-retention derivation and its sensitivity,
+the known discrepancies between sources, what the data cannot tell you, and download links
+for the four processed data files.
+
+**`/resources`** is the counter-current: the institutions working against the drain. LEAF's
+programme for Slovaks abroad, the IMPULZ grant scheme at the Slovak Academy of Sciences,
+three state return schemes that ran and were allowed to lapse, diaspora networks, and Slovak
+companies built at home. Every external link on it was fetched before it was written in.
 
 ---
 
@@ -123,6 +129,17 @@ Three things changed as a result:
   organising idea of §2's three series and §3's dumbbell.
 
 Every figure quoted in this README names the `headline_figures.json` key it came from.
+
+**Where that guarantee stops, which is the part worth knowing.** It covers the landing page
+and `/methodology`. It does not cover the section prose: `src/content/internal.ts`,
+`corridor.ts` and `diaspora.ts` hold dozens of figures typed in by hand and checked by
+reading, which is exactly the process that failed before. One of them was found false while
+finishing this WIP. §4 stated that Ján Tkáč returned from Sweden in 2014 with an ERC Starting
+Grant of over 1.5 million euros; CORDIS gives the grant as 1,155,970 euros running 2013 to
+2017, and his institute's own register has him back in Slovakia from 2009, so the grant
+followed the return by four years instead of causing it, which inverted the conclusion the
+paragraph drew from it. Routing the section figures through the same generated file is the
+open work.
 
 ---
 
