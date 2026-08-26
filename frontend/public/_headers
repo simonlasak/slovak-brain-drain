@@ -1,0 +1,18 @@
+# Cloudflare Pages reads this file from the root of the build output. Astro copies
+# everything in public/ verbatim into dist/, so it lands there.
+
+# Astro fingerprints these filenames with a content hash, so a changed file gets a
+# changed URL and this can be cached indefinitely.
+/_astro/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The Parquet and GeoJSON files are NOT fingerprinted: the pipeline rewrites them
+# under the same names. A long cache would keep serving last month's data after a
+# pipeline run, so these revalidate hourly instead.
+/data/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Frame-Options: SAMEORIGIN

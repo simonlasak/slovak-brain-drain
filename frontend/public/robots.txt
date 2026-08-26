@@ -1,0 +1,10 @@
+# Crawling is disallowed on purpose while this site is a work in progress.
+# /resources still carries placeholder content and the Slovak translation of
+# every section is an untranslated stub, so an indexed snapshot taken now would
+# misrepresent the piece.
+#
+# TO ALLOW INDEXING AT LAUNCH: change the line "Disallow: /" below to
+# "Disallow:" (an empty value, which permits everything). Change nothing else.
+
+User-agent: *
+Disallow: /

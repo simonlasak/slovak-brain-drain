@@ -19,7 +19,7 @@ import { useLocale } from '../../lib/locale';
  * 1. The reporting panel grows. Five countries report in 1995, 29 by 2021, so a
  *    summed series rises partly because countries join it. Restricted to
  *    destinations reporting in EVERY year of the window, the panel is 4 countries
- *    from 1995, 17 from 2000, and 22 from 2008 — and the 2008 panel still covers
+ *    from 1995, 17 from 2000, and 22 from 2008, and the 2008 panel still covers
  *    97.3 percent of what all reporting countries recorded in 2019, against 93.3
  *    for the 2000 panel. Starting later buys both comparability and coverage.
  *
@@ -43,8 +43,8 @@ import { useLocale } from '../../lib/locale';
  * absorbed most post-accession movement. That is a property of the source, not a
  * gap this chart can close, and the caption says so.
  *
- * COLOUR is assigned in fixed order by 2008-2023 volume — Germany, Czechia,
- * Austria — never cycled, and identity is carried by a legend plus an end label on
+ * COLOUR is assigned in fixed order by 2008-2023 volume (Germany, Czechia,
+ * Austria), never cycled, and identity is carried by a legend plus an end label on
  * every line, never by hue alone.
  */
 
@@ -303,7 +303,7 @@ export function DiasporaArrivalsChart({ series, labels }: Props) {
                   <th scope="row">{y}</th>
                   {series.map(s => {
                     const p = s.points.find(q => q.year === y);
-                    return <td key={s.code}>{p ? fmt(p.value) : '—'}</td>;
+                    return <td key={s.code}>{p ? fmt(p.value) : '-'}</td>;
                   })}
                 </tr>
               ))}

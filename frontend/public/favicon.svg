@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Slovak Brain Drain">
+  <!-- The masthead diamond (&#9670;) from src/layouts/Base.astro, drawn as a path
+       so it does not depend on a font. Filled with a literal hex because an SVG
+       asset cannot read a CSS custom property: #B83A1F duplicates the value of
+       --accent-primary in src/styles/tokens.css. Keep the two in step. -->
+  <path d="M16 2 L29 16 L16 30 L3 16 Z" fill="#B83A1F" />
+</svg>

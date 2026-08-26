@@ -1,0 +1,41 @@
+Data licence
+============
+
+The MIT licence in LICENSE covers the code in this repository. It does not
+cover the data. The data is covered by this notice.
+
+Processed outputs: CC BY 4.0
+---------------------------
+
+The processed data outputs in `data/processed/` and `frontend/public/data/` are
+licensed under the Creative Commons Attribution 4.0 International licence
+(CC BY 4.0):
+
+    https://creativecommons.org/licenses/by/4.0/
+
+You may share and adapt them, including commercially, provided you give
+appropriate credit, link to the licence, and indicate whether changes were
+made. Suggested attribution:
+
+    Šimon Lasák, "Slovenský odliv / Slovak Brain Drain" (2026), CC BY 4.0.
+
+This licence applies to the derived tables, aggregates and geometries produced
+by the pipeline in this repository. It does not, and cannot, relicense the
+primary data those outputs are computed from.
+
+Primary sources: their own terms apply
+--------------------------------------
+
+The underlying primary sources carry their own terms of use and their own
+attribution requirements, which are not superseded by the licence above. Users
+of this data must check and observe each source's terms independently:
+
+  - Štatistický úrad Slovenskej republiky (ŠÚ SR) - DataCube
+  - Eurostat
+  - Český statistický úřad (ČSÚ)
+  - OECD
+  - UN DESA (United Nations Department of Economic and Social Affairs)
+
+Where an output is derived from one of these sources, the source must be
+credited alongside this project. Per-figure provenance is recorded on the
+site's methodology page and in `docs/06-sources-page.md`.

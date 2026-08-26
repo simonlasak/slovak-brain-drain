@@ -1,5 +1,5 @@
 /*
- * Design tokens — locked in docs/05-design.md
+ * Design tokens, locked in docs/05-design.md
  * Direction: Folk-modern (terracotta + Tatra blue + harvest gold on cream)
  * Single source of truth. Do not edit values without updating docs/05-design.md.
  */
@@ -71,7 +71,7 @@
   --space-24: 96px;
   --space-32: 128px;
 
-  /* ─── Radius (max 8px — never pills) ──────────────────────── */
+  /* ─── Radius (max 8px, never pills) ──────────────────────── */
   --radius-none: 0;
   --radius-sm: 4px;
   --radius-md: 8px;

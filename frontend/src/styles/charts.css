@@ -1,5 +1,5 @@
 /*
- * Shared chart chrome — the pieces every section's figures use.
+ * Shared chart chrome: the pieces every section's figures use.
  *
  * WHY THIS FILE EXISTS. The caption row and the whole "About this data" panel were
  * copy-pasted into internal.astro, corridor.astro and diaspora.astro, three

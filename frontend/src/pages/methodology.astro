@@ -16,7 +16,11 @@ const mirrorPanel = figures.mirror_panel_countries.value;
 const fmt = (n: number) => n.toLocaleString('en');
 ---
 
-<Base title="Methodology - Slovak Brain Drain" lang="en">
+<Base
+  title="Methodology - Slovak Brain Drain"
+  lang="en"
+  description="Full data provenance, source quality ratings and known limitations, including the registration gap and how cohort retention is derived."
+>
   <h1>Methodology and Sources</h1>
   <p>Full data provenance, source quality ratings, and known limitations.</p>
 
@@ -87,7 +91,7 @@ const fmt = (n: number) => n.toLocaleString('en');
     </ul>
 
     <h2>Validation report</h2>
-    <p>Eight cross-source checks run on every pipeline build. The report is
+    <p>Nine cross-source checks run on every pipeline build. The report is
     written to <code>pipeline/validate/report.html</code> in the repository, with
     each check's severity and the observations behind it.</p>
   </section>

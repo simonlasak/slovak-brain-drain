@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="sk">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Slovak diacritic test — Brain Drain case study</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Inter+Tight:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap">
+
+<style>
+:root {
+  --bg-page: #FBF7F0;
+  --bg-surface: #FFFFFF;
+  --bg-nested: #F4EFE3;
+  --text-primary: #2A1810;
+  --text-secondary: #6B4A2F;
+  --text-tertiary: #8B6F4F;
+  --accent-primary: #B83A1F;
+  --accent-secondary: #2A6B8B;
+  --accent-tertiary: #D4A547;
+  --border-subtle: #E8DDC8;
+  --border-emphasis: #D4A547;
+
+  --font-serif: 'Source Serif 4', Georgia, serif;
+  --font-sans: 'Inter Tight', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  background: var(--bg-page);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 96px 64px 128px;
+}
+
+@media (max-width: 768px) {
+  main { padding: 48px 24px 96px; }
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+h1.page-title {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: 42px;
+  font-weight: 500;
+  line-height: 1.1;
+  margin-bottom: 16px;
+  letter-spacing: -0.005em;
+}
+
+p.page-lede {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  max-width: 720px;
+  margin-bottom: 16px;
+}
+
+p.page-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-bottom: 96px;
+}
+
+section.family {
+  margin-bottom: 96px;
+  padding-top: 32px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+section.family > .family-eyebrow {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+section.family > .family-name {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: 32px;
+  font-weight: 500;
+  line-height: 1.15;
+  margin-bottom: 8px;
+}
+
+section.family > .family-note {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  margin-bottom: 48px;
+  max-width: 720px;
+}
+
+.weight-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 32px;
+  padding: 32px 0;
+  border-bottom: 1px dashed var(--border-subtle);
+}
+
+.weight-row:last-child {
+  border-bottom: none;
+}
+
+.weight-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding-top: 12px;
+}
+
+.weight-content > * + * {
+  margin-top: 16px;
+}
+
+/* The required diacritic string, large */
+.diacritic-large {
+  font-size: 72px;
+  line-height: 1.0;
+  letter-spacing: 0;
+  display: block;
+}
+
+/* Slovak pangram-style sample line */
+.diacritic-context {
+  font-size: 24px;
+  line-height: 1.35;
+  letter-spacing: 0;
+  display: block;
+}
+
+/* ALL CAPS Slovak — must remain readable with diacritics */
+.diacritic-caps {
+  font-size: 14px;
+  line-height: 1.4;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: block;
+}
+
+/* Per-family typography */
+.serif       { font-family: var(--font-serif); font-optical-sizing: auto; }
+.sans        { font-family: var(--font-sans); }
+.mono        { font-family: var(--font-mono); }
+
+/* Per-weight */
+.w-400 { font-weight: 400; }
+.w-500 { font-weight: 500; }
+.w-600 { font-weight: 600; }
+
+/* Hero number — checks tabular feel for big stats */
+.hero-number {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: 96px;
+  font-weight: 600;
+  line-height: 1.0;
+  letter-spacing: -0.02em;
+  display: block;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Mono-vs-spec helper: side-by-side for comparison if Šimon wants it */
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  padding: 24px;
+  background: var(--bg-nested);
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.compare-row > div > .compare-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+footer.checklist {
+  margin-top: 96px;
+  padding-top: 48px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+footer.checklist > h2 {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.25;
+  margin-bottom: 24px;
+}
+
+footer.checklist > ul {
+  list-style: none;
+  padding: 0;
+  max-width: 720px;
+}
+
+footer.checklist > ul > li {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  padding-left: 20px;
+  position: relative;
+}
+
+footer.checklist > ul > li::before {
+  content: "◆";
+  color: var(--accent-primary);
+  position: absolute;
+  left: 0;
+  top: 4px;
+  font-size: 10px;
+}
+
+footer.checklist > p {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 32px;
+}
+</style>
+</head>
+
+<body>
+<main>
+
+  <p class="eyebrow">STAGE 0 · CHECKPOINT 0 · DIACRITIC RENDERING</p>
+  <h1 class="page-title">Slovenská diakritika &mdash; test rezov</h1>
+  <p class="page-lede">
+    This page exists to verify that every font we ship to production renders the
+    full set of Slovak diacritics &mdash; <span lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+    &mdash; cleanly at every weight we use.
+    Visual judgement is required: do the marks sit on the cap line correctly,
+    do they collide with ascenders, do they look balanced in ALL&nbsp;CAPS, and
+    is the overall texture acceptable.
+  </p>
+  <p class="page-meta">
+    bg: #FBF7F0 &middot; text: #2A1810 &middot; weights tested: 400 / 500 / 600 &middot;
+    fonts loaded from Google Fonts CDN
+  </p>
+
+  <!-- ====== Source Serif 4 ====== -->
+  <section class="family">
+    <p class="family-eyebrow">PRIMARY SERIF</p>
+    <h2 class="family-name serif">Source Serif 4</h2>
+    <p class="family-note">
+      Variable font, optical-size axis (8&ndash;60). Used for headlines, large numbers,
+      and long-form body copy. The optical size axis should make the diacritics
+      slightly heavier at small sizes &mdash; verify the marks remain legible.
+    </p>
+
+    <div class="weight-row">
+      <div class="weight-label">400 / Regular</div>
+      <div class="weight-content">
+        <span class="diacritic-large serif w-400" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context serif w-400" lang="sk">
+          Štatistický úrad Slovenskej republiky &middot; príliš žltučký kôň úpel ďábelské ódy
+        </span>
+        <span class="diacritic-caps serif w-400" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+      </div>
+    </div>
+
+    <div class="weight-row">
+      <div class="weight-label">500 / Medium</div>
+      <div class="weight-content">
+        <span class="diacritic-large serif w-500" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context serif w-500" lang="sk">
+          Štatistický úrad Slovenskej republiky &middot; príliš žltučký kôň úpel ďábelské ódy
+        </span>
+        <span class="diacritic-caps serif w-500" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+      </div>
+    </div>
+
+    <div class="weight-row">
+      <div class="weight-label">600 / Semibold</div>
+      <div class="weight-content">
+        <span class="diacritic-large serif w-600" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context serif w-600" lang="sk">
+          Štatistický úrad Slovenskej republiky &middot; príliš žltučký kôň úpel ďábelské ódy
+        </span>
+        <span class="diacritic-caps serif w-600" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+        <span class="hero-number" lang="sk">240&nbsp;000</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== Pangram Sans (Inter Tight fallback) ====== -->
+  <section class="family">
+    <p class="family-eyebrow">UI SANS &middot; PANGRAM SANS &mdash; PENDING LICENSE</p>
+    <h2 class="family-name serif">Inter Tight (fallback for Pangram Sans)</h2>
+    <p class="family-note">
+      Pangram Sans is the spec-preferred sans (Pangram Pangram, the Slovak type
+      foundry &mdash; paid commercial license). Until we resolve the budget question,
+      Inter Tight is loaded from Google Fonts as the spec&rsquo;s named fallback.
+      <strong>Plain Inter is explicitly disallowed</strong> &mdash; do not ever fall back below this.
+    </p>
+
+    <div class="weight-row">
+      <div class="weight-label">400 / Regular</div>
+      <div class="weight-content">
+        <span class="diacritic-large sans w-400" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context sans w-400" lang="sk">
+          Štatistický úrad Slovenskej republiky &middot; príliš žltučký kôň úpel ďábelské ódy
+        </span>
+        <span class="diacritic-caps sans w-400" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+      </div>
+    </div>
+
+    <div class="weight-row">
+      <div class="weight-label">500 / Medium</div>
+      <div class="weight-content">
+        <span class="diacritic-large sans w-500" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context sans w-500" lang="sk">
+          Štatistický úrad Slovenskej republiky &middot; príliš žltučký kôň úpel ďábelské ódy
+        </span>
+        <span class="diacritic-caps sans w-500" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+      </div>
+    </div>
+
+    <div class="weight-row">
+      <div class="weight-label">600 / Semibold</div>
+      <div class="weight-content">
+        <span class="diacritic-large sans w-600" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context sans w-600" lang="sk">
+          Štatistický úrad Slovenskej republiky &middot; príliš žltučký kôň úpel ďábelské ódy
+        </span>
+        <span class="diacritic-caps sans w-600" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== JetBrains Mono ====== -->
+  <section class="family">
+    <p class="family-eyebrow">MONOSPACE</p>
+    <h2 class="family-name serif">JetBrains Mono</h2>
+    <p class="family-note">
+      Used for tabular numbers in charts, source citations, table codes
+      (DataCube codes like <span class="mono">om7102rr</span>), ISO codes,
+      and NACE letters. Mono diacritics are notoriously hit-or-miss; verify
+      especially that <span lang="sk" class="mono">ľ ŕ ď ť</span> remain
+      distinguishable.
+    </p>
+
+    <div class="weight-row">
+      <div class="weight-label">400 / Regular</div>
+      <div class="weight-content">
+        <span class="diacritic-large mono w-400" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context mono w-400" lang="sk">
+          om7102rr &middot; Štatistický úrad &middot; ďábelské ódy
+        </span>
+        <span class="diacritic-caps mono w-400" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+        <span class="hero-number mono w-400">240&nbsp;000</span>
+      </div>
+    </div>
+
+    <div class="weight-row">
+      <div class="weight-label">500 / Medium</div>
+      <div class="weight-content">
+        <span class="diacritic-large mono w-500" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context mono w-500" lang="sk">
+          om7102rr &middot; Štatistický úrad &middot; ďábelské ódy
+        </span>
+        <span class="diacritic-caps mono w-500" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+      </div>
+    </div>
+
+    <div class="weight-row">
+      <div class="weight-label">600 / Semibold</div>
+      <div class="weight-content">
+        <span class="diacritic-large mono w-600" lang="sk">ä č ď ô ľ ŕ š ť ž</span>
+        <span class="diacritic-context mono w-600" lang="sk">
+          om7102rr &middot; Štatistický úrad &middot; ďábelské ódy
+        </span>
+        <span class="diacritic-caps mono w-600" lang="sk">§2 &middot; ČESKÝ KORIDOR</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ====== Side-by-side compare ====== -->
+  <section class="family">
+    <p class="family-eyebrow">SIDE-BY-SIDE &middot; SECTION TITLE STRESS TEST</p>
+    <h2 class="family-name serif">In context — what a section heading actually looks like</h2>
+    <p class="family-note">
+      Approximation of the H2 (32px, weight 500, Source Serif 4) with the
+      eyebrow (11px, weight 500, sans, 0.12em tracking) above it,
+      using the actual Slovak text the site will render.
+    </p>
+
+    <div class="compare-row">
+      <div>
+        <p class="compare-label">SLOVENSKY</p>
+        <p class="eyebrow" lang="sk">§2 · ČESKÝ KORIDOR</p>
+        <p class="serif" style="font-size:32px;font-weight:500;line-height:1.15;" lang="sk">
+          Český koridor — jednosmerný tok
+        </p>
+      </div>
+      <div>
+        <p class="compare-label">ENGLISH</p>
+        <p class="eyebrow" lang="en">§2 · THE CZECH CORRIDOR</p>
+        <p class="serif" style="font-size:32px;font-weight:500;line-height:1.15;" lang="en">
+          The Czech corridor — a one-directional flow
+        </p>
+      </div>
+    </div>
+
+    <div class="compare-row">
+      <div>
+        <p class="compare-label">SLOVENSKY · HERO STAT</p>
+        <p class="eyebrow" lang="sk">SLOVÁCI V ČESKU</p>
+        <p class="hero-number" lang="sk">240&nbsp;000</p>
+        <p class="sans" style="font-size:14px;color:var(--text-secondary);margin-top:8px;" lang="sk">
+          ekonomicky aktívnych v roku 2023
+        </p>
+      </div>
+      <div>
+        <p class="compare-label">ENGLISH · HERO STAT</p>
+        <p class="eyebrow" lang="en">SLOVAKS IN CZECHIA</p>
+        <p class="hero-number" lang="en">240,000</p>
+        <p class="sans" style="font-size:14px;color:var(--text-secondary);margin-top:8px;" lang="en">
+          working-age, 2023
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="checklist">
+    <h2>Visual judgement checklist for Šimon</h2>
+    <ul>
+      <li>Do <span lang="sk">ä, ô</span> sit cleanly on the cap line in <strong>Source Serif 4</strong>, or do they look pinched against the ascenders?</li>
+      <li>Are <span lang="sk">ľ, ŕ, ď, ť</span> visually distinct in <strong>JetBrains Mono</strong> at 400 weight, or do their háčik/cárka marks merge?</li>
+      <li>In ALL CAPS at 14px (<span lang="sk">ČESKÝ KORIDOR</span>), is the 0.12em letter-spacing enough to keep diacritics from crowding their neighbour?</li>
+      <li>Does Inter Tight at 500 weight feel close enough to a UI sans companion to Source Serif 4, or does the texture mismatch?</li>
+      <li>Is the hero stat (<span lang="sk">240&nbsp;000</span>) recognisably tabular and balanced at 96px / 600 weight in Source Serif 4?</li>
+      <li>Does the Slovak phrase <span lang="sk">&laquo;príliš žltučký kôň úpel ďábelské ódy&raquo;</span> render every diacritic correctly, with no missing glyphs or font-substitution fallbacks?</li>
+      <li>If we reject Inter Tight here, the only fallback we can take is licensing Pangram Sans &mdash; plain Inter is excluded by spec.</li>
+    </ul>
+    <p>
+      Open this file directly in Chrome / Safari / Firefox and judge visually.
+      No build step required &mdash; pure HTML + Google Fonts.
+    </p>
+  </footer>
+
+</main>
+</body>
+</html>

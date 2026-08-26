@@ -11,6 +11,10 @@ import react from '@astrojs/react';
 export default defineConfig({
   integrations: [react()],
   output: 'static',
+  // Deployed origin. Astro.site is what Base.astro builds og:url and the
+  // canonical link from, so these are absolute in the built HTML rather than
+  // path-relative (crawlers and social scrapers require absolute).
+  site: 'https://slovak-brain-drain.pages.dev',
   vite: {
     optimizeDeps: {
       exclude: ['@duckdb/duckdb-wasm'],

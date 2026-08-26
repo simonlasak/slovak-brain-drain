@@ -1,0 +1,104 @@
+---
+import Base from '../layouts/Base.astro';
+
+// Astro's static build emits this as dist/404.html, which Cloudflare Pages
+// serves for any unmatched path without extra configuration.
+// English only, matching /methodology and /resources.
+const sections = [
+  { href: '/internal', label: '§1 Internal Slovakia' },
+  { href: '/corridor', label: '§2 The Czech Corridor' },
+  { href: '/diaspora', label: '§3 Global Diaspora' },
+  { href: '/people', label: '§4 Notable Departures' },
+];
+---
+
+<Base
+  title="Page not found - Slovak Brain Drain"
+  lang="en"
+  description="That page does not exist on this site. Links back to the four sections of the Slovak emigration data story."
+  noindex
+>
+  <div class="notfound">
+    <p class="notfound-eyebrow">404</p>
+    <h1>That page is not here</h1>
+    <p class="notfound-lede">
+      The address does not match anything on this site. It may have moved while
+      the piece was being built, or the link may be mistyped.
+    </p>
+    <ul class="notfound-links">
+      {sections.map(s => <li><a href={s.href}>{s.label}</a></li>)}
+    </ul>
+    <p class="notfound-home"><a href="/">Back to the beginning</a></p>
+  </div>
+</Base>
+
+<style>
+  .notfound {
+    max-width: var(--max-prose);
+    margin: 0 auto;
+    padding: var(--space-16) 0 var(--space-24);
+  }
+  .notfound-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--accent-primary);
+    margin-bottom: var(--space-3);
+  }
+  .notfound h1 {
+    font-family: var(--font-serif);
+    font-size: 42px;
+    font-weight: 500;
+    line-height: 1.1;
+    color: var(--text-primary);
+    margin: 0;
+  }
+  .notfound-lede {
+    font-family: var(--font-serif);
+    font-size: 18px;
+    line-height: 1.6;
+    color: var(--text-secondary);
+    margin: var(--space-4) 0 var(--space-12);
+  }
+  .notfound-links {
+    list-style: none;
+    padding: 0;
+    border-top: 1px solid var(--border-subtle);
+  }
+  .notfound-links li {
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .notfound-links a {
+    display: block;
+    padding: var(--space-3) 0;
+    font-family: var(--font-sans);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--easing-default);
+  }
+  .notfound-links a:hover {
+    color: var(--accent-primary);
+  }
+  .notfound-home {
+    margin-top: var(--space-8);
+    font-family: var(--font-sans);
+    font-size: 14px;
+  }
+  .notfound-home a {
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+  .notfound-home a:hover {
+    color: var(--accent-primary);
+  }
+
+  @media (max-width: 640px) {
+    .notfound {
+      padding: var(--space-8) 0 var(--space-16);
+    }
+    .notfound h1 { font-size: 32px; }
+    .notfound-lede { font-size: 16px; }
+  }
+</style>

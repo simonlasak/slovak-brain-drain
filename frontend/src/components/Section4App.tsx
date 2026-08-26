@@ -54,8 +54,8 @@ interface PeopleData {
  *
  * name_sk currently EQUALS name for all nine records, both stripped of diacritics,
  * so this renders the ASCII form today: "Juraj Slafkovsky", "Andrej Babis", "Jan
- * Tkac". That is a data gap rather than a rendering one — the historical file shows
- * the intent, carrying 'Ján Vilček' in the same field — and it is not fixed here
+ * Tkac". That is a data gap rather than a rendering one (the historical file shows
+ * the intent, carrying 'Ján Vilček' in the same field) and it is not fixed here
  * because these are nine real people's names in a hand-curated research file, and
  * proposing spellings is not the same as being entitled to write them into it.
  * Preferring name_sk means the page is correct the moment the field is filled.
