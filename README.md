@@ -236,8 +236,16 @@ Re-fetch it, then the transforms and the mirror comparison become available:
 .venv/bin/python -m pipeline.transform.section1     # also section2, section3,
                                                     # boundaries_world, diaspora_names
 .venv/bin/python -m pipeline.transform.boundaries_web  # shrinks the GeoJSON for the web
+.venv/bin/python -m pipeline.transform.us_census_slovak  # ACS ancestry vs birthplace
+.venv/bin/python -m pipeline.transform.dzs_survey        # DZS survey figures + quotes
 .venv/bin/python -m pipeline.analysis.mirror_comparison
 ```
+
+`us_census_slovak.py` and `dzs_survey.py` exist because §3 and §2 each quote figures
+whose only evidence was a file inside the 738 MB. They pull the handful of relevant
+rows into `data/processed/`, which is committed, so those claims are checkable from a
+clone. `dzs_survey.py` stores the verbatim sentence and page number behind every
+figure, which is how the stay/leave bar's fabricated middle share was caught.
 
 `mirror_comparison.py` is the only analysis step that needs raw, because it reads the
 Eurostat TSVs directly. Its output is committed, so its figures are available even

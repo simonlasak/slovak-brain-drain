@@ -50,7 +50,7 @@ export interface Section2Content {
   callout3: { value: string; label: string };
   bridge4: string[];
   /** Labels for the stay/return/elsewhere survey split. */
-  stayLeave: { stay: string; return: string; other: string; caption: string };
+  stayLeave: { stay: string; return: string; other: string; unstated: string; caption: string };
 
   sub5: string;
   bridge5: string[];
@@ -122,9 +122,10 @@ const en: Section2Content = {
   ],
   stayLeave: {
     stay: 'Stay in Czechia',
-    return: 'Return to Slovakia',
+    return: 'Use it in Slovakia',
     other: 'Try another country',
-    caption: 'src: DZS 2023 survey of international students at Czech universities (N = 2,427 Slovak respondents). Survey proportions, not administrative data.',
+    unstated: 'Not categorised',
+    caption: 'Post-graduation intentions of Slovak students, as published. The three stated shares total 80, not 100: the report does not say what the remaining fifth intends, so that share is drawn rather than absorbed into the others. src: DZS 2023 survey of international students at Czech universities (N = 2,427 Slovak respondents). Survey proportions, not administrative data.',
   },
 
   sub5: 'Renewed, not aging',
@@ -215,9 +216,9 @@ const en: Section2Content = {
       title: 'Post-graduation intentions',
       source: 'DZS (Dom zahraničných Slovákov) 2023 survey of international students at Czech universities, 2,427 Slovak respondents (report table 8).',
       derivation:
-        'Self-reported intention after finishing studies, grouped into staying in Czechia (work 26 percent plus further study 27 percent), returning to Slovakia, and moving to a third country.',
+        'Self-reported intention after finishing studies, taken as published on page 83: 54 percent plan to stay in Czechia, of whom 27 percent intend to continue studying and 26 percent to work; 13 percent want to use their knowledge in their country of origin; 13 percent want to try another foreign country. The stay figure is the report\'s own 54 rather than the 53 its two components sum to.',
       caveat:
-        'Stated intention is not observed behaviour, and survey respondents are not a random sample of Slovak students. Treat 54 percent as the best available approximation of a stay rate, not a measured one.',
+        'Stated intention is not observed behaviour, and survey respondents are not a random sample of Slovak students. Treat 54 percent as the best available approximation of a stay rate, not a measured one. Note also that the published shares total 80: the report attributes no category to the remaining 20 percent, and this chart shows that gap rather than distributing it. An earlier version of this bar rendered 54, 33 and 13, which reconciled to 100 but whose middle figure appears nowhere in the source.',
     },
   },
 

@@ -154,6 +154,14 @@
   border-radius: 1px;
   flex: 0 0 auto;
 }
+/* The stay/leave bar draws blocks, so its key reads as a block rather than a
+   line or a dot. */
+.stay-leave-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
 .basis-dot {
   width: 9px;
   height: 9px;
