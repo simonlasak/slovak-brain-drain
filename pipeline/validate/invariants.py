@@ -248,6 +248,21 @@ def check_metric_definitions() -> CheckResult:
     details: list[str] = []
     worst = "green"
 
+    def skip(msg: str) -> None:
+        """Input unavailable, so the assertion could not be evaluated.
+
+        Deliberately NOT the same as fail(). A cross-source check whose other
+        source lives in data/raw/ cannot run on a clone, because raw is 738 MB and
+        is not committed. Reporting that as red made `validate.invariants` open with
+        a RED FLAG on any fresh checkout, which teaches the reader to discount reds.
+        Red is reserved for "the data contradicts this"; yellow with a reason is
+        "this was not checked, and here is why".
+        """
+        nonlocal worst
+        if worst == "green":
+            worst = "yellow"
+        details.append(msg)
+
     def fail(msg: str) -> None:
         nonlocal worst
         worst = "red"
@@ -295,7 +310,15 @@ def check_metric_definitions() -> CheckResult:
         ).select("year", "value").iter_rows(named=True)
     }
     shared = sorted(set(euro) & set(nat_out))
-    if not shared:
+    if not euro:
+        skip(
+            "SKIPPED: Eurostat migr_emi1ctz cross-check needs "
+            "data/raw/eurostat/migr_emi1ctz.tsv.gz, which is not committed. Re-fetch "
+            "with pipeline.run_stage1 to enable it. Note this source is SUSR's own "
+            "filing redistributed, so it corroborates the transform rather than the "
+            "underlying count."
+        )
+    elif not shared:
         fail("no overlapping years between national migr_out and Eurostat migr_emi1ctz")
     else:
         mism = [y for y in shared if abs(euro[y] - nat_out[y]) > 0.5]
