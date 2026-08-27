@@ -1,0 +1,27 @@
+{
+  // Cloudflare Workers Static Assets config.
+  //
+  // WHY THIS FILE EXISTS. Cloudflare's "Create > import a repository" flow now
+  // produces a Workers project rather than a Pages project, and a Workers build
+  // finishes with `npx wrangler deploy`, which needs a config telling it what to
+  // deploy. A Pages project would instead take a "Build output directory" in the
+  // dashboard and need no file in the repo. Both host this site identically; this
+  // is the one that matches the project already created.
+  //
+  // There is no "main" key on purpose. Omitting it makes this an assets-only
+  // Worker: no server code runs, Cloudflare just serves ./dist as static files,
+  // which is what `output: 'static'` in astro.config.mjs produces.
+  //
+  // Paths here resolve relative to this file, so the dashboard's Root directory
+  // must be set to `frontend` for the build command and this config to agree.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "slovak-brain-drain",
+  "compatibility_date": "2026-08-27",
+  "assets": {
+    "directory": "./dist",
+    // Serves dist/404.html for any unmatched path. Without this a bad URL gets
+    // Cloudflare's generic 404 instead of the project's own, which carries the
+    // site nav and links back to the four sections.
+    "not_found_handling": "404-page"
+  }
+}
