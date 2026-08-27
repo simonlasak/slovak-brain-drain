@@ -4,7 +4,7 @@ import { LinePath } from '@visx/shape';
 import { AxisBottom, AxisLeft } from '@visx/axis';
 import { Group } from '@visx/group';
 import { ParentSize } from '@visx/responsive';
-import { query, registerParquet } from '../../lib/db';
+import { loadSeries } from '../../lib/chartData';
 
 interface Row {
   year: number;
@@ -240,18 +240,7 @@ export function RegionTrendChart({ animated = true }: { animated?: boolean }) {
 
   useEffect(() => {
     async function load() {
-      await registerParquet('s1.parquet', '/data/section1_internal.parquet');
-      const rows = (await query(`
-        SELECT year, geo_code, value
-        FROM 's1.parquet'
-        WHERE metric = 'population'
-          AND geo_level = 'oblast'
-          AND geo_code IN ('SK01','SK02','SK03','SK04')
-          AND age_bracket = 'all'
-          AND education = 'all'
-          AND sex = 'all'
-        ORDER BY year
-      `)) as unknown as Row[];
+      const rows = await loadSeries<Row>('s1_region_trends');
 
       const baselines: Record<string, number> = {};
       for (const r of REGIONS) {

@@ -28,10 +28,7 @@ const fmt = (n: number) => n.toLocaleString('en');
   <div class="hero">
     <HeroCounter
       client:load
-      metric="migr_out"
-      geoLevel="nation"
-      yearFrom={2004}
-      yearTo={2024}
+      dataKey="hero_registered_departures"
       fallback={departures}
     />
     <p style="font-family: var(--font-sans); font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.14em; color: var(--text-secondary); margin-top: 1.5rem; max-width: 400px;">people Slovak authorities recorded leaving the country between 2004 and 2024</p>

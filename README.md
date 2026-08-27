@@ -16,7 +16,10 @@ Slovakia registered over it (`mirror_implied_departures_2004_2024`,
 `mirror_registered_departures_2004_2024`, `mirror_panel_countries`). That second figure is
 also a floor, because the panel omits the UK, Ireland, Spain, Switzerland and France.
 
-The live URL is pending.
+**Live:** https://slovak-brain-drain.simonlasak4.workers.dev
+
+A work in progress. The English site is complete; Slovak is a stub behind the language
+toggle, which says so when you pick it.
 
 ---
 
@@ -88,10 +91,11 @@ That is 4 ŠÚ SR cubes, 4 ČSÚ tables and 4 OECD extracts (`susr_cubes_used`,
 only. Fetchers also exist for the 2021 census, the IZ Bratislava unemployment panel and the
 US Census, but none of those currently feed a rendered figure.
 
-The three processed Parquet files the site queries are committed to the repo under
-`frontend/public/data/`, so the site builds and runs without re-running the pipeline, and
-`/methodology` links each one for download with its size and contents. Raw sources are not
-redistributed here and carry their own terms.
+The three processed Parquet files are committed to the repo under `frontend/public/data/`,
+and `/methodology` links each one for download with its size and contents. The site itself
+no longer reads them at runtime: the sixteen series it renders are precomputed to JSON by
+`pipeline/analysis/chart_data.py`, so the Parquet files are published output rather than a
+runtime dependency. Raw sources are not redistributed here and carry their own terms.
 
 ---
 
@@ -117,13 +121,19 @@ Three things changed as a result:
   indicator, a different geographic level, or a different publisher. The §1 and §3
   transforms also refuse to write output if a rendered metric is missing, and unmapped
   geographic codes log and drop or raise, never pass through silently.
-- **Headline figures are derived, not typed.** `pipeline/analysis/headline_figures.py`
-  queries the processed Parquet and writes `frontend/src/data/headline_figures.json`. Every
-  entry carries the SQL that produced it plus a note on what the number does and does not
-  mean. The landing page and the methodology page import that file at build time, so a
-  headline figure on either page cannot be a number someone typed. The landing hero goes
-  further and re-runs its own query in the browser at mount, using the build-time figure
-  only as a fallback while WASM loads.
+- **Figures are derived, not typed.** `pipeline/analysis/headline_figures.py` queries the
+  processed Parquet and writes `frontend/src/data/headline_figures.json`. Every entry
+  carries the SQL that produced it plus a note on what the number does and does not mean.
+  The landing page and the methodology page import that file at build time, so a headline
+  figure on either page cannot be a number someone typed. The landing hero takes the key of
+  a generated series rather than a value, so it has no prop that would accept one.
+- **Every chart series carries its own SQL too.** `pipeline/analysis/chart_data.py` holds
+  the query behind all sixteen rendered series and writes each one to
+  `public/data/charts/` alongside its SQL, its note, and the component that consumes it.
+  The browser has no SQL engine, so a component cannot drift from the query that produced
+  its data: there is no second copy of the query to drift from. It also refuses to write a
+  series that came back empty, because a silently empty chart is how a wrong filter used to
+  reach production.
 - **Definitions are shown, not resolved.** Where two sources disagree because they count
   different things, the site shows both side by side rather than picking one. That is the
   organising idea of §2's three series and §3's dumbbell.
@@ -207,7 +217,13 @@ python -m pipeline.transform.section1           # also section2, section3,
 python -m pipeline.validate.invariants          # writes pipeline/validate/report.html
 python -m pipeline.analysis.mirror_comparison
 python -m pipeline.analysis.headline_figures    # regenerates headline_figures.json
+python -m pipeline.analysis.chart_data          # regenerates every chart series
 ```
+
+`chart_data.py` is the one to re-run after any transform change: it holds the SQL for
+all sixteen series the frontend renders and writes them to
+`frontend/public/data/charts/`. The frontend has no SQL engine, so if this is stale the
+charts are stale, and it fails loudly rather than writing an empty series.
 
 `invariants.py` reads `data/processed/`, while the site serves from
 `frontend/public/data/`, so copy the Parquet files across before running it.
@@ -219,25 +235,24 @@ python -m pipeline.analysis.headline_figures    # regenerates headline_figures.j
 **Pipeline:** Python, httpx, Polars, DuckDB, Pydantic
 
 **Frontend:** Astro 6 (static output) with React islands, TypeScript, visx for charts,
-deck.gl and MapLibre GL for the §1 and §2 choropleths, d3-geo for the §3 projections,
-DuckDB-WASM querying Parquet directly in the browser
+deck.gl and MapLibre GL for the §1 and §2 choropleths, d3-geo for the §3 projections.
+No database in the browser: chart series are precomputed to JSON by the pipeline and
+fetched as static files.
 
-**Hosting:** Cloudflare Pages, static, no backend
+**Hosting:** Cloudflare Workers Static Assets, free tier, no backend
 
 ---
 
 ## Deployment
 
-Static build on Cloudflare Pages. In the Pages project settings, root directory `frontend`,
-build command `npm run build`, output directory `dist` (the output path is relative to the
-root directory). Cache headers are set in `frontend/public/_headers`: hashed Astro assets are
-immutable, and the Parquet and GeoJSON files revalidate hourly because the pipeline rewrites
-them under the same names.
+Static build on Cloudflare. Root directory `frontend`, build command `npm run build`,
+deploy command `npx wrangler deploy` against `frontend/wrangler.jsonc`, which declares an
+assets-only Worker over `dist`. Cache headers are in `frontend/public/_headers`: hashed
+Astro assets are immutable, and the data files revalidate hourly because the pipeline
+rewrites them under the same names.
 
-The WASM binary DuckDB needs is 34 MiB, which exceeds Cloudflare's 25 MiB per-file upload
-limit, so it is fetched from jsDelivr at the version `package-lock.json` pins rather than
-served from `public/`. `docs/08-deployment.md` records the full reasoning, the GitHub Pages
-comparison, and the post-deploy verification steps.
+`docs/08-deployment.md` records the reasoning, the GitHub Pages comparison, and the
+post-deploy verification steps.
 
 ---
 

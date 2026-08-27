@@ -12,3 +12,7 @@
 
 User-agent: *
 Disallow:
+
+# Generated at build time by @astrojs/sitemap from the built routes, so a new page
+# cannot be missed by forgetting to list it. /404 is excluded deliberately.
+Sitemap: https://slovak-brain-drain.simonlasak4.workers.dev/sitemap-index.xml

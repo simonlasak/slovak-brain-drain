@@ -71,67 +71,61 @@ generated under the same setting.
 
 ---
 
-## The 34 MiB problem, and what was done about it
+## The 34 MiB problem, and how it was retired
 
-`duckdb-eh.wasm` is 34.1 MiB. **Cloudflare Pages rejects any single file over
-25 MiB at upload time**, so with the binary vendored into `frontend/public/duckdb/`
-the deploy failed before the site could exist.
+Kept as a record, because the first fix was a workaround and the second was not.
 
-Resolved in `frontend/src/lib/db.ts` by fetching the WASM module and its worker
-from jsDelivr instead. The URLs are derived by `duckdb.getJsDelivrBundles()` from
-the `PACKAGE_VERSION` compiled into the installed library, so they always point at
-the version `package-lock.json` pins and cannot go stale on a dependency bump.
-`selectBundle()` additionally probes the browser and selects the
-exception-handling build where supported and the MVP build where not, which the
-previous single hardcoded path could not do.
+`duckdb-eh.wasm` is 34.1 MiB. **Cloudflare rejects any single file over 25 MiB at
+upload time**, so with the binary vendored into `frontend/public/duckdb/` the very
+first deploy failed before the site could exist.
 
-Verified before adoption:
+**First fix, since replaced.** `src/lib/db.ts` fetched the module and its worker
+from jsDelivr instead, with the URLs derived by `duckdb.getJsDelivrBundles()` from
+the `PACKAGE_VERSION` compiled into the installed library so they tracked
+`package-lock.json`. It unblocked the deploy, and it introduced a hard runtime
+dependency: if jsDelivr was unreachable, DuckDB never instantiated and every chart
+rendered an empty frame, because no island had a load-failure state. That was
+observed for real in a browser with no external egress, where `fonts.googleapis.com`
+and `cdn.jsdelivr.net` both failed while every same-origin asset served 200. The
+fonts fell back to a system face; the charts went blank.
 
-```
-$ curl -sI https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.33.1-dev45.0/dist/duckdb-eh.wasm
-200, content-type: application/wasm
-```
+**Second fix, current.** DuckDB is gone from the browser entirely.
+`pipeline/analysis/chart_data.py` runs the same sixteen queries against the Parquet
+files and writes one JSON file per series into `frontend/public/data/charts/`.
+`src/lib/chartData.ts` fetches them. `src/lib/db.ts` is deleted, and
+`@duckdb/duckdb-wasm` and `apache-arrow` are out of `package.json`.
 
-A cross-origin URL cannot be passed to `new Worker()`, so the CDN worker script is
-wrapped in a same-origin blob that `importScripts` it. This is the pattern
-duckdb-wasm's own documentation prescribes for CDN delivery.
+What it bought:
 
-`frontend/public/duckdb/` was deleted from the working tree. It remains in git
-history and in `node_modules`, so nothing is lost.
+| | Before | After |
+|---|---|---|
+| Engine download, first chart page | ~34 MiB, about 8 MiB over the wire | none |
+| All chart data | 400 KB of Parquet | **68 KB of JSON**, 16 files |
+| Landing page transfer | dominated by the WASM fetch | **456 KB** |
+| External runtime dependencies | jsDelivr, Google Fonts | Google Fonts |
+| Largest remaining asset | the WASM | `sk_okresy.geojson`, 1.28 MB |
 
-### Known risk this introduces
+Proved data-neutral rather than assumed: every rendered mark and every character of
+visible text was captured in a headless browser before and after the change, across
+all five chart-bearing routes, and the two snapshots are identical. 1,267 SVG marks,
+no differences.
 
-Every chart on the site now has a hard runtime dependency on jsDelivr. If that CDN
-is unreachable, DuckDB never instantiates and the chart islands render an empty
-frame rather than a message, because no component has a load-failure state.
+The SQL now lives in exactly one place. The frontend has no SQL engine, so a
+component cannot diverge from the query behind its data; there is no second copy to
+diverge from. Each generated file also carries its own `sql`, `note` and `consumer`
+fields, so a series can be traced to a query with one fetch.
 
-The site already depended on one third party at runtime, Google Fonts in
-`Base.astro`, but that one degrades gracefully to a fallback typeface. This one
-does not degrade: it removes the data.
+Re-run `python -m pipeline.analysis.chart_data` after any transform change. It fails
+loudly on a series that comes back empty rather than writing one.
 
-Observed for real while finishing the WIP. A sandboxed browser with no external
-egress failed identically on both hosts, `fonts.googleapis.com` and
-`cdn.jsdelivr.net`, while every same-origin asset still served 200. The fonts
-merely fell back; the charts went blank.
+The Parquet files stay in `public/data/`: `/methodology` links them for download
+under CC BY 4.0. They are published output now, not a runtime dependency.
 
-Two mitigations, neither done:
-- Cheap: give the chart islands a visible failure state, so an unreachable CDN
-  reads as "could not load the data" rather than as an empty chart.
-- Real: precompute the JSON, per the section below, and the dependency is gone.
+### Still worth doing
 
-### This is a workaround, not the right answer
-
-Every visitor still downloads a 34 MiB database engine, roughly 8 MiB over the
-wire after Brotli, to query 400 KB of Parquet. The landing page boots it to render
-one number it already has server-rendered as a fallback.
-
-The real fix is to stop shipping DuckDB to the browser: every query on this site
-is known at build time, so the pipeline can precompute one JSON file per chart and
-the islands can fetch those. That removes the CDN dependency, the blob-worker
-trick and the 8 MiB, and it makes the host question moot. Estimated at half a day.
-It is deliberately deferred past the WIP launch.
-
----
+`sk_okresy.geojson` at 1.28 MB is now the single largest asset on the site and
+makes `/internal` the heaviest page. Simplifying the district geometry would be the
+next real win.
 
 ## Verification after the first deploy
 

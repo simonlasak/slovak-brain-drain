@@ -3,7 +3,7 @@ import { scaleLinear, scaleBand } from '@visx/scale';
 import { AxisBottom } from '@visx/axis';
 import { Group } from '@visx/group';
 import { ParentSize } from '@visx/responsive';
-import { query, registerParquet } from '../../lib/db';
+import { loadSeries } from '../../lib/chartData';
 
 interface Row {
   geo_name: string;
@@ -17,9 +17,11 @@ interface TooltipData {
   wage_eur: number;
 }
 
-// The reference line is read from the same parquet as the bars, not hardcoded.
-// It was previously a literal that drifted from the series it was drawn against.
-const WAGE_YEAR = 2024;
+// The reference line comes from its own generated series, s1_wage_national, not
+// from a literal. It was once a hardcoded number that drifted from the bars it
+// was drawn against. The year the two share now lives with their SQL in
+// pipeline/analysis/chart_data.py, so they cannot be pinned to different years
+// from here.
 
 function colorFor(value: number, nationalAvg: number): string {
   return value >= nationalAvg ? 'var(--accent-secondary)' : 'var(--accent-primary)';
@@ -189,26 +191,10 @@ export function WageBarChart({ animated = true }: { animated?: boolean }) {
 
   useEffect(() => {
     async function load() {
-      await registerParquet('s1.parquet', '/data/section1_internal.parquet');
-      const [krajRows, natRows] = await Promise.all([
-        query(`
-          SELECT geo_name, value AS wage_eur
-          FROM 's1.parquet'
-          WHERE metric = 'avg_wage_eur'
-            AND geo_level = 'kraj'
-            AND year = ${WAGE_YEAR}
-          ORDER BY value DESC
-        `),
-        query(`
-          SELECT value AS wage_eur
-          FROM 's1.parquet'
-          WHERE metric = 'avg_wage_eur'
-            AND geo_level = 'national'
-            AND year = ${WAGE_YEAR}
-        `),
+      const [rows, nat] = await Promise.all([
+        loadSeries<Row>('s1_wages_kraj'),
+        loadSeries<{ wage_eur: number }>('s1_wage_national'),
       ]);
-      const rows = krajRows as unknown as Row[];
-      const nat = natRows as unknown as { wage_eur: number }[];
       setData(rows);
       // Both series must be the same reference period. If the national figure
       // is absent, render nothing rather than a chart whose reference line is

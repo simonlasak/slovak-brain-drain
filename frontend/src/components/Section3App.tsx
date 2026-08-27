@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { query, registerParquet } from '../lib/db';
+import { loadSeries } from '../lib/chartData';
 import { DiasporaMap } from './charts/DiasporaMap';
 import { DiasporaRankedChart } from './charts/DiasporaRankedChart';
 import { DiasporaArrivalsChart } from './charts/DiasporaArrivalsChart';
@@ -13,26 +13,27 @@ import { useLocale } from '../lib/locale';
 import { getSection3Content } from '../content/diaspora';
 import { countryName } from '../content/countryNames';
 
+// The source names, year windows and destination filters that used to be
+// interpolated into SQL here now live with that SQL in
+// pipeline/analysis/chart_data.py: un_desa_bilateral_2020 for the born stock,
+// eurostat_migr_pop1ctz for the citizen stock, and oecd_mig_flows_B11 over
+// 2008-2023 for the arrivals. Only the constants this component still reasons
+// with remain below.
+
 /** The UN DESA snapshot the map and both ranked charts are built on. */
 const SNAPSHOT_YEAR = 2020;
 const BASELINE_YEAR = 1990;
-const DESA_SOURCE = 'un_desa_bilateral_2020';
 const TOP_N = 12;
 
 /**
- * The arrivals chart's window and panel. 2008 is not a stylistic choice: before it
- * the reporting panel grows from 5 countries to 22, Czechia's register is
- * contradicted by its own stock, and Switzerland steps level. See the chart
- * component's header for the arithmetic. The three destinations are the largest by
- * 2008-2023 volume and are 72.5 percent of the panel.
+ * The arrivals panel. 2008 is not a stylistic choice: before it the reporting
+ * panel grows from 5 countries to 22, Czechia's register is contradicted by its
+ * own stock, and Switzerland steps level. See the chart component's header for the
+ * arithmetic. The three destinations are the largest by 2008-2023 volume and are
+ * 72.5 percent of the panel. This order fixes their colour assignment, so it must
+ * stay in step with the s3_arrival_flows query's own destination list.
  */
-const FLOW_SOURCE = 'oecd_mig_flows_B11';
-const FLOW_Y0 = 2008;
-const FLOW_Y1 = 2023;
 const FLOW_CODES = ['DEU', 'CZE', 'AUT'];
-
-/** The two stock bases compared under sub2, both on the 2020 snapshot. */
-const CITIZEN_SOURCE = 'eurostat_migr_pop1ctz';
 
 interface StockRow { code: string; year: number; value: number; data_type: string }
 
@@ -55,26 +56,13 @@ function Section3App() {
   useEffect(() => {
     async function load() {
       try {
-        await registerParquet('s3.parquet', '/data/section3_diaspora.parquet');
-
         // Every UN DESA snapshot year, so the map's per-country detail panel can
         // draw a trend without a second round trip.
         // data_type is UN DESA's own "type of data of destination" column: a
         // leading C means the figure was compiled from foreign-citizenship data
         // rather than place of birth. The map rings those discs, because
         // bridge 1 turns on the fact that the largest one is among them.
-        const rows = await query(`
-          SELECT destination_iso3 AS code, year, value,
-                 COALESCE(data_type, '') AS data_type
-          FROM 's3.parquet'
-          WHERE metric = 'stock'
-            AND source = '${DESA_SOURCE}'
-            AND sex = 'all'
-            AND slovak_def = 'born'
-            AND age_bracket = 'all'
-            AND education = 'all'
-          ORDER BY destination_iso3, year
-        `) as unknown as StockRow[];
+        const rows = await loadSeries<StockRow>('s3_born_stock');
 
         const byCode = new Map<string, { year: number; value: number }[]>();
         const basisByCode = new Map<string, boolean>();
@@ -125,17 +113,7 @@ function Section3App() {
         // Born against citizen, 2020: two different QUANTITIES on the same snapshot,
         // inner-joined so only destinations reporting both appear. Never summed with
         // each other for the same reason the arrivals series is kept apart.
-        const citizenRows = await query(`
-          SELECT destination_iso3 AS code, value
-          FROM 's3.parquet'
-          WHERE metric = 'stock'
-            AND source = '${CITIZEN_SOURCE}'
-            AND slovak_def = 'citizen'
-            AND sex = 'all'
-            AND age_bracket = 'all'
-            AND education = 'all'
-            AND year = ${SNAPSHOT_YEAR}
-        `) as unknown as { code: string; value: number }[];
+        const citizenRows = await loadSeries<{ code: string; value: number }>('s3_citizen_stock');
 
         const citizenByCode = new Map<string, number>();
         for (const r of citizenRows) citizenByCode.set(r.code, Number(r.value));
@@ -155,18 +133,9 @@ function Section3App() {
         // Annual arrivals: a FLOW on the citizenship definition. Queried
         // separately and never joined to the stock rows, because adding or netting
         // the two would mix definitions.
-        const flowRows = await query(`
-          SELECT destination_iso3 AS code, year, value
-          FROM 's3.parquet'
-          WHERE metric = 'inflow'
-            AND source = '${FLOW_SOURCE}'
-            AND sex = 'all'
-            AND age_bracket = 'all'
-            AND education = 'all'
-            AND year BETWEEN ${FLOW_Y0} AND ${FLOW_Y1}
-            AND destination_iso3 IN (${FLOW_CODES.map(c => `'${c}'`).join(', ')})
-          ORDER BY destination_iso3, year
-        `) as unknown as { code: string; year: number; value: number }[];
+        const flowRows = await loadSeries<{ code: string; year: number; value: number }>(
+          's3_arrival_flows',
+        );
 
         const flowByCode = new Map<string, { year: number; value: number }[]>();
         for (const r of flowRows) {

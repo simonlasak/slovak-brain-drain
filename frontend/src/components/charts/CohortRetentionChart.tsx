@@ -3,7 +3,7 @@ import { scaleLinear } from '@visx/scale';
 import { AxisBottom } from '@visx/axis';
 import { Group } from '@visx/group';
 import { ParentSize } from '@visx/responsive';
-import { query, registerParquet } from '../../lib/db';
+import { loadSeries } from '../../lib/chartData';
 
 interface Row {
   geo_name: string;
@@ -278,16 +278,9 @@ export function CohortRetentionChart({ animated = true }: { animated?: boolean }
 
   useEffect(() => {
     async function load() {
-      await registerParquet('s1.parquet', '/data/section1_internal.parquet');
-      const rows = (await query(`
-        SELECT geo_name, geo_code, value AS retention_pct
-        FROM 's1.parquet'
-        WHERE metric = 'cohort_retention'
-          AND year = 2024
-          AND geo_level = 'okres'
-          AND sex = 'all'
-        ORDER BY value DESC
-      `)) as { geo_name: string; geo_code: string; retention_pct: number }[];
+      const rows = await loadSeries<{ geo_name: string; geo_code: string; retention_pct: number }>(
+        's1_cohort_retention_okres',
+      );
 
       // geo_level = 'okres' already excludes the SK_CAP aggregate, which now
       // carries geo_level = 'okres_aggregate'. No row-level filter needed.

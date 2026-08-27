@@ -6,9 +6,11 @@
 /_astro/*
   Cache-Control: public, max-age=31536000, immutable
 
-# The Parquet and GeoJSON files are NOT fingerprinted: the pipeline rewrites them
-# under the same names. A long cache would keep serving last month's data after a
-# pipeline run, so these revalidate hourly instead.
+# The data files are NOT fingerprinted: the pipeline rewrites them under the same
+# names. A long cache would keep serving last month's data after a pipeline run, so
+# these revalidate hourly instead. The glob covers /data/charts/ too, which is where
+# the sixteen precomputed chart series live and therefore what every chart on the
+# site now reads instead of querying Parquet in the browser.
 /data/*
   Cache-Control: public, max-age=3600, must-revalidate
 

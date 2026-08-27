@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { query, registerParquet } from '../lib/db';
+import { loadSeries } from '../lib/chartData';
 import { CorridorMap } from './charts/CorridorMap';
 import { StockTrendChart } from './charts/StockTrendChart';
 import { StudentBreakdownChart } from './charts/StudentBreakdownChart';
@@ -42,55 +42,23 @@ function Section2App() {
   useEffect(() => {
     async function load() {
       try {
-        await registerParquet('s2.parquet', '/data/section2_corridor.parquet');
-
-        const regionRows = await query(`
-          SELECT cz_geo_code, value, year
-          FROM 's2.parquet'
-          WHERE pathway = 'all'
-            AND cz_geo_code != 'CZ'
-            AND sex = 'all'
-            AND source = 'csu_CIZ003T003'
-            AND metric = 'stock'
-          ORDER BY year, cz_geo_code
-        `) as unknown as RegionRow[];
+        const regionRows = await loadSeries<RegionRow>('s2_regions');
         setRegionData(regionRows);
 
         const years = [...new Set(regionRows.map(r => r.year))].sort((a, b) => a - b);
         setRegionYears(years);
 
-        const stockRows = await query(`
-          SELECT year, pathway, value
-          FROM 's2.parquet'
-          WHERE sex = 'all'
-            AND cz_geo_code = 'CZ'
-            AND year BETWEEN 2015 AND 2024
-            AND (
-              (pathway = 'all' AND source = 'csu_CIZ003T003' AND metric = 'stock')
-              OR (pathway = 'labour' AND employment_status = 'total' AND metric = 'stock')
-              OR (pathway = 'student' AND field_or_sector = 'ED5-8' AND metric = 'students_enrolled')
-            )
-          ORDER BY year, pathway
-        `) as unknown as StockRow[];
+        const stockRows = await loadSeries<StockRow>('s2_stock_series');
 
-        // The only SUM in this section, so it is the only query where an
-        // unconstrained dimension could double-count. age_bracket and education
-        // are pinned to 'all' explicitly: today every labour row carries 'all'
-        // for both, so the sum is correct either way, but it would silently
-        // double-count the moment CSU published an age or education breakdown.
-        // See check_subtotal_double_counting in pipeline/validate/invariants.py,
-        // which reports employment_status alone as a 4.95x trap on this file.
-        const labour2024 = await query(`
-          SELECT 2024 as year, 'labour' as pathway,
-            SUM(value) as value
-          FROM 's2.parquet'
-          WHERE pathway = 'labour'
-            AND year = 2024
-            AND sex = 'all'
-            AND age_bracket = 'all'
-            AND education = 'all'
-            AND employment_status IN ('employed', 'self_employed')
-        `) as unknown as StockRow[];
+        // s2_labour_2024 is the only SUM on this section, so it is the only query
+        // where an unconstrained dimension could double-count. Its SQL pins
+        // age_bracket and education to 'all' explicitly: today every labour row
+        // carries 'all' for both, so the sum is correct either way, but it would
+        // silently double-count the moment CSU published an age or education
+        // breakdown. See check_subtotal_double_counting in
+        // pipeline/validate/invariants.py, which reports employment_status alone
+        // as a 4.95x trap on this file.
+        const labour2024 = await loadSeries<StockRow>('s2_labour_2024');
 
         const hasLabour2024 = stockRows.some(r => r.pathway === 'labour' && r.year === 2024);
         const allStock = hasLabour2024
@@ -99,15 +67,7 @@ function Section2App() {
 
         setStockData(allStock);
 
-        const studentRows = await query(`
-          SELECT year, field_or_sector as level, value
-          FROM 's2.parquet'
-          WHERE pathway = 'student'
-            AND sex = 'all'
-            AND field_or_sector IN ('ED6', 'ED7', 'ED8')
-            AND year BETWEEN 2013 AND 2024
-          ORDER BY year, level
-        `) as unknown as StudentRow[];
+        const studentRows = await loadSeries<StudentRow>('s2_students_by_level');
         setStudentData(studentRows);
 
       } catch (e: any) {

@@ -3,7 +3,7 @@ import { scaleLinear } from '@visx/scale';
 import { AxisBottom } from '@visx/axis';
 import { Group } from '@visx/group';
 import { ParentSize } from '@visx/responsive';
-import { query, registerParquet } from '../../lib/db';
+import { loadSeries } from '../../lib/chartData';
 
 interface Row {
   geo_name: string;
@@ -259,26 +259,9 @@ export function RankedChangeChart({ animated = true }: { animated?: boolean }) {
 
   useEffect(() => {
     async function load() {
-      await registerParquet('s1.parquet', '/data/section1_internal.parquet');
-      const rows = (await query(`
-        WITH pop AS (
-          SELECT geo_name, geo_code, year, value
-          FROM 's1.parquet'
-          WHERE metric = 'population'
-            AND geo_level = 'okres'
-            AND year IN (2004, 2025)
-            AND sex = 'all'
-            AND age_bracket = 'all'
-            AND education = 'all'
-        )
-        SELECT a.geo_name AS geo_name,
-          a.geo_code AS geo_code,
-          ROUND(100.0 * (b.value - a.value) / a.value, 1) AS pct_change
-        FROM pop a
-        JOIN pop b ON a.geo_code = b.geo_code
-        WHERE a.year = 2004 AND b.year = 2025
-        ORDER BY pct_change DESC
-      `)) as { geo_name: string; geo_code: string; pct_change: number }[];
+      const rows = await loadSeries<{ geo_name: string; geo_code: string; pct_change: number }>(
+        's1_population_change_okres',
+      );
 
       // geo_level = 'okres' already excludes the SK_CAP aggregate, which now
       // carries geo_level = 'okres_aggregate'. No row-level filter needed.

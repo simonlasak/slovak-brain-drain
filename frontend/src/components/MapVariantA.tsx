@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { DeckGL } from '@deck.gl/react';
 import { GeoJsonLayer } from '@deck.gl/layers';
 import { WebMercatorViewport } from '@deck.gl/core';
-import { query, registerParquet } from '../lib/db';
+import { loadSeries } from '../lib/chartData';
 import { AboutData } from './charts/AboutData';
 import type { SourcePanel } from '../content/internal';
 
@@ -199,19 +199,17 @@ export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVaria
   useEffect(() => {
     async function preload() {
       try {
-        console.log('Preload starting...');
-        await registerParquet('s1.parquet', '/data/section1_internal.parquet');
-        console.log('Parquet registered, running queries...');
+        // One generated series per step metric. The series keys mirror STEPS, so
+        // adding a step means adding a query in
+        // pipeline/analysis/chart_data.py and it will fail loudly here if the
+        // file is missing rather than colouring the map with nothing.
         const metrics = STEPS.map(s => s.metric).filter(Boolean) as string[];
         const results = await Promise.all(
-          metrics.map(metric => query(`
-            SELECT geo_code, value FROM 's1.parquet'
-            WHERE metric = '${metric}' AND year = 2024
-              AND geo_level = 'okres' AND age_bracket = 'all' AND education = 'all'
-          `))
-        ) as { geo_code: string; value: number }[][];
+          metrics.map(metric =>
+            loadSeries<{ geo_code: string; value: number }>(`s1_map_okres_${metric}_2024`),
+          ),
+        );
 
-        console.log('Queries complete, parsing...');
         // Index 0 = empty (step 0 has null metric), then one per real step
         const parsed: Record<string, number>[] = [{}];
         for (const rows of results) {
@@ -222,7 +220,6 @@ export default function MapVariantA({ steps, aboutLabel, sourcePanel }: MapVaria
         preloadedData.current = parsed;
         (window as any).__preloadedData = preloadedData.current;
         dataReadyRef.current = true;
-        console.log('PRELOAD complete. Steps:', parsed.map(p => Object.keys(p).length));
         setDataReady(true);
         applyStep(targetStepRef.current);
       } catch (err) {

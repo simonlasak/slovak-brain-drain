@@ -14,7 +14,6 @@
     "@deck.gl/geo-layers": "^9.3.2",
     "@deck.gl/layers": "^9.3.2",
     "@deck.gl/react": "^9.3.2",
-    "@duckdb/duckdb-wasm": "^1.33.1-dev45.0",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@visx/axis": "^3.12.0",
@@ -23,7 +22,6 @@
     "@visx/scale": "^3.12.0",
     "@visx/shape": "^3.12.0",
     "@visx/tooltip": "^3.12.0",
-    "apache-arrow": "^21.1.0",
     "astro": "^6.3.7",
     "d3-geo": "^3.1.0",
     "deck.gl": "^9.3.2",
@@ -32,5 +30,8 @@
     "react-dom": "^19.2.6",
     "react-map-gl": "^8.1.1",
     "typescript": "^6.0.3"
+  },
+  "devDependencies": {
+    "@astrojs/sitemap": "^3.7.3"
   }
 }
