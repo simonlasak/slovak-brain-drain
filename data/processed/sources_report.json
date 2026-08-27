@@ -1,0 +1,46 @@
+{
+  "cross_validations": [
+    {
+      "id": "section2_student_labour_narrative_correction",
+      "description": "Original finding vs corrected finding on Slovak student/labour corridor",
+      "original_claim": "Student pipeline collapsing while labour stock accelerates. Brain drain becoming pure labour drain. 66 workers per student signals behavioural shift away from university pathway.",
+      "pushback": "Surface pattern (students down, workers up) is consistent with multiple hypotheses. Stock data cannot distinguish behavioural change from cohort aging-in-place.",
+      "checks_run": [
+        "Annual inflows (OECD): stable at 6,000-7,000/year since 2012. Weakly supports accumulation not acceleration.",
+        "Slovak 15-19 cohort (section1 data): shrank 37% from 420k (2004) to 263k (2019). Student decline of 41% tracks cohort decline almost exactly.",
+        "Age structure (CIZ004T002, EU27 proxy): mean age rose from 39.9 (2015) to 40.9 (2024), ~1 year per year. Consistent with same cohort aging in place, not young arrivals refreshing the distribution."
+      ],
+      "revised_finding": "The labour stock of Slovaks in CZ grew to 240,000 through two decades of cumulative stable arrivals aging in place, not an acceleration of new departures. The student stock decline closely tracks the 37% shrinkage in Slovakia's 18-year-old cohort caused by the 1990s birthrate collapse, not a behavioural shift away from Czech universities. Annual inflows have been stable at ~6,000-7,000/year. The corridor is a story of successful retention combined with demographic headwinds.",
+      "remaining_gaps": [
+        "No Slovak-specific age structure (EU27 proxy used)",
+        "No newly-enrolled student inflow data (stock only)",
+        "No stay-rate computed yet",
+        "No Czech wage data fetched yet"
+      ],
+      "result": "original_claim_revised"
+    }
+  ],
+  "section1_wage_sources": {
+    "susr_pr0204qs": {
+      "title": "Average monthly wages in economy of the SR",
+      "granularity": "national",
+      "geo_level": "national",
+      "years": "2004-2025",
+      "note": "National quarterly average, annual figure used. geo_code SK0."
+    },
+    "susr_np3112qr": {
+      "title": "Average wage in the economy of the SR - by region",
+      "granularity": "kraj (NUTS3, 8 regions)",
+      "geo_level": "kraj",
+      "years": "2000-2025",
+      "indicator": "E_PRIEM_NOM_MZDA (average nominal monthly earning, EUR)",
+      "period": "1Q4Q (annual aggregate)",
+      "note": "Fetched 2026-06-01. 8 kraje (SK010-SK042). Directly comparable to pr0204qs national series."
+    }
+  },
+  "section2_schema_notes": {
+    "labour_discontinuity": "Labour pathway 2012-2014 rows contain self-employed stock only (Cizinci s platnym zivnostenskym opravnenim). Total employment and employee counts begin in 2015. Pre-2015 rows have employment_status = 'self_employed'; they are not comparable to post-2015 totals and must not be plotted on the same axis without annotation.",
+    "age_proxy": "Age structure rows (metric = 'age_structure_proxy') use EU27 citizens in CZ as proxy. Slovak-specific age data not available in CSU open data. is_proxy = True for all such rows.",
+    "field_of_study_gap": "Field-of-study breakdown for Slovak students is a permanent data gap. MSMT DSIA files aggregate all foreigners without nationality dimension. Eurostat educ_uoe_mobs02 has ISCED level only. Student pathway retains ED5/6/7/8 level split only."
+  }
+}

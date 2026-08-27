@@ -7,7 +7,9 @@
     "dev": "astro dev",
     "dev:lan": "astro dev --host",
     "build": "astro build",
-    "preview": "astro preview --host"
+    "preview": "astro preview --host",
+    "verify:snapshot": "node tools/verify/snapshot.mjs",
+    "verify:compare": "node tools/verify/compare.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.5",
@@ -30,6 +32,7 @@
     "typescript": "^6.0.3"
   },
   "devDependencies": {
-    "@astrojs/sitemap": "^3.7.3"
+    "@astrojs/sitemap": "^3.7.3",
+    "playwright": "^1.62.1"
   }
 }

@@ -396,7 +396,7 @@ def check_no_ambiguous_keys() -> CheckResult:
             f"{fname}: {len(dup):,} duplicated keys covering {extra:,} redundant "
             f"rows, of which {len(conflicting):,} hold CONFLICTING values"
         )
-        for r in conflicting.head(4).iter_rows(named=True):
+        for r in conflicting.sort(key).head(4).iter_rows(named=True):
             shown = {k: r[k] for k in key if k in ("year", "metric", "source", "sex")}
             details.append(f"    {shown} -> {r['n']} rows, {r['nv']} distinct values")
 
@@ -559,7 +559,10 @@ def check_un_desa_vs_oecd() -> CheckResult:
         details.append("This is expected - OECD uses ISO3 (CZE), DESA uses numeric (203). Harmonization needed in frontend.")
         worst = "yellow"
     else:
-        for row in joined.iter_rows(named=True):
+        # Sorted before iterating: a Polars join makes no ordering guarantee, so
+        # without this the observations below come out in a different sequence on
+        # every run and report.html shows a diff with no change in it.
+        for row in joined.sort(["year", "destination_iso3"]).iter_rows(named=True):
             if row["oecd_val"] > 0:
                 pct = abs(row["desa_val"] - row["oecd_val"]) / row["oecd_val"] * 100
                 if pct > 15:
@@ -713,7 +716,7 @@ def check_geo_levels_tile() -> CheckResult:
             continue
 
         failures = []
-        for r in sums.iter_rows(named=True):
+        for r in sums.sort("year").iter_rows(named=True):
             nat = national.get(r["year"])
             if nat is None or nat == 0:
                 continue

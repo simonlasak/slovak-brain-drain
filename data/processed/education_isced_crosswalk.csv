@@ -1,0 +1,13 @@
+census_2011_category,census_2021_category,isced_group,isced_label,is_comparable
+Základné,Primary education (ISCED 1),0-2,Primary or lower secondary,true
+Učňovské (bez maturity),Lower secondary vocational (ISCED 2),0-2,Primary or lower secondary,true
+Stredné odborné (bez maturity),Lower secondary vocational (ISCED 2),0-2,Primary or lower secondary,true
+Úplné stredné učňovské (s maturitou),Upper secondary (ISCED 3),3-4,Upper secondary or post-secondary non-tertiary,true
+Úplné stredné odborné (s maturitou),Upper secondary (ISCED 3),3-4,Upper secondary or post-secondary non-tertiary,true
+Úplné stredné všeobecné,Upper secondary general (ISCED 3),3-4,Upper secondary or post-secondary non-tertiary,true
+Vyššie odborné vzdelanie,Post-secondary non-tertiary (ISCED 4),3-4,Upper secondary or post-secondary non-tertiary,true
+Vysokoškolské bakalárske,Tertiary - bachelor (ISCED 6),5-8,Tertiary,true
+"Vysokoškolské magisterské, inžinierske, doktorské","Tertiary - master (ISCED 7)",5-8,Tertiary,true
+Vysokoškolské doktorandské,Tertiary - doctoral (ISCED 8),5-8,Tertiary,true
+Bez školského vzdelania,No school education (ISCED 0),0-2,Primary or lower secondary,true
+Nezistené,Not identified,unknown,Unknown,false

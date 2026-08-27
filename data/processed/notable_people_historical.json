@@ -1,0 +1,62 @@
+[
+  {
+    "id": "vilcek",
+    "name": "Ján Vilček",
+    "name_sk": "Ján Vilček",
+    "birth_year": 1933,
+    "birth_place": "Bratislava",
+    "left_year": 1964,
+    "age_at_leaving": 31,
+    "field": "biomedical research",
+    "narrative": "Defected during a scientific conference. Co-developed Remicade (infliximab), one of the best-selling drugs in history. Donated $200M+ to NYU.",
+    "sources": ["wikipedia:Jan_Vilček"]
+  },
+  {
+    "id": "lowy",
+    "name": "Peter Lowy",
+    "name_sk": "Peter Lowy",
+    "birth_year": 1959,
+    "birth_place": "Bratislava",
+    "left_year": 1968,
+    "age_at_leaving": 9,
+    "field": "business / real estate",
+    "narrative": "Family fled after 1968 Soviet invasion. Built Westfield Corporation into the world's largest shopping center company.",
+    "sources": ["wikipedia:Peter_Lowy"]
+  },
+  {
+    "id": "bajcsy",
+    "name": "Ruzena Bajcsy",
+    "name_sk": "Ružena Bajcsy",
+    "birth_year": 1933,
+    "birth_place": "Bratislava",
+    "left_year": 1967,
+    "age_at_leaving": 34,
+    "field": "robotics / computer science",
+    "narrative": "Left for Stanford, then became professor at UC Berkeley. Pioneer in computer vision and robotics. Member of the National Academy of Engineering.",
+    "sources": ["wikipedia:Ruzena_Bajcsy"]
+  },
+  {
+    "id": "banic",
+    "name": "Štefan Banič",
+    "name_sk": "Štefan Banič",
+    "birth_year": 1870,
+    "birth_place": "Smolenice",
+    "left_year": 1907,
+    "age_at_leaving": 37,
+    "field": "invention / aviation",
+    "narrative": "Emigrated to the US and invented a parachute design in 1914, which he donated to the US Army.",
+    "sources": ["wikipedia:Štefan_Banič"]
+  },
+  {
+    "id": "murgas",
+    "name": "Jozef Murgaš",
+    "name_sk": "Jozef Murgaš",
+    "birth_year": 1864,
+    "birth_place": "Tajov",
+    "left_year": 1896,
+    "age_at_leaving": 32,
+    "field": "wireless telegraphy / invention",
+    "narrative": "Catholic priest who emigrated to Pennsylvania and pioneered wireless telegraphy. Held multiple patents predating some of Marconi's work.",
+    "sources": ["wikipedia:Jozef_Murgaš"]
+  }
+]

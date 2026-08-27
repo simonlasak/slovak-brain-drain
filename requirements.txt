@@ -1,0 +1,28 @@
+# Python dependencies for the pipeline.
+#
+#   python3 -m venv .venv
+#   .venv/bin/pip install -r requirements.txt
+#
+# Developed and run on Python 3.9.6. Nothing here needs anything newer, but the
+# code uses `from __future__ import annotations` throughout, so 3.9 is the floor.
+#
+# Versions are pinned to what the committed data was actually generated with. The
+# three section Parquet files reproduce byte-identically under these versions,
+# with one exception noted in docs/08-deployment.md: section1_internal.parquet is
+# content-deterministic but not byte-deterministic, because the Parquet writer
+# does not guarantee identical row-group layout across runs.
+
+# Everything the pipeline modules import.
+duckdb==1.4.4
+httpx==0.28.1
+polars==1.36.1
+pydantic==2.13.4
+PyYAML==6.0.3
+rich==15.0.0
+
+# Not imported by any pipeline module, but needed to read the source PDFs when
+# verifying survey figures by hand. The DZS respondent-count correction in
+# src/content/corridor.ts was found with pdfplumber against
+# data/raw/csu_foreigners/dzs_foreign_students_cz_2023_en.pdf. Install these only
+# if you are re-checking a figure against a PDF.
+pdfplumber==0.11.8

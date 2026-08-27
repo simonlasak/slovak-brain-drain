@@ -202,32 +202,73 @@ npm run dev     # npm run dev:lan to expose on the LAN
 
 The processed Parquet files are committed, so this is all you need to run the site.
 
-### Re-running the pipeline (optional)
-
-Python 3.9 or newer. There is no requirements file checked in; the pipeline needs `duckdb`,
-`httpx`, `polars`, `pydantic`, `pyyaml` and `rich`. Copy `.env.example` to `.env` if you want
-the US Census fetch, which needs a free API key. Every stage runs as a module from the repo
-root:
+### Re-running the pipeline
 
 ```bash
-python -m pipeline.run_smoke                    # one small cube, end to end
-python -m pipeline.run_stage1                   # fetch all sources
-python -m pipeline.transform.section1           # also section2, section3,
-                                                # boundaries_world, diaspora_names
-python -m pipeline.transform.boundaries_web     # optimises the GeoJSON for the web
-python -m pipeline.validate.invariants          # writes pipeline/validate/report.html
-python -m pipeline.analysis.mirror_comparison
-python -m pipeline.analysis.headline_figures    # regenerates headline_figures.json
-python -m pipeline.analysis.chart_data          # regenerates every chart series
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
 ```
 
-`chart_data.py` is the one to re-run after any transform change: it holds the SQL for
-all sixteen series the frontend renders and writes them to
-`frontend/public/data/charts/`. The frontend has no SQL engine, so if this is stale the
-charts are stale, and it fails loudly rather than writing an empty series.
+Python 3.9.6 is what the committed data was generated on, and `requirements.txt`
+pins the exact versions. Every stage runs as a module from the repo root.
 
-`invariants.py` reads `data/processed/`, while the site serves from
-`frontend/public/data/`, so copy the Parquet files across before running it.
+**What a bare clone can do.** `data/processed/` is committed, 656 KB of derived
+output, so the analysis and validation layer runs immediately with no fetching:
+
+```bash
+.venv/bin/python -m pipeline.analysis.chart_data       # the 16 rendered chart series
+.venv/bin/python -m pipeline.analysis.headline_figures # headline_figures.json
+.venv/bin/python -m pipeline.validate.invariants       # 9 checks -> validate/report.html
+```
+
+All three are verified to run with `data/raw/` absent. `chart_data.py` is the one to
+re-run after any change to a transform: it holds the SQL for all sixteen series the
+frontend renders, and because the frontend has no SQL engine, stale output here means
+stale charts. It fails loudly rather than writing an empty series.
+
+**What needs the raw sources.** `data/raw/` is 738 MB of fetched upstream data and is
+NOT committed: it is not ours to redistribute, and each publisher sets its own terms.
+Re-fetch it, then the transforms and the mirror comparison become available:
+
+```bash
+.venv/bin/python -m pipeline.run_smoke              # one small cube, end to end
+.venv/bin/python -m pipeline.run_stage1             # fetch all sources
+.venv/bin/python -m pipeline.transform.section1     # also section2, section3,
+                                                    # boundaries_world, diaspora_names
+.venv/bin/python -m pipeline.transform.boundaries_web  # shrinks the GeoJSON for the web
+.venv/bin/python -m pipeline.analysis.mirror_comparison
+```
+
+`mirror_comparison.py` is the only analysis step that needs raw, because it reads the
+Eurostat TSVs directly. Its output is committed, so its figures are available even
+where the script cannot run. Copy `.env.example` to `.env` if you want the US Census
+fetch, which needs a free API key.
+
+**Reproducibility, checked rather than asserted.** Re-running all three section
+transforms plus every analysis step against the raw sources produces the committed
+outputs with **zero diff**, with one exception: `section1_internal.parquet` is
+content-identical (70,061 rows, no row differing either way) but not
+byte-identical, because the Parquet writer does not guarantee row-group layout
+across runs. `validate/report.html` used to churn on every run for a similar reason,
+an unsorted Polars join; it is now byte-stable across consecutive runs.
+
+### Verifying a change did not move the data
+
+```bash
+cd frontend
+npm run build && npm run preview          # in another terminal
+npm i -D playwright && npx playwright install chromium   # once
+npm run verify:snapshot /tmp/before.json
+# make the change, rebuild
+npm run verify:snapshot /tmp/after.json
+npm run verify:compare /tmp/before.json /tmp/after.json
+```
+
+It fingerprints every SVG mark and every character of visible text across the five
+chart routes. Removing DuckDB from the browser and re-encoding the GeoJSON were both
+proved data-neutral this way: 1,267 marks, identical before and after. It does not
+cover the §1 and §2 maps, which draw into a WebGL canvas; check those at the data
+source and by confirming the canvas has a live GL context.
 
 ---
 
