@@ -364,8 +364,15 @@ def check_metric_definitions() -> CheckResult:
     return CheckResult(
         name="Metric definitions (each metric tied to a different indicator)",
         severity=worst,
-        summary=("PASS: all four definition checks hold" if worst == "green"
-                 else "FAIL: a metric does not measure what its name says"),
+        # Three states, not two. Saying "a metric does not measure what its name
+        # says" when the only thing that happened is a skipped cross-check is
+        # itself a false claim, and this report exists to not make those.
+        summary=(
+            "PASS: all four definition checks hold" if worst == "green"
+            else "FAIL: a metric does not measure what its name says" if worst == "red"
+            else "PARTIAL: the checks that ran hold; at least one was skipped for a "
+                 "missing input, named below"
+        ),
         details=details,
     )
 
