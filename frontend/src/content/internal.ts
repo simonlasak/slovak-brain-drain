@@ -106,7 +106,7 @@ const en: Section1Content = {
   caption1:
     'Net cohort retention: ratio of 35-39 year olds in 2024 to 15-19 year olds in 2004, same district. Combines migration and mortality. src: ŠÚ SR om7007rr.',
   bridge1: [
-    'The mechanism behind this redistribution is not complicated. Bratislava kraj pays an average monthly wage of 1,858 EUR. Prešov kraj pays 1,195 EUR. That is a 56 percent premium for doing equivalent work 400 kilometres to the west. Six of Slovakia’s eight regions sit in a compressed band between 1,195 and 1,419 EUR. Bratislava is not merely the highest-paying region; it is a category of its own, 30 percent above the next closest region. For a 22-year-old finishing a degree, the arithmetic of this gap is not subtle.',
+    'The mechanism behind this redistribution is not complicated. Bratislava kraj pays an average monthly wage of 1,858 EUR. Prešov kraj pays 1,195 EUR. That is a 56 percent premium for doing equivalent work 400 kilometres to the west. Seven of Slovakia’s eight regions sit in a compressed band between 1,195 and 1,419 EUR. Bratislava is not merely the highest-paying region; it is a category of its own, 30 percent above the next closest region. For a 22-year-old finishing a degree, the arithmetic of this gap is not subtle.',
   ],
   callout2: { value: '+56%', label: 'Bratislava wage premium over Prešov, 2024, the largest regional gap in Slovakia' },
 

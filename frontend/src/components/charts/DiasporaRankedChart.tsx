@@ -43,8 +43,14 @@ function Chart({ data, width, mode, locale, animated }: {
 
   const values = data.map(d => (mode === 'absolute' ? d.value : (d.growth ?? 0)));
   const maxV = Math.max(...values, 1);
-  // Growth spans 62% to 62,883%, so a linear axis renders everything except
-  // Norway as a hairline. Log keeps every bar readable.
+  // Across the twelve destinations actually drawn, growth spans +50.8% (Canada)
+  // to +8,853.6% (Spain), a factor of 174, so a linear axis renders the smaller
+  // bars as hairlines. Log keeps every bar readable.
+  //
+  // The earlier comment here said 62% to 62,883% and named Norway. Both ends were
+  // read off the full table rather than off this chart's slice: TOP_N is 12,
+  // ranked by 2020 stock, and Norway is thirteenth, so it is not drawn at all.
+  // Any range stated about a chart has to be computed from what the chart shows.
   const useLog = mode === 'growth';
   const xScale = useLog
     ? scaleLinear({ domain: [0, Math.log10(maxV + 1)], range: [0, innerW] })

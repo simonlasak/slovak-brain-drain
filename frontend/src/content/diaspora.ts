@@ -173,7 +173,7 @@ const en: Section3Content = {
   // the absolute one it is meant to be read against, and caption2 describes the figure
   // sub2's heading has always promised.
   captionGrowth:
-    'The same 12 destinations, as percent change 1990 to 2020. Log axis: the range runs from +62 percent to +62,883 percent, so a linear one would render every bar but Norway’s as a hairline. src: UN DESA bilateral migrant stock, 2020 revision.',
+    'The same 12 destinations, as percent change 1990 to 2020. Log axis: across these twelve the range runs from +51 percent to +8,854 percent, a factor of 174, so a linear one would render the smaller bars as hairlines. Both ends are read off the twelve drawn here, not off the wider table. src: UN DESA bilateral migrant stock, 2020 revision.',
   // Verified against the parquet: 25 destinations report both for 2020; born 305,669
   // against citizen 297,234; excluding Czechia born exceeds citizen by 15,954 while
   // Czechia runs 7,519 the other way; Netherlands 4.1x, Hungary 0.50x, Lithuania 0.28x.
@@ -217,7 +217,7 @@ const en: Section3Content = {
     'Slovak citizens recorded arriving each year, 2008 to 2023, for the three largest reporting destinations. Restricted to the 22 destinations that reported in every year of the window, which together account for 97.3 percent of what all reporting countries recorded in 2019; the three shown are 72.5 percent of that. The series starts in 2008 because the reporting panel and the Czech register both change before it. The United Kingdom appears in this source for a single year and Ireland not at all. src: OECD International Migration Database, measure B11.',
   bridgeFlows: [
     'Everything so far has counted people who are somewhere. This counts people arriving, which is a flow rather than a stock, and it is recorded on the citizenship definition rather than on birthplace. It cannot be added to the map, netted against it, or drawn on the same axis, and the three definitions of the previous sections do not become four: this is the same citizenship definition, measured as movement instead of presence.',
-    'What it shows is steadiness rather than surge. Germany runs between roughly 8,600 and 15,500 a year, with the rise beginning in 2011, the year its transitional restriction on workers from the 2004 accession states expired. Czechia and Austria are flatter still, Czechia between 5,000 and 7,600 and Austria between 4,000 and 6,500. Nothing in the window looks like an exodus, and nothing looks like a stop.',
+    'What it shows is steadiness rather than surge. Germany runs between roughly 8,600 and 15,500 a year, with the rise beginning in 2011, the year its transitional restriction on workers from the 2004 accession states expired. Czechia and Austria are flatter still, Czechia between 4,400 and 7,600 and Austria between 4,000 and 6,500. Nothing in the window looks like an exodus, and nothing looks like a stop.',
     'The chart also cannot answer the question most readers will bring to it, and the reason is worth stating rather than burying. The United Kingdom appears in this source for one year, 2013, and Ireland appears not at all, yet the United Kingdom is the second-largest destination in the 2020 stock and Ireland the eighth. The two countries that absorbed the most post-accession movement are the two this measurement cannot see. A flow chart built here describes central Europe well and the Anglophone destinations not at all.',
   ],
   arrivals: {
@@ -331,7 +331,7 @@ const en: Section3Content = {
       derivation:
         'Percent change in each destination’s Slovak-born population between 1990 and 2020: 100 * (stock_2020 - stock_1990) / stock_1990. Shown for the 12 largest destinations by 2020 size.',
       caveat:
-        'Percentages from small bases are dramatic by construction. Norway’s +62,883 percent is a rise from 6 people to 3,779, which is real but says more about the 1990 baseline than about Norway. Read the growth panel alongside the absolute one.',
+        'Percentages from small bases are dramatic by construction. Spain’s +8,854 percent is a rise from 110 people to 9,849, which is real but says more about the 1990 baseline than about Spain, and Hungary’s +6,539 percent starts from 316. Read the growth panel alongside the absolute one. Note also that this panel shows the twelve largest destinations by 2020 stock, so a destination with faster growth from a tinier base can sit outside it: Norway rose from 6 people to 3,779, which is +62,883 percent, and is thirteenth by stock.',
     },
     basis: {
       title: 'Born in Slovakia against Slovak citizens',

@@ -91,8 +91,8 @@ const en: Section2Content = {
 
   intro: [
     'Two Czech statistical registers count Slovaks in Czechia, and they arrive at different totals. The foreigners’ residence register (ČSÚ CIZ002/CIZ003) recorded 125,280 Slovak citizens with a registered address in Czechia as of early 2025. The labour registry (ČSÚ CIZ03) recorded 240,297 Slovaks as economically active in Czechia in 2023. The gap reflects the nature of the corridor itself: under EU free movement, a Slovak citizen can work in Czechia on a Czech employment contract while maintaining official residence in Slovakia. Tens of thousands do, particularly along the Moravian border. Neither number is wrong. The residence figure counts people who live in Czechia. The labour figure counts people who work there. Together they describe a corridor where the boundary between "living abroad" and "commuting to a better-paying job" has dissolved for a significant share of the Slovak workforce.',
-    'This corridor did not emerge in a surge. Both figures accumulated over two decades of stable departures, roughly 6,000 to 7,000 new arrivals per year since EU accession in 2004. The two countries share a language boundary so low it barely registers, mutual recognition of qualifications, and seventy-four years of shared institutional history. What the data describes is the internal extension of the Slovak labour market into a higher-wage jurisdiction, not emigration in the classical sense.',
-    'The question this section answers is not "why do Slovaks leave?" but "what happened to the ones who left for Czechia twenty years ago?" The answer, visible in both the employment stock and the age structure, is that they stayed.',
+    'This corridor did not emerge in a surge. Both figures accumulated over two decades of stable departures, roughly 6,000 to 7,000 new arrivals per year since 2013, and a noisier decade before that. The two countries share a language boundary so low it barely registers, mutual recognition of qualifications, and seventy-four years of shared institutional history. What the data describes is the internal extension of the Slovak labour market into a higher-wage jurisdiction, not emigration in the classical sense.',
+    'The question this section answers is not "why do Slovaks leave?" but "what happened to the ones who left for Czechia twenty years ago?" The answer, which the employment stock shows plainly, is that they stayed, and that others kept arriving behind them.',
   ],
   callout1: { value: '240,297', label: 'Slovaks economically active in Czechia, 2023' },
 
@@ -124,12 +124,26 @@ const en: Section2Content = {
     stay: 'Stay in Czechia',
     return: 'Return to Slovakia',
     other: 'Try another country',
-    caption: 'src: DZS 2023 survey of international students at Czech universities (N approx. 3,200 Slovak respondents). Survey proportions, not administrative data.',
+    caption: 'src: DZS 2023 survey of international students at Czech universities (N = 2,427 Slovak respondents). Survey proportions, not administrative data.',
   },
 
-  sub5: 'Aging in place',
+  sub5: 'Renewed, not aging',
   bridge5: [
-    'The mean age of EU27 citizens in Czechia rose from 39.9 in 2015 to 40.9 in 2024, advancing at almost exactly one year per calendar year. This is the signature of a population aging in place rather than being refreshed by new arrivals: the same cohort that crossed the border in their twenties is now in their forties, with Czech careers and Czech mortgages.',
+    // CORRECTED 2026-08-27, and this one changed the argument rather than a digit.
+    // The paragraph said the mean age advanced "at almost exactly one year per
+    // calendar year" and read that as a closed cohort aging in place. The series
+    // says 39.65 in 2015 and 40.49 in 2024: 0.84 years over nine calendar years,
+    // about a tenth of the claimed rate. A closed cohort would have advanced by
+    // nine. So the evidence pointed the opposite way from the reading, and the
+    // subhead asserted the refuted version. Rewritten below to what the numbers
+    // support, and the levels are now stated to one decimal off the series rather
+    // than rounded to 39.9/40.9.
+    //
+    // TODO(copy, needs Simon): this is a thesis change in a section you approved,
+    // not a corrected figure, so the framing wants your eye. The claim that the
+    // 2000s arrivals stayed still holds on the labour register; what the age
+    // profile adds is that they were joined, not that they aged alone.
+    'The mean age of EU27 citizens in Czechia was 39.7 in 2015 and 40.5 in 2024. It advanced 0.8 years across nine calendar years, and that is the figure to sit with: a settled cohort aging in place would have advanced by nine. A population whose average age barely moves while its stock keeps growing is one being continuously refreshed at the young end, not one quietly growing older together. Both things are therefore true of this corridor. The people who arrived in the mid-2000s largely stayed, which is what the labour register shows, and they kept being joined by others in their twenties, which is why the average never caught up with them. One caveat on the figure itself: no Slovak-only age profile is published for Czechia, so this is the EU27 resident population standing in for the Slovak one, and it describes the shape of the whole rather than a measurement of Slovaks specifically.',
     // APPROVED 2026-07-30 with five edits, all applied:
     //  1. "confirm nobody went home" -> "confirm this was not a return wave".
     //     The evidence rules out a wave, not individual returns.
@@ -199,7 +213,7 @@ const en: Section2Content = {
     },
     stayLeave: {
       title: 'Post-graduation intentions',
-      source: 'DZS (Dom zahraničných Slovákov) 2023 survey of international students at Czech universities, approximately 3,200 Slovak respondents.',
+      source: 'DZS (Dom zahraničných Slovákov) 2023 survey of international students at Czech universities, 2,427 Slovak respondents (report table 8).',
       derivation:
         'Self-reported intention after finishing studies, grouped into staying in Czechia (work 26 percent plus further study 27 percent), returning to Slovakia, and moving to a third country.',
       caveat:
