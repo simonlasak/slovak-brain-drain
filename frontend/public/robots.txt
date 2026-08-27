@@ -1,10 +1,14 @@
-# Crawling is disallowed on purpose while this site is a work in progress.
-# /resources still carries placeholder content and the Slovak translation of
-# every section is an untranslated stub, so an indexed snapshot taken now would
-# misrepresent the piece.
+# Crawling allowed. Opened 27 August 2026, when the English site was complete:
+# all four sections, /methodology with its download links, and /resources with
+# every external claim fetched and verified.
 #
-# TO ALLOW INDEXING AT LAUNCH: change the line "Disallow: /" below to
-# "Disallow:" (an empty value, which permits everything). Change nothing else.
+# STILL A WORK IN PROGRESS, and knowingly indexed as one: the Slovak translation
+# of every section is a stub, so a visitor who picks SK gets the English text
+# behind a notice saying the translation is in preparation. That is the one thing
+# an indexed snapshot taken now will misrepresent.
+#
+# TO CLOSE IT AGAIN: change "Disallow:" below to "Disallow: /". Note that
+# de-indexing is slow, so removal takes far longer than the block does.
 
 User-agent: *
-Disallow: /
+Disallow:

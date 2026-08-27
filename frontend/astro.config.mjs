@@ -14,7 +14,7 @@ export default defineConfig({
   // Deployed origin. Astro.site is what Base.astro builds og:url and the
   // canonical link from, so these are absolute in the built HTML rather than
   // path-relative (crawlers and social scrapers require absolute).
-  site: 'https://slovak-brain-drain.pages.dev',
+  site: 'https://slovak-brain-drain.simonlasak4.workers.dev',
   vite: {
     optimizeDeps: {
       exclude: ['@duckdb/duckdb-wasm'],
