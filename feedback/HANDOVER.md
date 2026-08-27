@@ -1,9 +1,89 @@
-# Handover — Slovak Brain Drain, post-audit
+# Handover - Slovak Brain Drain
 
-Written 2026-07-30. Repo clean, all work pushed to `origin/main` at `5154563`.
+## CURRENT STATUS, 27 August 2026
 
-Read `docs/03-methodology.md` and `docs/05-design.md` before writing code. Do not
-implement from memory.
+**The site is live** at https://slovak-brain-drain.simonlasak4.workers.dev on
+Cloudflare Workers Static Assets, indexed (robots.txt open), with a sitemap. All
+work is pushed to `origin/main`. See `docs/08-deployment.md` for the deploy runbook
+and the reasoning behind the host choice.
+
+### This machine vs the next one
+
+`data/raw/` is **738 MB and is not committed**: it is not ours to redistribute. That
+was the constraint that decided what had to be finished here.
+
+**Done here, because it needed the raw data:**
+
+- `data/processed/` is now **committed** (656 KB). That is what makes the analysis
+  layer work from a bare clone. Verified by cloning to a scratch directory and
+  running it: `analysis.chart_data`, `analysis.headline_figures` and
+  `validate.invariants` all run, regenerate the committed outputs byte-identically,
+  and report no blocking issues. `frontend` also does `npm ci && npm run build`
+  clean from that clone, which is exactly what Cloudflare does.
+- `requirements.txt` exists now, pinned to the versions the committed data was
+  generated with. Python 3.9.6.
+- Reproducibility measured, not asserted: re-running all three section transforms
+  plus every analysis step against raw gives **zero diff**, except that
+  `section1_internal.parquet` is content-identical (70,061 rows, none differing) but
+  not byte-identical, because the Parquet writer does not fix row-group layout.
+- `transform/us_census_slovak.py` and `transform/dzs_survey.py` are new. They exist
+  because §3's ACS figures and §2's survey figures had their only evidence inside the
+  738 MB. Those extracts are now committed, so the claims are checkable from a clone.
+  `dzs_survey.py` stores the verbatim sentence and page behind every figure.
+- `validate/report.html` is deterministic now (three unsorted Polars iterations), so
+  a diff on it means something changed.
+
+**Only `analysis.mirror_comparison` still needs raw**, because it reads the Eurostat
+TSVs directly. Its output is committed, so its figures survive where it cannot run.
+
+**Portable, so it can move to the next machine:** everything in `frontend/`. The
+Slovak authoring pass, the eight `TODO(copy)` items, the SSR gap, an OG image, the
+remaining hardcoded hex, chart a11y.
+
+### What was found and fixed this session
+
+Two fabricated or wrong figures were live on the site, both in the same class as the
+300,000 that once headlined the landing page:
+
+1. **§2's stay/leave bar rendered 54 / 33 / 13**, summing to exactly 100. The DZS
+   2023 report says 54 stay, 13 country of origin, 13 another country: total 80.
+   **The 33 is in no sentence of the source.** Now 54 / 13 / 13 with the
+   uncategorised 20 drawn rather than absorbed, plus a legend, because two adjacent
+   13 percent segments cannot label themselves.
+2. **§2's "Aging in place"** claimed the mean age advanced "almost exactly one year
+   per calendar year" and read that as a closed cohort. It advanced 0.84 years over
+   nine calendar years, about a tenth of that. The evidence pointed the opposite way
+   from the reading. Rewritten, subhead changed to "Renewed, not aging", flagged
+   `TODO(copy)` because it is a thesis change in a section Šimon approved.
+
+Plus four range and count errors, a survey N taken from the wrong vintage of the
+same report, a §3 caption whose worked example described a bar the chart does not
+draw, and the Ján Tkáč ERC claim (wrong amount, wrong year, and the grant followed
+the return by four years rather than causing it).
+
+**An audit of all ~130 hand-typed figures across the three content modules found
+about 85 percent verified exactly.** ~85 percent of them are clean single queries
+and could be generated instead of typed, which would have caught four of the six
+errors mechanically. That is the highest-value remaining engineering work. The
+residual it cannot close: the aging-in-place error had correct levels and a wrong
+reading, so rate and trend language needs a human pass.
+
+### Architecture changed under you
+
+- **DuckDB-WASM is gone from the browser.** `pipeline/analysis/chart_data.py` holds
+  the SQL for all sixteen rendered series and writes JSON; `src/lib/chartData.ts`
+  fetches it. `src/lib/db.ts` is deleted. Engine download went from ~34 MiB to none,
+  all chart data from 400 KB of Parquet to 68 KB of JSON. The frontend has no SQL
+  engine, so a component cannot drift from the query behind its data.
+- **`frontend/tools/verify/`** fingerprints every SVG mark and every character of
+  visible text across the five chart routes. It is what proved that refactor and the
+  GeoJSON re-encoding data-neutral: 1,267 marks, identical. Use it on anything that
+  should not move the data. It does not cover the two deck.gl maps.
+
+---
+
+Written 2026-07-30, superseded above. Read `docs/03-methodology.md` and
+`docs/05-design.md` before writing code. Do not implement from memory.
 
 ---
 
