@@ -121,11 +121,41 @@ loudly on a series that comes back empty rather than writing one.
 The Parquet files stay in `public/data/`: `/methodology` links them for download
 under CC BY 4.0. They are published output now, not a runtime dependency.
 
+### The boundary files, done next
+
+Removing DuckDB made `sk_okresy.geojson` the largest asset on the site, so
+`pipeline/transform/boundaries_web.py` now optimises the three GeoJSON files on the
+way into `frontend/public/data/`. They had been copied byte-identical to what the
+fetchers pulled down.
+
+| File | Before | After |
+|---|---|---|
+| `sk_okresy.geojson` | 1284.9 KB | **581.6 KB** |
+| `cz_kraje.geojson` | 428.0 KB | **205.2 KB** |
+| `world_countries.geojson` | 199.8 KB | 199.8 KB (already lean) |
+
+Two changes, both invisible at render scale. Coordinates are rounded to five
+decimal places, about 1.1 m, against a rendered pixel of roughly 480 m on the §1
+map: the upstream files carried up to 15 decimals, which is sub-nanometre. And only
+the properties the frontend actually reads are kept, which is two of the 17
+Eurostat attributes on `cz_kraje` and two of the five on `sk_okresy`.
+
+Rounding is safe for shared borders because it is deterministic: neighbours store
+the same coordinates along a shared edge, and equal inputs round to equal outputs,
+so edges that met still meet. Verified rather than assumed: feature counts, key
+values and names are preserved in order, and the bounding-box drift is 0.54 m,
+inside the half-step the rounding permits.
+
+It deliberately does NOT simplify geometry. Dropping vertices would save more but
+moves borders, and doing it without topology awareness opens gaps between
+neighbours. That needs mapshaper and a visual check.
+
 ### Still worth doing
 
-`sk_okresy.geojson` at 1.28 MB is now the single largest asset on the site and
-makes `/internal` the heaviest page. Simplifying the district geometry would be the
-next real win.
+The largest asset is now `dist/_astro/geojson-layer.*.js` at 691 KB, which is
+deck.gl's GeoJSON layer. Both scroll maps hydrate on load, so it sits on the
+critical path of `/internal` and `/corridor` whether or not the reader scrolls to
+the map.
 
 ## Verification after the first deploy
 

@@ -214,6 +214,7 @@ python -m pipeline.run_smoke                    # one small cube, end to end
 python -m pipeline.run_stage1                   # fetch all sources
 python -m pipeline.transform.section1           # also section2, section3,
                                                 # boundaries_world, diaspora_names
+python -m pipeline.transform.boundaries_web     # optimises the GeoJSON for the web
 python -m pipeline.validate.invariants          # writes pipeline/validate/report.html
 python -m pipeline.analysis.mirror_comparison
 python -m pipeline.analysis.headline_figures    # regenerates headline_figures.json
